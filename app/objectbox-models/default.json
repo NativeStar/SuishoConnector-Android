@@ -1,0 +1,67 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:2947947432727022472",
+      "lastPropertyId": "8:3399012061160989973",
+      "name": "TransmitDatabaseEntity",
+      "properties": [
+        {
+          "id": "1:3991016219232272401",
+          "name": "timestamp",
+          "type": 6,
+          "flags": 129
+        },
+        {
+          "id": "2:7517595364547396536",
+          "name": "type",
+          "type": 2
+        },
+        {
+          "id": "3:5531598673893722982",
+          "name": "messageFrom",
+          "type": 2
+        },
+        {
+          "id": "4:4352452338971826277",
+          "name": "fileSize",
+          "type": 6
+        },
+        {
+          "id": "5:500895860196760716",
+          "name": "msg",
+          "type": 9
+        },
+        {
+          "id": "6:1150387966906774606",
+          "name": "isDeleted",
+          "type": 1
+        },
+        {
+          "id": "7:8540050798651417213",
+          "name": "fileName",
+          "type": 9
+        },
+        {
+          "id": "8:3399012061160989973",
+          "name": "filePath",
+          "type": 9
+        }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "1:2947947432727022472",
+  "lastIndexId": "0:0",
+  "lastRelationId": "0:0",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
+  "version": 1
+}

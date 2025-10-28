@@ -1,0 +1,166 @@
+<resources>
+    <string name="app_name" translatable="false">Suisho Connector</string>
+    <string name="appTitle" translatable="false">Suisho Connector</string>
+    <string name="startScan_button">扫码连接</string>
+    <string name="port">端口</string>
+    <string name="ipAddressInput_invalid">目标地址无效</string>
+    <string name="portInput_invalid">无效端口号 应该在1–60000之间</string>
+    <string name="text_ok">确定</string>
+    <string name="text_exit">退出</string>
+    <string name="dialog_text_connected_handshake">正在交换数据</string>
+    <string name="changeConnectMethod_inputAddress">手动输入地址</string>
+    <string name="changeConnectMethod_scanCode">扫码连接</string>
+    <string name="inputAddressTips">在PC端点击"切换连接方式"后输入显示的IP及端口</string>
+    <string name="input_addressInputText">电脑IP</string>
+    <string name="button_connectAddressButton">连接</string>
+    <string name="error_emptyInput_pleaseInputAddressHere">请输入IP地址</string>
+    <string name="dialog_connecting_text">连接中…</string>
+    <string name="dialog_connectFailedAlertText">连接失败:请检查与电脑是否在同一局域网内\n如为手动连接请检查输入是否正确</string>
+    <string name="text_error">发生异常</string>
+    <string name="service_notification_title">前台服务通知</string>
+    <string name="service_notification_content">程序保活需要，请勿关闭通知</string>
+    <string name="transmit_send_text_input_hint">在此输入文本</string>
+    <string name="permission_scanCode_camera_message">该功能需要授予相机权限</string>
+    <string name="permission_request_alert_title">需要权限</string>
+    <string name="text_cancel">取消</string>
+    <string name="permission_denied_necessary_scancode">您拒绝了相机权限,扫码功能无法正常运行</string>
+    <string name="permission_request_alert_title_denied">权限被拒绝</string>
+    <string name="permission_denied_do_task_alert_message">权限被拒绝
+        请前往系统设置手动开启</string>
+    <string name="permission_denied_alert_open_system_permission_setting">权限设置</string>
+    <string name="transmit_load_json_failed_dialog_message">加载历史消息失败,已重置数据</string>
+    <string name="transmit_load_json_failed_dialog_title">加载失败</string>
+    <string name="transmit_upload_failed_has_uploading_file">上传失败:请等待上一个文件上传完成</string>
+    <string name="transmit_open_file_failed_not_resolve_application">无法打开文件:没有应用程序支持打开它</string>
+    <string name="transmit_open_file_failed_not_exists">打开失败:文件已被删除</string>
+    <string name="transmit_send_failed_network">请先连接计算机或检查网络状况</string>
+    <string name="service_connect_success">连接成功</string>
+    <string name="text_not_connect">未连接</string>
+    <string name="text_computer_id">计算机ID</string>
+    <string name="text_number_unknown" translatable="false">N/A</string>
+    <string name="text_notification_forward">通知转发</string>
+    <string name="text_address_connect_help">请点击PC端的\"切换连接方式\"按钮查看IP及端口号并在下方对应位置输入</string>
+    <string name="text_need_disconnect_first">请先断开现有连接</string>
+    <string name="text_disconnect">断开</string>
+    <string name="text_disconnect_confirm_message">确认断开连接?</string>
+    <string name="text_disconnect_action_success">已关闭连接</string>
+    <string name="text_need_connect_first">请先连接计算机</string>
+    <string name="text_connected">已连接</string>
+    <string name="text_connection_state_subtitle_not_connect">扫码或输入地址连接</string>
+    <string name="nav_home">主页</string>
+    <string name="nav_transmit">互传</string>
+    <string name="nav_setting">设置</string>
+    <string name="text_copy">复制</string>
+    <string name="text_delete">删除</string>
+    <string name="text_multiple_choice">多选</string>
+    <string name="text_share">分享</string>
+    <string name="text_ssl_verify_error">SSL验证失败 双端证书不匹配 请尝试清理手机端证书后重试</string>
+    <string name="text_running">运行中</string>
+    <string name="text_not_running">未运行</string>
+    <string name="text_not_permission">无权限</string>
+    <string name="connection_auto_mode">正在扫描绑定的设备</string>
+    <string name="state_name_icon_packing">正在打包应用图标</string>
+    <string name="state_desc_icon_packing">用于发送至计算机显示</string>
+    <string name="state_name_battery_opt">电池优化未关闭</string>
+    <string name="state_desc_battery_opt">应用后台进程可能被杀</string>
+    <string name="state_tip">有新的提醒 点击查看</string>
+    <string name="state_name_query_package_permission">无获取应用列表权限</string>
+    <string name="state_desc_query_package_permission">应用图标显示等功能将工作异常</string>
+    <string name="state_name_error">发生异常</string>
+    <string name="state_desc_error_packing_icon">打包应用图标时发生异常</string>
+    <string name="state_name_notification_listener_permission">无通知读取权限</string>
+    <string name="state_desc_notification_listener_permission">通知转发无法正常工作</string>
+    <string name="state_name_send_notification">无法发送通知</string>
+    <string name="state_desc_send_notification">前台服务不能通过常驻通知保活</string>
+    <string name="state_name_auto_connect_error">自动连接异常</string>
+    <string name="state_desc_auto_connect_error">运行过程中发生异常</string>
+    <string name="title_activity_file_upload">发送到计算机</string>
+    <string name="text_send_file">发送文件</string>
+    <string name="text_send_text">发送文本</string>
+    <string name="text_sent">已发送</string>
+    <string name="text_send_text_dialog_message">确认将分享文本发送至计算机?</string>
+    <string name="text_untrusted">不信任</string>
+    <string name="text_trusted">已信任</string>
+    <string name="text_no_longer_trust">不再信任</string>
+    <string name="text_deleted">已删除</string>
+    <string name="dialog_trust_computer_title">信任此设备?</string>
+    <string name="dialog_trust_computer_message">此计算机将可以访问设备的通知、文件、等
+        这可能包含隐私信息 仅建议在私人设备上使用</string>
+    <string name="dialog_manage_all_files_permission_message">
+        从Android11开始 软件操作非共享目录或私有目录下的文件需要"管理所有文件"权限\n
+        您需要授予此权限才能自定义传输文件的下载目录\n
+        点击"确定"前往系统授权界面
+    </string>
+    <string name="dialog_write_external_storage_permission_message">
+        在此Android版本上 使用该功能需要"写入外部存储"权限 您尚未授予本软件该权限\n
+        点击"确定"将发起授权请求
+    </string>
+    <string name="text_trust">信任</string>
+    <string name="state_title_auto_connect_pause">自动连接暂停</string>
+    <string name="state_desc_auto_connect_pause_not_wifi">未连接到WLAN网络</string>
+    <string name="dialog_change_trust_mode_title">切换信任模式</string>
+    <string name="dialog_change_trust_mode_message">将此计算机调整为:</string>
+    <string name="dialog_change_trust_mode_message2">将影响使用通知转发 文件管理等</string>
+    <string name="service_mediaProjection_notification_title">媒体转发服务</string>
+    <string name="service_mediaProjection_notification_content">正在运行 通知用于保活</string>
+    <string name="text_send_file_not_data">无法发送文件:数据异常</string>
+
+    <string name="text_accessibility_label">远程控制服务</string>
+    <string name="text_accessibility_desc">可在连接投屏后进行模拟点击 无需Shell或Root权限</string>
+    <string name="text_send_file_from_self">无法发送来自自身的文件</string>
+    <string name="text_manage">管理</string>
+    <string name="setting_trust_device_manager">受信任设备管理</string>
+    <string name="setting_group_functions">功能开关</string>
+    <string name="setting_function_notification_forward">通知转发</string>
+    <string name="setting_function_screen_projection">屏幕投射</string>
+    <string name="trusted_device_manager_not_device">无已信任的设备</string>
+    <string name="text_connected_device_remove_trust_button">当前连接</string>
+    <!-- Strings used for fragments for navigation -->
+
+    <string name="text_loading">加载中</string>
+    <string name="storage_manage_cache_desc">打包的应用图标、系统优化的代码等 会在需要时重新生成</string>
+    <string name="text_clear">清理</string>
+    <string name="text_wipe_data">清除数据</string>
+    <string name="home_card_trust_mode_connected">信任模式(点击切换)</string>
+    <string name="text_file_manage">文件浏览</string>
+    <string name="dialog_wipe_data_title">正在抹除数据</string>
+    <string name="dialog_wipe_data_message">完成后程序将自动退出</string>
+    <string name="text_cleared">清理完成</string>
+    <string-array name="array_setting_dropdown_transmit_save_file_path">
+        <item>私有目录</item>
+        <item>Download目录</item>
+<!--        <item>自定义位置</item>-->
+    </string-array>
+    <string name="dialog_transmit_file_save_location">文件存储位置</string>
+    <string name="home_card_trust_mode">信任模式</string>
+    <string name="dialog_close_application_confirm_title">关闭应用</string>
+    <string name="dialog_close_application_confirm_message">确认关闭应用?</string>
+    <string name="text_connect_failed">连接失败</string>
+    <string name="text_invalid_qrcode">无效二维码</string>
+    <string name="dialog_scanned_wrong_qrcode">二维码错误\n这是用于在局域网内下载安装包的二维码\n你应该扫描用于连接的二维码(软件启动后主页显示的)\n如果你是需要更新客户端 请点击确定按钮在浏览器打开该链接</string>
+    <string name="setting_function_auto_exit_on_disconnect">自动退出</string>
+    <string name="setting_function_auto_exit_on_disconnect_desc">连接被关闭且软件正在后台时自动终止进程 避免耗电</string>
+    <string name="state_title_error_file_server">文件浏览模块初始化异常</string>
+    <string name="state_desc_error_file_server">相关功能可能无法工作 请尝试重新连接</string>
+    <string name="setting_function_file_manager">文件浏览</string>
+    <string name="setting_function_file_manager_desc">允许信任的计算机浏览和下载设备文件</string>
+    <string name="text_active_after_reboot">你需要重启软件使该变更完全生效</string>
+    <string name="setting_storage_permission_dialog_message">使用该功能需要给予本软件存储权限 点击\"确定\"发起授权</string>
+    <string name="text_crash_dialog_title">应用程序崩溃</string>
+    <string name="text_crash_dialog_message">Suisho Connector崩溃了,在设置中将日志导出并发送给开发者可能有助于修复此问题.带来不便深感抱歉.</string>
+    <string name="text_export_success">导出完成</string>
+    <string name="crash_not_log">无崩溃日志</string>
+    <string name="text_export_failed">导出失败</string>
+    <string name="dialog_log_export_message">崩溃日志将被打包至\"/内部存储/Download/SuishoConnector/\"目录下</string>
+    <string name="text_export_to">已导出为:</string>
+    <string name="setting_launch_verify_summary_device_not_password">无法使用:设备未设置锁屏密码</string>
+    <string name="auth_dialog_title">身份验证</string>
+    <string name="setting_launch_verify_summary_unsupport">无法使用:设备不支持</string>
+    <string name="text_verify_success">验证成功</string>
+    <string name="auth_dialog_desc">我们需要确保您是机主</string>
+    <string name="setting_launch_verify_summary_exception">无法使用:初始化时发生异常</string>
+    <string name="card_text_waiting_verify">等待用户验证</string>
+    <string name="auth_launch_verify_dialog_message">为保护机主隐私 使用该程序前需要通过身份验证</string>
+    <string name="text_verify">验证</string>
+
+</resources>

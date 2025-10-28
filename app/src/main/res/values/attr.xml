@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string-array name="array_setting_dropdown_transmit_save_file_path_entry">
+        <item>private</item>
+        <item>download</item>
+        <item>custom</item>
+    </string-array>
+<!--    <item name="colorPrimary" type="integer" tools:ignore="MissingDefaultResource">#212121</item>-->
+</resources>

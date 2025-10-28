@@ -1,0 +1,79 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id("io.objectbox")
+}
+android {
+    namespace 'com.example.linktocomputer'
+    compileSdk 33
+
+    defaultConfig {
+        applicationId 'com.suisho.linktocomputer'
+        minSdk 29
+        targetSdk 33
+        //noinspection ExpiredTargetSdkVersion,ExpiredTargetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        ndk{
+            abiFilters "arm64-v8a"
+        }
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary true
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    buildFeatures {
+        viewBinding true
+        compose true
+        aidl true
+    }
+    lint {
+        abortOnError false
+    }
+    kotlinOptions {
+        jvmTarget = '11'
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion '1.5.1'
+    }
+    packaging {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+}
+dependencies {
+//    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation "androidx.activity:activity:1.6.0-alpha05"
+//    implementation 'androidx.navigation:navigation-fragment:2.5.3'
+//    implementation 'androidx.navigation:navigation-ui:2.5.3'
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+//    implementation files('C:/Users/z2858/AndroidStudioProjects/LinkToComputer/app/lib/google-webrtc-1.0.32006.aar')
+//    implementation files("./lib/google-webrtc-1.0.32006.aar")
+//    implementation 'com.github.shenbengit:WebRTCExtension:1.1.0'
+    implementation 'androidx.preference:preference-ktx:1.2.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    implementation 'androidx.biometric:biometric:1.1.0'
+//    implementation files('C:\\Users\\z2858\\AndroidStudioProjects\\LinkToComputer\\app\\lib\\opus-jni-java-1.0.3.jar')
+//    implementation 'org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.1.21'
+}
+tasks.withType(JavaCompile){
+    options.encoding = "UTF-8"
+}

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <androidx.cardview.widget.CardView
+        android:layout_width="250dp"
+        android:layout_height="100dp"
+        android:layout_marginTop="1dp"
+        android:elevation="3dp"
+        android:id="@+id/transmit_file_background_card_view"
+        app:cardBackgroundColor="@color/material_dynamic_neutral_variant95"
+        app:cardCornerRadius="8dp"
+        android:layout_marginEnd="3dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginBottom="3dp"
+        app:cardElevation="3dp">
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <ImageView
+                android:layout_width="75dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/baseline_insert_drive_file_24"
+                android:contentDescription="一个文件项目 点击打开"/>
+            <ImageView
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:src="@drawable/baseline_open_in_new_24"
+                android:layout_gravity="bottom|end"
+                android:id="@+id/transmit_file_openable_icon"
+                android:contentDescription="装饰图标"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/transmit_file_name"
+                android:textSize="18sp"
+                android:layout_marginStart="74dp"
+                android:layout_marginTop="3dp"
+                android:textStyle="bold"
+                android:textColor="@color/text_black"
+                style="@style/TextAppearance.AppCompat.Large"
+                android:maxLines="2"
+                android:ellipsize="middle"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/transmit_file_size"
+                android:textSize="18sp"
+                android:layout_marginStart="74dp"
+                android:layout_marginTop="55dp"/>
+        </FrameLayout>
+    </androidx.cardview.widget.CardView>
+
+</LinearLayout>

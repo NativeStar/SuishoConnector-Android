@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    app:behavior_hideable="true"
+    app:behavior_peekHeight="250dp"
+    app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="确认清除数据?"
+        android:layout_gravity="center"
+        android:textStyle="bold"
+        android:textColor="@android:color/holo_red_light"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="程序的所有数据将被清除,包括缓存、设置项、传输记录等.同时所有授予的权限将被撤销,需重新设置.\n确认继续?"
+        android:layout_gravity="center"/>
+    <com.example.linktocomputer.view.ConfirmSeekBar
+        android:layout_marginTop="15dp"
+        android:id="@+id/wipe_data_confirm_seek_bar"
+        android:layout_marginBottom="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="30dp" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="将滑块拖到最右端以确认"
+        android:layout_gravity="center"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="10dp"/>
+</LinearLayout>

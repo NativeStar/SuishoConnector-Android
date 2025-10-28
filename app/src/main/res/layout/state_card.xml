@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="54dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@android:color/transparent"
+    app:cardCornerRadius="8dp"
+    android:paddingTop="2dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:orientation="horizontal">
+        <ImageView
+            android:paddingTop="12dp"
+            android:paddingBottom="6dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:id="@+id/state_dialog_card_icon"
+            android:importantForAccessibility="no"
+            android:src="@drawable/baseline_arrow_drop_down_circle_24"/>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="5dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textStyle="bold"
+                android:id="@+id/state_dialog_card_name" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/state_dialog_card_description"
+                android:paddingTop="5dp"/>
+        </LinearLayout>
+    </LinearLayout>
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/baseline_keyboard_arrow_right_24"
+        android:layout_gravity="right"
+        android:id="@+id/state_dialog_card_clickable_icon"
+        android:layout_marginTop="14dp"
+        android:layout_marginEnd="6dp"
+        android:visibility="gone"/>
+</androidx.cardview.widget.CardView>

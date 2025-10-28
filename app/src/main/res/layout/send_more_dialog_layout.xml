@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="16dp"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_menu_layout_shape">
+<LinearLayout
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@color/material_dynamic_neutral90"
+    android:orientation="vertical">
+    <Button
+        android:id="@+id/uploadImageButtton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:background="@color/material_dynamic_neutral80"
+        android:text="图片"
+        app:icon="@drawable/baseline_image_24" />
+
+    <Button
+        android:id="@+id/uploadFileButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:background="@color/material_dynamic_neutral70"
+        android:text="文件"
+        app:icon="@drawable/baseline_insert_drive_file_24" />
+</LinearLayout>
+
+</androidx.cardview.widget.CardView>
