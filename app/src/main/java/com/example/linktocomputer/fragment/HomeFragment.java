@@ -2,6 +2,7 @@ package com.example.linktocomputer.fragment;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Rect;
 import android.media.projection.MediaProjectionManager;
@@ -32,6 +33,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.gson.JsonObject;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.ChecksumException;
 import com.google.zxing.FormatException;
@@ -44,10 +46,7 @@ import com.journeyapps.barcodescanner.camera.CameraManager;
 import com.journeyapps.barcodescanner.camera.CameraSettings;
 import com.journeyapps.barcodescanner.camera.PreviewCallback;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.regex.Pattern;
@@ -184,9 +183,12 @@ public class HomeFragment extends Fragment {
         });
         //调试
         binding.cardConnectionStateIcon.setOnClickListener(v1 -> {
+            if(0 == (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE)){
+                return;
+            }
             new MaterialAlertDialogBuilder(getActivity())
                     .setItems(new CharSequence[]{
-                            "Exec shell",
+                            "Edit desktop client state",
                             "Request media projection permission & Test projection",
                             "Finish activity",
                             "Throw exception",
@@ -204,25 +206,25 @@ public class HomeFragment extends Fragment {
                             getActivity().startActivityForResult(intent, MainActivityResultEnum.START_MEDIA_PROJECTION);
                         } else if(which == 0) {
                             EditText editText = new EditText(getActivity());
-                            editText.setHint("Input command here");
+                            editText.setHint("State id");
                             new MaterialAlertDialogBuilder(getActivity())
                                     .setView(editText)
-                                    .setTitle("Shell Execute")
-                                    .setPositiveButton("Exec", (dialog1, which1) -> {
-                                        try {
-                                            Process process = Runtime.getRuntime().exec(editText.getText().toString());
-                                            InputStream inputStream = process.getInputStream();
-                                            InputStreamReader isr = new InputStreamReader(inputStream);
-                                            BufferedReader br = new BufferedReader(isr);
-                                            String line;
-                                            while ((line = br.readLine()) != null) {
-                                                Log.i("Debug shell exec", line);
-                                            }
-                                        } catch (Exception e) {
-                                            Log.e("Debug shell exec", e.getMessage(), e);
-                                        }
+                                    .setTitle("Edit desktop state")
+                                    .setPositiveButton("Add", (dialog1, which1) -> {
+                                        JsonObject jsonObject = new JsonObject();
+                                        jsonObject.addProperty("packetType", "edit_state");
+                                        jsonObject.addProperty("type", "add");
+                                        jsonObject.addProperty("name", editText.getText().toString());
+                                        GlobalVariables.computerConfigManager.getNetworkService().sendObject(jsonObject);
                                     })
-                                    .setNegativeButton("Cancel", (dialog1, which1) -> {
+                                    .setNegativeButton("Remove", (dialog1, which1) -> {
+                                        JsonObject jsonObject = new JsonObject();
+                                        jsonObject.addProperty("packetType", "edit_state");
+                                        jsonObject.addProperty("type", "remove");
+                                        jsonObject.addProperty("name", editText.getText().toString());
+                                        GlobalVariables.computerConfigManager.getNetworkService().sendObject(jsonObject);
+                                    })
+                                    .setNeutralButton("Cancel", (dialog1, which1) -> {
                                     })
                                     .show();
                         } else if(which == 2) {
@@ -242,7 +244,8 @@ public class HomeFragment extends Fragment {
                                     .setTitle("Edit state")
                                     .setPositiveButton("Add", (dialog1, which1) -> ((NewMainActivity) getActivity()).stateBarManager.addState(States.getStateList().get(editText.getText().toString())))
                                     .setNegativeButton("Remove", (dialog1, which1) -> ((NewMainActivity) getActivity()).stateBarManager.removeState(States.getStateList().get(editText.getText().toString())))
-                                    .setNeutralButton("Cancel",(dialog1, which1) -> {})
+                                    .setNeutralButton("Cancel", (dialog1, which1) -> {
+                                    })
                                     .show();
                         }
                     })

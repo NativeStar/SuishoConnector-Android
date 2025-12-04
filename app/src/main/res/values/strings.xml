@@ -17,8 +17,8 @@
     <string name="dialog_connecting_text">连接中…</string>
     <string name="dialog_connectFailedAlertText">连接失败:请检查与电脑是否在同一局域网内\n如为手动连接请检查输入是否正确</string>
     <string name="text_error">发生异常</string>
-    <string name="service_notification_title">前台服务通知</string>
-    <string name="service_notification_content">程序保活需要，请勿关闭通知</string>
+    <string name="service_notification_title">工作中</string>
+    <string name="service_notification_content">Suisho Connector正在运行</string>
     <string name="transmit_send_text_input_hint">在此输入文本</string>
     <string name="permission_scanCode_camera_message">该功能需要授予相机权限</string>
     <string name="permission_request_alert_title">需要权限</string>
@@ -162,5 +162,6 @@
     <string name="card_text_waiting_verify">等待用户验证</string>
     <string name="auth_launch_verify_dialog_message">为保护机主隐私 使用该程序前需要通过身份验证</string>
     <string name="text_verify">验证</string>
+    <string name="service_notification_button_close">关闭连接</string>
 
 </resources>

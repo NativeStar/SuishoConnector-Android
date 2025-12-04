@@ -8,6 +8,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -108,6 +109,8 @@ public class ConnectMainService extends Service implements INetworkService {
     private boolean notificationListenerServiceWorking = false;
     //电池状广播接收器
     BatteryStateReceiver batteryStateReceiver = null;
+    private BroadcastReceiver closeConnectionBroadcastReceiver = null;
+    private ServiceConnection bindServiceConnection = null;
     //文件管理器 远程播放流媒体等的文件服务器
     private final FileServer webFileServer = new FileServer(30767);
     //wifi状态广播接收器
@@ -144,6 +147,10 @@ public class ConnectMainService extends Service implements INetworkService {
 
     @Override
     public void onDestroy() {
+        if(closeConnectionBroadcastReceiver != null)
+            unregisterReceiver(closeConnectionBroadcastReceiver);
+        if(bindServiceConnection!=null)
+            unbindService(bindServiceConnection);
         super.onDestroy();
     }
 
@@ -151,6 +158,13 @@ public class ConnectMainService extends Service implements INetworkService {
     @Override
     public void onCreate() {
         super.onCreate();
+        closeConnectionBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                ConnectMainService.this.disconnect();
+            }
+        };
+        registerReceiver(closeConnectionBroadcastReceiver, new IntentFilter("close_connection"));
         createNotificationChannel();
     }
 
@@ -357,6 +371,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                         }
                                     });
                                 }
+                                stopSelf();
                             }
 
                             @Override
@@ -383,7 +398,6 @@ public class ConnectMainService extends Service implements INetworkService {
                                         this.onClosed(webSocket, 1000, "");
                                     } else {
                                         activityMethods.showAlert(R.string.text_error, R.string.dialog_connectFailedAlertText, R.string.text_ok);
-//                                        stopSelf();
                                     }
                                 } catch (NullPointerException nullPointerException) {
                                     activityMethods.showAlert(R.string.text_error, R.string.dialog_connectFailedAlertText, R.string.text_ok);
@@ -549,7 +563,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             }
                                             mediaProjectionPacket.addProperty("_result", true);
                                             Intent intent = new Intent(ConnectMainService.this, MediaProjectionService.class);
-                                            bindService(intent, new ServiceConnection() {
+                                            bindServiceConnection = new ServiceConnection() {
                                                 @Override
                                                 public void onServiceConnected(ComponentName name, IBinder service) {
                                                     projectionServiceIPC = IMediaProjectionServiceIPC.Stub.asInterface(service);
@@ -566,7 +580,8 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 @Override
                                                 public void onServiceDisconnected(ComponentName name) {
                                                 }
-                                            }, BIND_AUTO_CREATE);
+                                            };
+                                            bindService(intent, bindServiceConnection, BIND_AUTO_CREATE);
                                             break;
                                         case "main_checkPermission":
                                             JsonObject permissionCheckPacket = new JsonObject();
@@ -818,18 +833,22 @@ public class ConnectMainService extends Service implements INetworkService {
         }, BIND_AUTO_CREATE);
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private Notification buildForegroundNotification(Activity activity) {
         Notification.Builder nBuilder = new Notification.Builder(this.getApplicationContext(), "MainServiceNotification");
-        Intent intent = new Intent(activity, activity.getClass());
-        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(activity, 126, intent, PendingIntent.FLAG_IMMUTABLE);
+        Intent notificationBodyIntent = new Intent(activity, activity.getClass());
+        notificationBodyIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent notificationBodyPendingIntent = PendingIntent.getActivity(activity, 126, notificationBodyIntent, PendingIntent.FLAG_IMMUTABLE);
+        Intent notificationButtonIntent = new Intent("close_connection");
+        PendingIntent notificationButtonPendingIntent = PendingIntent.getBroadcast(this, 127, notificationButtonIntent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_ONE_SHOT);
         nBuilder.setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentTitle(getText(R.string.service_notification_title))
                 .setContentText(getText(R.string.service_notification_content))
                 .setWhen(System.currentTimeMillis())
                 .setOngoing(true)
                 .setAutoCancel(false)
-                .setContentIntent(pendingIntent)
+                .addAction(R.drawable.baseline_close_24, getText(R.string.service_notification_button_close), notificationButtonPendingIntent)
+                .setContentIntent(notificationBodyPendingIntent)
                 .setChannelId("foregroundService");
         return nBuilder.build();
     }
