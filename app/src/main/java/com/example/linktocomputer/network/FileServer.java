@@ -119,7 +119,6 @@ public class FileServer extends NanoHTTPD {
 
     private RangeRequestPoint parseRangeHeader(Map<String, String> headers, long fileSize) {
         String rangeHeader = headers.get("range");
-//        if (rangeHeader.startsWith("bytes=")) {
         RangeRequestPoint rangeRequestPoint = new RangeRequestPoint();
         String rangeValue = rangeHeader.substring("bytes=".length());
         String[] ranges = rangeValue.split("-");
@@ -131,7 +130,6 @@ public class FileServer extends NanoHTTPD {
         }
         rangeRequestPoint.size = rangeRequestPoint.end - rangeRequestPoint.start + 1;
         return rangeRequestPoint;
-//        }
     }
 
     private static final class RangeRequestPoint {

@@ -512,8 +512,11 @@ public class ConnectMainService extends Service implements INetworkService {
                                         case "main_bindDevice":
                                             //绑定计算机
                                             new Thread(() -> {
-                                                try (FileOutputStream keyFileOut = new FileOutputStream(getFilesDir() + "/bind.key")) {
-//                                                    Log.i("main",jsonObj.msg);
+                                                File keyFile = new File(getFilesDir() + "/bind.key");
+                                                if(keyFile.exists()) {
+                                                    keyFile.delete();
+                                                }
+                                                try (FileOutputStream keyFileOut = new FileOutputStream(keyFile)) {
                                                     keyFileOut.write(jsonObj.msg.getBytes());
                                                     keyFileOut.flush();
                                                     GlobalVariables.settings.edit().putBoolean("boundDevice", true).apply();

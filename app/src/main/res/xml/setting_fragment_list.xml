@@ -9,6 +9,11 @@
             android:icon="@drawable/baseline_storage_24"
             android:key="key_storage_manage"
             android:title="存储空间管理" />
+        <Preference
+            android:icon="@drawable/baseline_cell_tower_24"
+            android:key="key_clear_auto_connect_file"
+            android:title="@string/setting_clear_auto_connect_file"
+            />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/setting_group_functions">
         <!--        <SwitchPreferenceCompat-->

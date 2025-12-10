@@ -110,6 +110,7 @@
     <string name="text_send_file_from_self">无法发送来自自身的文件</string>
     <string name="text_manage">管理</string>
     <string name="setting_trust_device_manager">受信任设备管理</string>
+    <string name="setting_clear_auto_connect_file">解除自动连接绑定</string>
     <string name="setting_group_functions">功能开关</string>
     <string name="setting_function_notification_forward">通知转发</string>
     <string name="setting_function_screen_projection">屏幕投射</string>
@@ -163,5 +164,9 @@
     <string name="auth_launch_verify_dialog_message">为保护机主隐私 使用该程序前需要通过身份验证</string>
     <string name="text_verify">验证</string>
     <string name="service_notification_button_close">关闭连接</string>
+    <string name="dialog_clear_auto_connect_file_title">解绑设备</string>
+    <string name="dialog_clear_auto_connect_file_desc">确认解绑设备?将不再进行自动连接</string>
+    <string name="text_unbind_success">解绑完成 重启生效</string>
+    <string name="text_unbind_failed_not_bound">当前未绑定任何设备</string>
 
 </resources>

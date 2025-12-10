@@ -57,7 +57,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class SettingFragment extends PreferenceFragmentCompat {
-//    private SharedPreferences sharedPreferences;
+    //    private SharedPreferences sharedPreferences;
     private ActivityResultLauncher<Intent> pickDirectoryCallback;
 
     public SettingFragment() {
@@ -273,8 +273,8 @@ public class SettingFragment extends PreferenceFragmentCompat {
                         return false;
                     }
                 } else {
-                    Activity activity=getActivity();
-                    if(activity.checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED ||activity.checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED) {
+                    Activity activity = getActivity();
+                    if(activity.checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED || activity.checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED) {
                         showStoragePermissionDialog();
                         return false;
                     }
@@ -284,13 +284,30 @@ public class SettingFragment extends PreferenceFragmentCompat {
             findPreference("function_file_manager").setEnabled(false);
             return true;
         });
+        findPreference("key_clear_auto_connect_file").setOnPreferenceClickListener((preference -> {
+            File keyFile = new File(getActivity().getFilesDir() + "/bind.key");
+            if(!keyFile.exists()) {
+                Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_unbind_failed_not_bound, 2000).show();
+                return true;
+            }
+            new MaterialAlertDialogBuilder(getActivity())
+                    .setTitle(R.string.dialog_clear_auto_connect_file_title)
+                    .setMessage(R.string.dialog_clear_auto_connect_file_desc)
+                    .setPositiveButton(R.string.text_ok, (dialog, which) -> {
+                        //解绑计算机
+                        keyFile.delete();
+                        GlobalVariables.settings.edit().putBoolean("boundDevice", false).apply();
+                        Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_unbind_success, 2000).show();
+                    })
+                    .setNegativeButton(R.string.text_cancel, (dialog, which) -> dialog.dismiss())
+                    .show();
+            return true;
+        }));
         findPreference("key_export_crash_logs").setOnPreferenceClickListener((preference -> {
             new MaterialAlertDialogBuilder(getActivity())
                     .setMessage(R.string.dialog_log_export_message)
-                    .setPositiveButton(R.string.text_ok,((dialog, which) -> exportCrashReport()))
-                    .setNegativeButton(R.string.text_cancel,(dialog, which) -> {
-                        dialog.dismiss();
-                    })
+                    .setPositiveButton(R.string.text_ok, ((dialog, which) -> exportCrashReport()))
+                    .setNegativeButton(R.string.text_cancel, (dialog, which) -> dialog.dismiss())
                     .setCancelable(false)
                     .show();
             return true;
@@ -301,15 +318,16 @@ public class SettingFragment extends PreferenceFragmentCompat {
             findPreference("function_launch_verify").setSummary(R.string.setting_launch_verify_summary_exception);
         }
     }
-    private void initLaunchVerifySwitch(){
-        BiometricManager biometricManager=BiometricManager.from(getActivity());
+
+    private void initLaunchVerifySwitch() {
+        BiometricManager biometricManager = BiometricManager.from(getActivity());
         int canAuth;
-        if(Build.VERSION.SDK_INT<=Build.VERSION_CODES.Q) {
-            canAuth= biometricManager.canAuthenticate(DEVICE_CREDENTIAL|BIOMETRIC_WEAK);
-        }else{
-            canAuth= biometricManager.canAuthenticate(DEVICE_CREDENTIAL|BIOMETRIC_STRONG);
+        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            canAuth = biometricManager.canAuthenticate(DEVICE_CREDENTIAL | BIOMETRIC_WEAK);
+        } else {
+            canAuth = biometricManager.canAuthenticate(DEVICE_CREDENTIAL | BIOMETRIC_STRONG);
         }
-        switch (canAuth){
+        switch (canAuth) {
             case BiometricManager.BIOMETRIC_SUCCESS:
                 findPreference("function_launch_verify").setEnabled(true);
                 break;
@@ -321,7 +339,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                 break;
         }
         findPreference("function_launch_verify").setOnPreferenceChangeListener((preference, newValue) -> {
-            BiometricPrompt prompt= new BiometricPrompt.Builder(getActivity())
+            BiometricPrompt prompt = new BiometricPrompt.Builder(getActivity())
                     .setTitle(getString(R.string.auth_dialog_title))
                     .setSubtitle(getString(R.string.auth_dialog_desc))
                     .setDeviceCredentialAllowed(true)
@@ -330,20 +348,21 @@ public class SettingFragment extends PreferenceFragmentCompat {
                 @Override
                 public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
                     super.onAuthenticationSucceeded(result);
-                    ((SwitchPreferenceCompat)preference).setChecked((Boolean) newValue);
+                    ((SwitchPreferenceCompat) preference).setChecked((Boolean) newValue);
                     Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_verify_success, 2500).show();
                 }
             });
             return false;
         });
     }
-    private void showStoragePermissionDialog(){
+
+    private void showStoragePermissionDialog() {
         new MaterialAlertDialogBuilder(getActivity())
                 .setTitle(R.string.permission_request_alert_title)
                 .setMessage(R.string.setting_storage_permission_dialog_message)
-                .setPositiveButton(R.string.text_ok,(dialog, which) -> {
+                .setPositiveButton(R.string.text_ok, (dialog, which) -> {
                     if(Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
-                        Intent intent=new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                        Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
                         intent.setData(Uri.fromParts("package", getContext().getPackageName(), null));
                         getActivity().startActivity(intent);
                     } else {
@@ -356,10 +375,12 @@ public class SettingFragment extends PreferenceFragmentCompat {
 //                        }
 //                    }
                 })
-                .setNegativeButton(R.string.text_cancel,(dialog, which) -> {})
+                .setNegativeButton(R.string.text_cancel, (dialog, which) -> {
+                })
                 .show();
 
     }
+
     private boolean moveTransmitFiles(File transmitFilesPath) {
         File[] transmitFiles = transmitFilesPath.listFiles();
         //防止文件名冲突
@@ -387,25 +408,26 @@ public class SettingFragment extends PreferenceFragmentCompat {
         }
         return true;
     }
-    private void exportCrashReport(){
-        File crashLogDirectory=new File(getActivity().getDataDir() + "/files/crash/");
+
+    private void exportCrashReport() {
+        File crashLogDirectory = new File(getActivity().getDataDir() + "/files/crash/");
         if(!crashLogDirectory.isDirectory()) {
-            Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(),R.string.crash_not_log,2500).show();
+            Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.crash_not_log, 2500).show();
             return;
         }
-        File[] logFiles=crashLogDirectory.listFiles();
-        if(logFiles.length==0){
-            Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(),R.string.crash_not_log,2500).show();
+        File[] logFiles = crashLogDirectory.listFiles();
+        if(logFiles.length == 0) {
+            Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.crash_not_log, 2500).show();
             return;
         }
-        new Thread(()->{
-            File logZipFile=new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/crashReport-"+System.currentTimeMillis()+".zip");
+        new Thread(() -> {
+            File logZipFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/crashReport-" + System.currentTimeMillis() + ".zip");
             try {
-                ZipOutputStream zipOutputStream=new ZipOutputStream(Files.newOutputStream(logZipFile.toPath()));
-                for(File logFile:logFiles){
-                    FileInputStream inputStream=new FileInputStream(logFile);
+                ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(logZipFile.toPath()));
+                for(File logFile : logFiles) {
+                    FileInputStream inputStream = new FileInputStream(logFile);
                     zipOutputStream.putNextEntry(new ZipEntry(logFile.getName()));
-                    byte[] buffer=new byte[(int) logFile.length()];
+                    byte[] buffer = new byte[(int) logFile.length()];
                     inputStream.read(buffer);
                     zipOutputStream.write(buffer);
                     inputStream.close();
@@ -413,19 +435,20 @@ public class SettingFragment extends PreferenceFragmentCompat {
                 }
                 zipOutputStream.flush();
                 zipOutputStream.close();
-                getActivity().runOnUiThread(()-> Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(),getString(R.string.text_export_to)+logZipFile.getName(),5000).show());
+                getActivity().runOnUiThread(() -> Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), getString(R.string.text_export_to) + logZipFile.getName(), 5000).show());
             } catch (IOException e) {
-                getActivity().runOnUiThread(()->{
+                getActivity().runOnUiThread(() -> {
                     new MaterialAlertDialogBuilder(getActivity())
                             .setTitle(R.string.text_export_failed)
                             .setMessage(e.getMessage())
-                            .setPositiveButton(R.string.text_ok,(dialog, which) -> dialog.dismiss())
+                            .setPositiveButton(R.string.text_ok, (dialog, which) -> dialog.dismiss())
                             .setCancelable(false)
                             .show();
                 });
             }
         }).start();
     }
+
     @Override
     public void onCreatePreferences(@Nullable Bundle savedInstanceState, String rootKey) {
         addPreferencesFromResource(R.xml.setting_fragment_list);

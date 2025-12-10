@@ -257,15 +257,6 @@ public class Util {
     public static int dp2px(int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, Resources.getSystem().getDisplayMetrics());
     }
-    public static short byte2short(byte[] number){
-        //目前数组最多两位
-        short targetNum = (short) 0;
-        for (int i = 2; i > 0; i--) {
-            targetNum<<=8;
-            targetNum |= (number[i-1] & 0xff);
-        }
-        return targetNum;
-    }
     //还原ncr编码
     public static String unescape(String src){
         Pattern pattern = Pattern.compile("&#.*?;");
