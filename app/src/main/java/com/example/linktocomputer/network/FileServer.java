@@ -14,6 +14,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.net.URLConnection;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -103,7 +104,7 @@ public class FileServer extends NanoHTTPD {
                     byte[] buffer = new byte[(int) fileRange.size];
                     videoFileRandomAccess.seek(fileRange.start);
                     videoFileRandomAccess.readFully(buffer);
-                    Response rangeResponse = newFixedLengthResponse(Response.Status.PARTIAL_CONTENT, "application/octet-stream", new ByteArrayInputStream(buffer), fileRange.size);
+                    Response rangeResponse = newFixedLengthResponse(Response.Status.PARTIAL_CONTENT, URLConnection.guessContentTypeFromName(targetFileName), new ByteArrayInputStream(buffer), fileRange.size);
                     rangeResponse.addHeader("Content-Range", "bytes " + fileRange.start + "-" + fileRange.end + "/" + targetFile.length());
                     return rangeResponse;
                 }
