@@ -6,7 +6,7 @@ import com.google.gson.JsonObject;
 
 public class NotificationPacket {
     private final JsonObject jsonObject;
-    public NotificationPacket(String pkg,long time, String title, @Nullable String content,String appName,String key,boolean ongoing) {
+    public NotificationPacket(String pkg,long time, String title, @Nullable String content,String appName,String key,boolean ongoing,int progress) {
         jsonObject=new JsonObject();
         jsonObject.addProperty("packetType","action_notificationForward");
         //包名
@@ -24,6 +24,8 @@ public class NotificationPacket {
         jsonObject.addProperty("key",key);
         //是否常驻
         jsonObject.addProperty("ongoing",ongoing);
+        //可能的进度条
+        jsonObject.addProperty("progress",progress);
     }
     public JsonObject getJsonObject(){
         return jsonObject;

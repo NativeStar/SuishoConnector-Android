@@ -15,6 +15,7 @@ public class CurrentNotificationsListPacket {
             Notification notification=statusBarNotification.getNotification();
             final String notificationTitle=notification.extras.getString(Notification.EXTRA_TITLE);
             final String notificationContent=notification.extras.getString(Notification.EXTRA_TEXT);
+            final int notificationProgress=notification.extras.getInt(Notification.EXTRA_PROGRESS,-1);
             //跳过没有内容的通知 可能用了自定义view 反正传过去没法正常显示的
             if(notificationTitle==null&&notificationContent==null){
                 continue;
@@ -27,6 +28,7 @@ public class CurrentNotificationsListPacket {
             notificationJsonObject.addProperty("key",statusBarNotification.getKey());
             notificationJsonObject.addProperty("title",notificationTitle);
             notificationJsonObject.addProperty("content",notificationContent);
+            notificationJsonObject.addProperty("progress",notificationProgress);
             notificationList.add(notificationJsonObject);
         }
         jsonObject.addProperty("_isResponsePacket",true);
