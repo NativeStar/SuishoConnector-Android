@@ -397,9 +397,11 @@ public class ConnectMainService extends Service implements INetworkService {
                                         activityMethods.showAlert("通讯关闭", "连接异常中断", "确定");
                                         this.onClosed(webSocket, 1000, "");
                                     } else {
+                                        Log.e("main", t.toString(),t);
                                         activityMethods.showAlert(R.string.text_error, R.string.dialog_connectFailedAlertText, R.string.text_ok);
                                     }
                                 } catch (NullPointerException nullPointerException) {
+                                    Log.e("main", t.toString(),t);
                                     activityMethods.showAlert(R.string.text_error, R.string.dialog_connectFailedAlertText, R.string.text_ok);
                                     stopSelf();
                                 }
@@ -653,6 +655,11 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 break;
                                             }
                                             notificationListenerService.cancelNotification(jsonObj.key);
+                                            break;
+                                        case "appendMediaSessionControl":
+                                            if(notificationListenerService != null) {
+                                                notificationListenerService.appendMediaSessionControl(jsonObj.msg, jsonObj.time);
+                                            }
                                             break;
                                         default:
                                             Log.e("main", "未知操作:" + jsonObj.packetType);

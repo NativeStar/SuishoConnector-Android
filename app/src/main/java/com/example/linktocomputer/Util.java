@@ -232,7 +232,7 @@ public class Util {
     @Nullable
     public static String calculateSHA256(File file) {
         if(!file.exists()) return null;
-        MessageDigest md = null;
+        MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
@@ -250,6 +250,20 @@ public class Util {
         byte[] bytes = md.digest();
         StringBuilder sb = new StringBuilder();
         for(byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+    public static String calculateSHA256(byte[] data) {
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            return null;
+        }
+        byte [] result=md.digest(data);
+        StringBuilder sb = new StringBuilder();
+        for(byte b : result) {
             sb.append(String.format("%02x", b));
         }
         return sb.toString();

@@ -551,7 +551,6 @@ public class NewMainActivity extends AppCompatActivity {
         if(networkServiceIntent != null) {
             outState.putParcelable("networkIntent", networkServiceIntent);
         }
-        Log.i("main", "onSaveInstanceState");
     }
 
     /**
