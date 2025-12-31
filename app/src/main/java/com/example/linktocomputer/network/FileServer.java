@@ -91,8 +91,22 @@ public class FileServer extends NanoHTTPD {
             try {
                 String targetFileName = targetFile.getName();
                 //对视频文件分段发送
-                if((targetFileName.endsWith("mp4") || targetFileName.endsWith("webm")) && session.getHeaders().containsKey("range")) {
+                if((targetFileName.endsWith(".mp4") || targetFileName.endsWith(".webm")) && session.getHeaders().containsKey("range")) {
                     RangeRequestPoint fileRange = parseRangeHeader(session.getHeaders(), targetFile.length());
+                    //校验范围
+                    if(fileRange.start < 0 || fileRange.end >= targetFile.length() || fileRange.start > fileRange.end) {
+                        Response invalidRangeResponse = newFixedLengthResponse(Response.Status.RANGE_NOT_SATISFIABLE, "text/plain", "Invalid Range");
+                        invalidRangeResponse.addHeader("Content-Range", "bytes */" + targetFile.length());
+                        return invalidRangeResponse;
+                    }
+                    //处理head请求
+                    if(session.getMethod() == Method.HEAD) {
+                        Response headResponse = newFixedLengthResponse(Response.Status.PARTIAL_CONTENT, URLConnection.guessContentTypeFromName(targetFileName), "");
+                        headResponse.addHeader("Content-Range", "bytes " + fileRange.start + "-" + fileRange.end + "/" + targetFile.length());
+                        headResponse.addHeader("Content-Length", String.valueOf(fileRange.size));
+                        headResponse.addHeader("Accept-Ranges", "bytes");
+                        return headResponse;
+                    }
                     //只能同时处理一个文件
                     if(!lastRequestVideoFilePath.equals(targetFile.getPath())) {
                         lastRequestVideoFilePath = targetFile.getPath();
@@ -108,10 +122,16 @@ public class FileServer extends NanoHTTPD {
                     rangeResponse.addHeader("Content-Range", "bytes " + fileRange.start + "-" + fileRange.end + "/" + targetFile.length());
                     return rangeResponse;
                 }
+                if(session.getMethod() == Method.HEAD) {
+                    Response headResponse = newFixedLengthResponse(Response.Status.OK, "application/octet-stream", "");
+                    headResponse.addHeader("Content-Length", String.valueOf(targetFile.length()));
+                    headResponse.addHeader("Accept-Ranges", "bytes");
+                    return headResponse;
+                }
                 FileInputStream fileInputStream = new FileInputStream(targetFile);
                 return newFixedLengthResponse(Response.Status.OK, "application/octet-stream", fileInputStream, targetFile.length());
             } catch (IOException e) {
-                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text.plain", e.getMessage());
+                return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
             }
         } else {
             return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Not args");
