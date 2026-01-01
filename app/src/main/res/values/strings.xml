@@ -4,7 +4,7 @@
     <string name="startScan_button">扫码连接</string>
     <string name="port">端口</string>
     <string name="ipAddressInput_invalid">目标地址无效</string>
-    <string name="portInput_invalid">无效端口号 应该在1–60000之间</string>
+    <string name="portInput_invalid">无效端口号 应该在1–65535之间</string>
     <string name="text_ok">确定</string>
     <string name="text_exit">退出</string>
     <string name="dialog_text_connected_handshake">正在交换数据</string>
