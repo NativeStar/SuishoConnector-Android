@@ -342,9 +342,9 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
         dataList.add(pushData);
         //更新列表
         if(!activity.isDestroyed()) {
-            //防止通过系统分享上传文件时在肺ui线程执行崩溃
+            //防止通过系统分享上传文件时在非ui线程执行崩溃
             activity.runOnUiThread(() -> {
-                notifyItemInserted(dataList.size());
+                notifyItemInserted(dataList.size()-1);
                 //滑动到底部
                 listScrollToBottom(forceScrollToBottom, recyclerView);
             });
@@ -359,12 +359,14 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
 
     public void listScrollToBottom(boolean force, @Nullable RecyclerView recyclerView) {
         RecyclerView scrollView = messagesView == null ? activity.findViewById(R.id.transmit_message_list) : messagesView;
-        messagesView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+        if(scrollView == null) return;
+        scrollView.clearOnScrollListeners();
+        scrollView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 //到底部消除提示图标
-                if(!messagesView.canScrollVertically(1)) {
+                if(!scrollView.canScrollVertically(1)) {
                     BottomNavigationView bottomNavigationView = activity.findViewById(R.id.connected_activity_navigation_bar);
                     bottomNavigationView.removeBadge(R.id.connected_activity_navigation_bar_menu_transmit);
                 }

@@ -74,8 +74,8 @@ public class TransmitDownloadFile {
                     fileOutputStream=new FileOutputStream(filePath);
                 } catch (IOException e) {
                     onError(e);
+                    return;
                 }
-                //
                 File certFile = new File(activityMethods.getActivity().getDataDir().getAbsolutePath() + "/files/cert/" + GlobalVariables.computerConfigManager.getId() + ".crt");
                 try (InputStream certFileInputStream=Files.newInputStream(certFile.toPath())){
                     CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
@@ -180,7 +180,7 @@ public class TransmitDownloadFile {
     }
     private void createNotification(){
         ensureNotificationChannel(notificationManager);
-        Notification.Builder builder=new Notification.Builder(activityMethods.getActivity(),"fileUploadProgress");
+        Notification.Builder builder=new Notification.Builder(activityMethods.getActivity(),"fileDownloadProgress");
         builder.setOngoing(true)
                 .setAutoCancel(false)
                 .setContentTitle("文件接收中...")

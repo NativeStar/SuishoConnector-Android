@@ -149,7 +149,7 @@ public class ConnectMainService extends Service implements INetworkService {
     public void onDestroy() {
         if(closeConnectionBroadcastReceiver != null)
             unregisterReceiver(closeConnectionBroadcastReceiver);
-        if(bindServiceConnection!=null)
+        if(bindServiceConnection != null)
             unbindService(bindServiceConnection);
         super.onDestroy();
     }
@@ -349,6 +349,10 @@ public class ConnectMainService extends Service implements INetworkService {
                                 }
                                 if(webFileServer != null) webFileServer.stop();
                                 isConnected = false;
+                                NewMainActivity activity = activityMethods.getActivity();
+                                if(!activity.isDestroyed()) {
+                                    activity.unregisterNetworkCallback();
+                                }
                                 if(GlobalVariables.preferences.getBoolean("function_auto_exit_on_disconnect", false)) {
                                     ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
                                     am.getRunningAppProcesses().forEach(runningAppProcessInfo -> {
@@ -397,11 +401,11 @@ public class ConnectMainService extends Service implements INetworkService {
                                         activityMethods.showAlert("通讯关闭", "连接异常中断", "确定");
                                         this.onClosed(webSocket, 1000, "");
                                     } else {
-                                        Log.e("main", t.toString(),t);
+                                        Log.e("main", t.toString(), t);
                                         activityMethods.showAlert(R.string.text_error, R.string.dialog_connectFailedAlertText, R.string.text_ok);
                                     }
                                 } catch (NullPointerException nullPointerException) {
-                                    Log.e("main", t.toString(),t);
+                                    Log.e("main", t.toString(), t);
                                     activityMethods.showAlert(R.string.text_error, R.string.dialog_connectFailedAlertText, R.string.text_ok);
                                     stopSelf();
                                 }

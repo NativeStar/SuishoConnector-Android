@@ -92,12 +92,13 @@ public class NewMainActivity extends AppCompatActivity {
     private final int[] navigationIds = {R.id.connected_activity_navigation_bar_menu_home, R.id.connected_activity_navigation_bar_menu_transmit, R.id.connected_activity_navigation_bar_menu_setting};
     public AutoConnector autoConnector;
     private boolean autoConnectorWorked = false;
+
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //动态色
-        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S){
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             DynamicColors.applyToActivityIfAvailable(this);
         }
         binding = ActivityConnectedBinding.inflate(getLayoutInflater());
@@ -273,7 +274,7 @@ public class NewMainActivity extends AppCompatActivity {
                         .setMessage(R.string.auth_launch_verify_dialog_message)
                         .setCancelable(false)
                         .setNeutralButton(R.string.text_exit, null)
-                        .setPositiveButton(R.string.text_verify,null)
+                        .setPositiveButton(R.string.text_verify, null)
                         .create();
                 verifyDialog.show();
                 //手动验证
@@ -281,7 +282,7 @@ public class NewMainActivity extends AppCompatActivity {
                     showLaunchVerifyPrompt(verifyDialog);
                 });
                 //退出
-                verifyDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v->{
+                verifyDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
                     if(networkService == null || !networkService.isConnected) {
                         finishAffinity();
                         System.exit(0);
@@ -754,7 +755,7 @@ public class NewMainActivity extends AppCompatActivity {
     }
 
     public void sendPacket(JsonObject object) {
-        if(networkService!=null) networkService.sendObject(object);
+        if(networkService != null) networkService.sendObject(object);
     }
 
     public void setAutoConnectorWorked() {
@@ -764,20 +765,13 @@ public class NewMainActivity extends AppCompatActivity {
     //注销网络回调
     public void unregisterNetworkCallback() {
         if(networkStateCallback != null) {
-            ConnectivityManager connectivityManager = getSystemService(ConnectivityManager.class);
-//            connectivityManager.unregisterNetworkCallback(networkStateCallback);
+            try {
+                ConnectivityManager connectivityManager = getSystemService(ConnectivityManager.class);
+                connectivityManager.unregisterNetworkCallback(networkStateCallback);
+            } catch (IllegalArgumentException ignore) {
+            } finally {
+                networkStateCallback = null;
+            }
         }
     }
 }
-//json操作基础
-//    Gson gson=new Gson();
-//    JsonObject obj=new JsonObject();
-//    JsonArray jsonArray=new JsonArray();
-//    String[] strArray={"a","b","c"};
-//        obj.addProperty("string","hello world");
-//                obj.addProperty("numberInt",123);
-//                obj.addProperty("numberFloat",1.5);
-//                obj.addProperty("boolean",true);
-//                JsonArray strJsonArray=gson.toJsonTree(strArray).getAsJsonArray();
-//                obj.add("array",strJsonArray);
-//                Log.w("json",obj.toString());

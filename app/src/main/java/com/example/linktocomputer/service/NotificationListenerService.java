@@ -49,14 +49,22 @@ public class NotificationListenerService extends android.service.notification.No
     @Override
     public IBinder onBind(Intent intent) {
         //根据请求者不同返回不同对象
-        if(intent.getAction() != null && !intent.getAction().equals("networkServiceLaunch")) {
-            Log.d("NotificationListener", "System bound");
-            systemBound = true;
-            return super.onBind(intent);
+//        if(intent.getAction() != null && !intent.getAction().equals("networkServiceLaunch")) {
+//            Log.d("NotificationListener", "System bound");
+//            systemBound = true;
+//            return super.onBind(intent);
+//        }
+//        Log.d("NotificationListener", "Network Service bound");
+//        appPackageName = getPackageName();
+//        return new MyBinder();
+        if("networkServiceLaunch".equals(intent.getAction())) {
+            Log.d("NotificationListener", "Network Service bound");
+            appPackageName = getPackageName();
+            return new MyBinder();
         }
-        Log.d("NotificationListener", "Network Service bound");
-        appPackageName = getPackageName();
-        return new MyBinder();
+        Log.d("NotificationListener", "System bound");
+        systemBound = true;
+        return super.onBind(intent);
     }
 
     public void setMainService(ConnectMainService service) {
@@ -66,7 +74,8 @@ public class NotificationListenerService extends android.service.notification.No
     public void setEnable(boolean enable) {
         this.enable = enable;
     }
-    public void appendMediaSessionControl(String action,@Nullable Long seekTime){
+
+    public void appendMediaSessionControl(String action, @Nullable Long seekTime) {
         if(mediaSessionManager != null) {
             mediaSessionManager.appendControl(action, seekTime);
         }
@@ -170,6 +179,9 @@ public class NotificationListenerService extends android.service.notification.No
     }
 
     private void onNewMediaNotification(StatusBarNotification sbn, Notification notification, MediaSession.Token token) {
+        if(networkService == null) {
+            return;
+        }
         if(mediaSessionManager == null) {
             mediaSessionManager = new MediaSessionManager(networkService, sbn, token);
         } else {
