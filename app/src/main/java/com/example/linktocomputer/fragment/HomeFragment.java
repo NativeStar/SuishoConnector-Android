@@ -288,7 +288,7 @@ public class HomeFragment extends Fragment {
                 }
                 //端口号合规性
                 try {
-                    if(Integer.parseInt(userInputPort) > 60000) {
+                    if(Integer.parseInt(userInputPort) > 65535) {
                         ((TextInputEditText) bottomSheetView.findViewById(R.id.portInput)).setError(getText(R.string.portInput_invalid));
                         ((TextInputEditText) bottomSheetView.findViewById(R.id.portInput)).setText("");
                         bottomSheetView.findViewById(R.id.portInput).requestFocus();
