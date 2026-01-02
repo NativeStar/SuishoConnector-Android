@@ -46,6 +46,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
     private final List<TransmitMessageAbstract> dataList = new ArrayList<>();
     private final ClipboardManager clipboardManager;
     private final Box<TransmitDatabaseEntity> database;
+
     public RecyclerView getView() {
         return messagesView;
     }
@@ -54,23 +55,8 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
         return dataList.size();
     }
 
-    private RecyclerView messagesView;
+    private final RecyclerView messagesView;
     private Activity activity;
-
-    public void setMessagesView(@NonNull RecyclerView newView) {
-        messagesView = newView;
-//        messagesView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-//            @Override
-//            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-//                super.onScrolled(recyclerView, dx, dy);
-//                //到底部消除提示图标
-//                if (!messagesView.canScrollVertically(1)) {
-//                    BottomNavigationView bottomNavigationView = activity.findViewById(R.id.connected_activity_navigation_bar);
-//                    bottomNavigationView.removeBadge(R.id.connected_activity_navigation_bar_menu_transmit);
-//                }
-//            }
-//        });
-    }
 
     @NonNull
     @Override
@@ -88,11 +74,12 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
     @Override
     public int getItemViewType(int position) {
         //获取类型
-        return ((TransmitMessageAbstract) dataList.get(position)).getType();
+        return dataList.get(position).getType();
     }
+
     public TransmitMessagesListAdapter(List<TransmitDatabaseEntity> data, Activity activity, Box<TransmitDatabaseEntity> databaseBox, RecyclerView recyclerView) {
         messagesView = recyclerView;
-        database=databaseBox;
+        database = databaseBox;
         messagesView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -133,33 +120,22 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
             case MessageConf.MESSAGE_TYPE_TEXT:
                 TextView textView = holder.messageView.findViewById(R.id.transmit_message_text_view);
                 textView.setText(((TransmitMessageTypeText) dataList.get(position)).msg);
-                //关闭焦点全选
-                textView.setSelectAllOnFocus(false);
-                //暂时这样解决
-                textView.setOnLongClickListener(view->{
+                holder.messageView.setOnLongClickListener(view -> {
+                    //文本卡片长按事件
                     View menuLayout = LayoutInflater.from(activity).inflate(R.layout.transmit_message_action_menu_text, null, false);
                     PopupWindow popupWindow = new PopupWindow(menuLayout, ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
                     setUniversalLongClickMenuAction(menuLayout, messagesView, popupWindow, holder);
-                    menuLayout.findViewById(R.id.long_click_menu_action_copy).setOnClickListener(v -> {
+                    menuLayout.findViewById(R.id.long_click_menu_action_copy_full).setOnClickListener(v -> {
                         popupWindow.dismiss();
                         ClipData clipData = ClipData.newPlainText("CopyText", ((TransmitMessageTypeText) dataList.get(position)).msg);
                         clipboardManager.setPrimaryClip(clipData);
                         Snackbar.make(((NewMainActivity) activity).getBinding().getRoot(), "已复制", 2000).show();
                     });
-                    popupWindow.setOutsideTouchable(true);
-                    popupWindow.showAsDropDown(view);
-                    return false;
-                });
-                holder.messageView.setOnLongClickListener(view -> {
-                    //文本卡片长按事件 多选等
-                    View menuLayout = LayoutInflater.from(activity).inflate(R.layout.transmit_message_action_menu_text, null, false);
-                    PopupWindow popupWindow = new PopupWindow(menuLayout, ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
-                    setUniversalLongClickMenuAction(menuLayout, messagesView, popupWindow, holder);
-                    menuLayout.findViewById(R.id.long_click_menu_action_copy).setOnClickListener(v -> {
+                    menuLayout.findViewById(R.id.long_click_menu_action_copy_free).setOnClickListener(v -> {
                         popupWindow.dismiss();
-                        ClipData clipData = ClipData.newPlainText("CopyText", ((TransmitMessageTypeText) dataList.get(position)).msg);
-                        clipboardManager.setPrimaryClip(clipData);
-                        Snackbar.make(((NewMainActivity) activity).getBinding().getRoot(), "已复制", 2000).show();
+                        textView.setTextIsSelectable(true);
+                        textView.setFocusable(true);
+                        textView.setFocusableInTouchMode(true);
                     });
                     popupWindow.setOutsideTouchable(true);
                     popupWindow.showAsDropDown(view);
@@ -312,11 +288,6 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         notifyItemRemoved(holder.getLayoutPosition());
                     }).setNegativeButton("取消", (dialog, which) -> dialog.cancel())/*啥事没有*/.show();
         }));
-//        menu.findViewById(R.id.long_click_menu_action_multiple_choice).setOnClickListener(v -> activity.runOnUiThread(() -> {
-//            popup.dismiss();
-//            //TODO 完成多选
-//            Toast.makeText(activity, "", Toast.LENGTH_LONG).show();
-//        }));
     }
 
     @Override
@@ -344,13 +315,13 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
         if(!activity.isDestroyed()) {
             //防止通过系统分享上传文件时在非ui线程执行崩溃
             activity.runOnUiThread(() -> {
-                notifyItemInserted(dataList.size()-1);
+                notifyItemInserted(dataList.size() - 1);
                 //滑动到底部
                 listScrollToBottom(forceScrollToBottom, recyclerView);
             });
         }
         //保存
-        if(requestSave&&enableSaveHistory()) database.put(pushData.toDatabaseEntity());
+        if(requestSave && enableSaveHistory()) database.put(pushData.toDatabaseEntity());
     }
 
     public void addItem(TransmitRecyclerAddItemType type, TransmitMessageAbstract pushData, boolean requestSave, boolean forceScrollToBottom) {
@@ -395,8 +366,9 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
             messageView = itemView;
         }
     }
-    private boolean enableSaveHistory(){
-        return GlobalVariables.preferences.getBoolean("transmit_save_history",true);
+
+    private boolean enableSaveHistory() {
+        return GlobalVariables.preferences.getBoolean("transmit_save_history", true);
     }
 
     public void setActivity(Activity act) {

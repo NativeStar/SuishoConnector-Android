@@ -14,9 +14,13 @@
         <com.google.android.material.button.MaterialButton
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/long_click_menu_action_copy"
-            android:text="@string/text_copy" />
-
+            android:id="@+id/long_click_menu_action_copy_full"
+            android:text="@string/text_copy_full" />
+        <com.google.android.material.button.MaterialButton
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/long_click_menu_action_copy_free"
+            android:text="@string/text_copy_free" />
         <com.google.android.material.button.MaterialButton
             android:id="@+id/long_click_menu_action_delete"
             android:layout_width="match_parent"

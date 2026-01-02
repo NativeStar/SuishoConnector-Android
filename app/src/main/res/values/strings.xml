@@ -50,7 +50,8 @@
     <string name="nav_home">主页</string>
     <string name="nav_transmit">互传</string>
     <string name="nav_setting">设置</string>
-    <string name="text_copy">复制</string>
+    <string name="text_copy_full">全部复制</string>
+    <string name="text_copy_free">自由选择</string>
     <string name="text_delete">删除</string>
     <string name="text_multiple_choice">多选</string>
     <string name="text_share">分享</string>

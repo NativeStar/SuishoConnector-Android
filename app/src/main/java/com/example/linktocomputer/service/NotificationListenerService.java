@@ -49,14 +49,6 @@ public class NotificationListenerService extends android.service.notification.No
     @Override
     public IBinder onBind(Intent intent) {
         //根据请求者不同返回不同对象
-//        if(intent.getAction() != null && !intent.getAction().equals("networkServiceLaunch")) {
-//            Log.d("NotificationListener", "System bound");
-//            systemBound = true;
-//            return super.onBind(intent);
-//        }
-//        Log.d("NotificationListener", "Network Service bound");
-//        appPackageName = getPackageName();
-//        return new MyBinder();
         if("networkServiceLaunch".equals(intent.getAction())) {
             Log.d("NotificationListener", "Network Service bound");
             appPackageName = getPackageName();
