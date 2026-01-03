@@ -489,8 +489,6 @@ public class NewMainActivity extends AppCompatActivity {
             @Override
             public void onServiceDisconnected(ComponentName name) {
                 GlobalVariables.networkServiceBound = false;
-                //网络进程被杀
-//                Log.e("main","dead");
             }
         };
         bindService(networkServiceIntent, networkServiceConnection, BIND_IMPORTANT);
@@ -684,7 +682,7 @@ public class NewMainActivity extends AppCompatActivity {
         });
     }
 
-    public void connectByQRCode(String address, int port, String computerId, int certDownloadPort) {
+    public void connectByQRCode(String address, int port, String computerId, int certDownloadPort,String pairToken) {
         String url = address + ":" + port;
         String ipAddressAndPortRegexp = "^(((25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d)))\\.){3}(25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d)))):([1-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$";
         Log.i("main", url);
@@ -705,6 +703,8 @@ public class NewMainActivity extends AppCompatActivity {
         networkServiceIntent.putExtra("id", computerId);
         //证书下载端口
         networkServiceIntent.putExtra("certDownloadPort", certDownloadPort);
+        //配对token
+        networkServiceIntent.putExtra("pairToken", pairToken);
         //地址
         networkServiceIntent.putExtra("address", address);
         //emm虽然没什么意义
@@ -714,30 +714,42 @@ public class NewMainActivity extends AppCompatActivity {
     }
 
     //手动连接
-    public void connectByAddressInput(String url, String port) {
+    public void connectByAddressInput(String url, String port,@Nullable String pairCode,@Nullable String key) {
         new Thread(() -> {
-            Request request = new Request.Builder()
+            Request.Builder requestBuilder = new Request.Builder()
                     .url("http://" + url + ":" + port)
                     .removeHeader("User-Agent")
                     .addHeader("User-Agent", "Shamiko")
                     .removeHeader("Accept-Encoding")
-                    .addHeader("Accept-Encoding", "identity")
-                    .build();
+                    .addHeader("Accept-Encoding", "identity");
+            if(pairCode!=null){
+                requestBuilder.addHeader("suisho-pair-code", pairCode);
+            }else if(key!=null){
+                requestBuilder.addHeader("suisho-auto-connector-key", key);
+            }
+            Request request = requestBuilder.build();
             try (Response response = new OkHttpClient().newCall(request).execute()) {
                 ManualConnectPacket packet = GlobalVariables.jsonBuilder.fromJson(response.body().string(), ManualConnectPacket.class);
+                if(!packet.success){
+                    runOnUiThread(() -> new MaterialAlertDialogBuilder( this)
+                            .setTitle("连接失败")
+                            .setMessage(packet.message)
+                            .setCancelable(false)
+                            .setNegativeButton(R.string.text_ok, (dialog, which) -> dialog.dismiss()).show()
+                    );
+                    return;
+                }
                 runOnUiThread(() -> {
                     Snackbar.make(binding.getRoot(), "已发起连接", 1500).show();
                 });
                 //懒
-                connectByQRCode(url, packet.mainPort, packet.id, packet.certPort);
+                connectByQRCode(url, packet.mainPort, packet.id, packet.certPort,packet.token);
             } catch (IOException | NullPointerException e) {
-                runOnUiThread(() -> {
-                    new MaterialAlertDialogBuilder(this)
-                            .setTitle("连接失败")
-                            .setMessage(e.toString())
-                            .setCancelable(false)
-                            .setNegativeButton(R.string.text_ok, (dialog, which) -> dialog.dismiss()).show();
-                });
+                runOnUiThread(() -> new MaterialAlertDialogBuilder(this)
+                        .setTitle("连接失败")
+                        .setMessage(e.toString())
+                        .setCancelable(false)
+                        .setNegativeButton(R.string.text_ok, (dialog, which) -> dialog.dismiss()).show());
             }
         }).start();
     }

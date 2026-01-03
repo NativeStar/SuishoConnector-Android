@@ -335,7 +335,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                 findPreference("function_launch_verify").setSummary(R.string.setting_launch_verify_summary_device_not_password);
                 break;
             default:
-                findPreference("function_launch_verify").setSummary(R.string.setting_launch_verify_summary_unsupport);
+                findPreference("function_launch_verify").setSummary(R.string.setting_launch_verify_summary_unsupported);
                 break;
         }
         findPreference("function_launch_verify").setOnPreferenceChangeListener((preference, newValue) -> {

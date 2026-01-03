@@ -274,6 +274,7 @@ public class HomeFragment extends Fragment {
             bottomSheetView.findViewById(R.id.bottom_sheet_address_connect_button).setOnClickListener(callback -> {
                 String userInputIP = ((TextInputEditText) bottomSheetView.findViewById(R.id.urlInput)).getText().toString();
                 String userInputPort = ((TextInputEditText) bottomSheetView.findViewById(R.id.portInput)).getText().toString();
+                String userInputPairCode = ((TextInputEditText) bottomSheetView.findViewById(R.id.pairCodeInput)).getText().toString();
                 if(userInputIP.isEmpty()) {
                     //设置提示内容并给予输入框焦点
                     ((TextInputEditText) bottomSheetView.findViewById(R.id.urlInput)).setError(getText(R.string.error_emptyInput_pleaseInputAddressHere));
@@ -301,17 +302,21 @@ public class HomeFragment extends Fragment {
                     bottomSheetView.findViewById(R.id.portInput).requestFocus();
                     return;
                 }
+                //配对码
+                if(userInputPairCode.length()!=6){
+                    ((TextInputEditText) bottomSheetView.findViewById(R.id.pairCodeInput)).setError(getText(R.string.pairCodeInput_invalid));
+                    bottomSheetView.findViewById(R.id.pairCodeInput).requestFocus();
+                    return;
+                }
                 bottomSheetDialog.cancel();
-                ((NewMainActivity) getActivity()).connectByAddressInput(userInputIP, userInputPort);
+                ((NewMainActivity) getActivity()).connectByAddressInput(userInputIP, userInputPort, userInputPairCode, null);
             });
             bottomSheetDialog.setContentView(bottomSheetView);
             bottomSheetDialog.setCanceledOnTouchOutside(true);
             bottomSheetDialog.show();
         });
         //关闭连接
-        binding.homeDisconnectActionButton.setOnClickListener(v -> {
-            ((NewMainActivity) getActivity()).showDisconnectOrCloseApplicationDialog();
-        });
+        binding.homeDisconnectActionButton.setOnClickListener(v -> ((NewMainActivity) getActivity()).showDisconnectOrCloseApplicationDialog());
         //信任模式
         binding.cardTrustModeClickable.setOnClickListener(v -> {
             NewMainActivity activity = (NewMainActivity) getActivity();
@@ -388,7 +393,7 @@ public class HomeFragment extends Fragment {
             }
             HandshakePacket jsonObject = GlobalVariables.jsonBuilder.fromJson(content, HandshakePacket.class);
             if(jsonObject.id.length() != 32) throw new Exception("Invalid QRCode");
-            ((NewMainActivity) getActivity()).connectByQRCode(jsonObject.address, jsonObject.port, jsonObject.id, jsonObject.certDownloadPort);
+            ((NewMainActivity) getActivity()).connectByQRCode(jsonObject.address, jsonObject.port, jsonObject.id, jsonObject.certDownloadPort, jsonObject.token);
         } catch (Exception e) {
             new MaterialAlertDialogBuilder(getActivity())
                     .setTitle(getActivity().getResources().getString(R.string.text_connect_failed))

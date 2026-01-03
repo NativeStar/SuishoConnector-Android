@@ -3,6 +3,7 @@ package com.example.linktocomputer.network.udp;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 
+import com.example.linktocomputer.GlobalVariables;
 import com.example.linktocomputer.activity.NewMainActivity;
 import com.example.linktocomputer.constant.States;
 
@@ -33,21 +34,24 @@ public class AutoConnector extends Thread {
             socket = new DatagramSocket(port);
             socket.setReuseAddress(true);
             socket.setBroadcast(true);
-            byte[] buffer = new byte[256];
+            //key
             FileInputStream keyInput = new FileInputStream(keyFilePath);
-            byte[] data = new byte[256];
-            keyInput.read(data);
+            byte[] keyData = new byte[256];
+            keyInput.read(keyData);
             keyInput.close();
+            //androidId
+            byte[] androidIdBuffer= GlobalVariables.androidId.getBytes();
+            byte[] udpBuffer = new byte[androidIdBuffer.length];
             while (looping) {
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                DatagramPacket packet = new DatagramPacket(udpBuffer, udpBuffer.length);
                 socket.receive(packet);
                 InetAddress senderAddress = packet.getAddress();
-                if(Arrays.equals(packet.getData(), data)) {
+                if(Arrays.equals(packet.getData(), androidIdBuffer)) {
                     //按手动连接来
                     activity.runOnUiThread(() -> {
                         //前面是阻塞的 修复点击连接相关按钮后仍会自动连接
                         if(!looping) return;
-                        activity.connectByAddressInput(senderAddress.toString().replace("/", ""), String.valueOf(39865));
+                        activity.connectByAddressInput(senderAddress.toString().replace("/", ""), String.valueOf(39865),null,new String(keyData));
                         if(this.lock.isHeld()) this.lock.release();
                     });
                     break;

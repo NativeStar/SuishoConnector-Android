@@ -3,8 +3,10 @@
     <string name="appTitle" translatable="false">Suisho Connector</string>
     <string name="startScan_button">扫码连接</string>
     <string name="port">端口</string>
+    <string name="pair_code">配对码</string>
     <string name="ipAddressInput_invalid">目标地址无效</string>
     <string name="portInput_invalid">无效端口号 应该在1–65535之间</string>
+    <string name="pairCodeInput_invalid">无效配对码</string>
     <string name="text_ok">确定</string>
     <string name="text_exit">退出</string>
     <string name="dialog_text_connected_handshake">正在交换数据</string>
@@ -157,7 +159,7 @@
     <string name="text_export_to">已导出为:</string>
     <string name="setting_launch_verify_summary_device_not_password">无法使用:设备未设置锁屏密码</string>
     <string name="auth_dialog_title">身份验证</string>
-    <string name="setting_launch_verify_summary_unsupport">无法使用:设备不支持</string>
+    <string name="setting_launch_verify_summary_unsupported">无法使用:设备不支持</string>
     <string name="text_verify_success">验证成功</string>
     <string name="auth_dialog_desc">我们需要确保您是机主</string>
     <string name="setting_launch_verify_summary_exception">无法使用:初始化时发生异常</string>

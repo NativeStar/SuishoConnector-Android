@@ -5,4 +5,5 @@ public class HandshakePacket {
     public String id;
     public int port;
     public int certDownloadPort;
+    public String token;
 }

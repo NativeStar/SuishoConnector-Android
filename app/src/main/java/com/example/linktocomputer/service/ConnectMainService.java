@@ -104,6 +104,7 @@ public class ConnectMainService extends Service implements INetworkService {
     private int certDownloadPort;
     //计算机地址
     private String computerAddress;
+    private String pairToken;
     public IConnectedActivityMethods activityMethods;
     //通知监听服务运行状态
     private boolean notificationListenerServiceWorking = false;
@@ -141,7 +142,7 @@ public class ConnectMainService extends Service implements INetworkService {
         computerId = intent.getStringExtra("id");
         certDownloadPort = intent.getIntExtra("certDownloadPort", 0);
         computerAddress = intent.getStringExtra("address");
-        //低内存被杀时不自动恢复
+        pairToken = intent.getStringExtra("pairToken");
         return Service.START_NOT_STICKY;
     }
 
@@ -319,6 +320,7 @@ public class ConnectMainService extends Service implements INetworkService {
                 }
                 Request wsReq = new Request.Builder()
                         .url(url)
+                        .addHeader("suisho-pair-token",pairToken)
                         .build();
                 webSocketClient = new OkHttpClient()
                         .newBuilder()
@@ -331,15 +333,12 @@ public class ConnectMainService extends Service implements INetworkService {
                             @Override
                             public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
                                 super.onOpen(webSocket, response);
-                                Log.i("main", "wsOpened");
                                 //握手
                                 webSocketClient.send(buildHandshakeJson());
                             }
-
                             @Override
                             public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
                                 super.onClosed(webSocket, code, reason);
-                                Log.i("main", "wsClosed");
                                 //关闭投屏
                                 if(projectionServiceIPC != null) {
                                     try {
@@ -366,7 +365,8 @@ public class ConnectMainService extends Service implements INetworkService {
                                                     //检测是否在栈顶
                                                     am.getAppTasks().forEach(appTask -> {
                                                         if(appTask.getTaskInfo().baseIntent.getComponent().getShortClassName().equals(NewMainActivity.class.getName())) {
-                                                            activityMethods.showAlert("通讯关闭", "连接断开", "确定");
+                                                            activityMethods.showAlert("通讯关闭", reason, "确定");
+                                                            activityMethods.closeConnectingDialog();
                                                         }
                                                     });
                                                 }
