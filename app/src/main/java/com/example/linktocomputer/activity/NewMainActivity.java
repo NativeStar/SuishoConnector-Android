@@ -64,10 +64,22 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.JsonObject;
 
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.regex.Pattern;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -682,7 +694,7 @@ public class NewMainActivity extends AppCompatActivity {
         });
     }
 
-    public void connectByQRCode(String address, int port, String computerId, int certDownloadPort,String pairToken) {
+    public void connectByQRCode(String address, int port, String computerId, int certDownloadPort, String pairToken) {
         String url = address + ":" + port;
         String ipAddressAndPortRegexp = "^(((25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d)))\\.){3}(25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d)))):([1-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$";
         Log.i("main", url);
@@ -714,24 +726,52 @@ public class NewMainActivity extends AppCompatActivity {
     }
 
     //手动连接
-    public void connectByAddressInput(String url, String port,@Nullable String pairCode,@Nullable String key) {
+    public void connectByAddressInput(String url, String port, @Nullable String pairCode, @Nullable String key) {
         new Thread(() -> {
+            //使用预制证书加密 好过明文裸奔
+            SSLContext manualConnectSSLContext;
+            TrustManager manualConnectTrustManager;
+            try {
+                CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+                KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+                keyStore.load(null);
+                String certificateAlias = Integer.toString(0);
+                keyStore.setCertificateEntry(certificateAlias, certificateFactory.generateCertificate(getResources().openRawResource(R.raw.default_cert)));
+                manualConnectSSLContext = SSLContext.getInstance("TLS");
+                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                trustManagerFactory.init(keyStore);
+                manualConnectTrustManager = trustManagerFactory.getTrustManagers()[0];
+                manualConnectSSLContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
+            } catch (CertificateException | IOException | NoSuchAlgorithmException |
+                     KeyStoreException | KeyManagementException e) {
+                runOnUiThread(() -> new MaterialAlertDialogBuilder(this)
+                        .setTitle("连接失败")
+                        .setMessage("SSL证书读取异常:" + e)
+                        .setCancelable(false)
+                        .setNegativeButton(R.string.text_ok, (dialog, which) -> dialog.dismiss()).show());
+                return;
+            }
             Request.Builder requestBuilder = new Request.Builder()
-                    .url("http://" + url + ":" + port)
+                    .url("https://" + url + ":" + port)
                     .removeHeader("User-Agent")
                     .addHeader("User-Agent", "Shamiko")
                     .removeHeader("Accept-Encoding")
                     .addHeader("Accept-Encoding", "identity");
-            if(pairCode!=null){
+            if(pairCode != null) {
                 requestBuilder.addHeader("suisho-pair-code", pairCode);
-            }else if(key!=null){
+            } else if(key != null) {
                 requestBuilder.addHeader("suisho-auto-connector-key", key);
             }
             Request request = requestBuilder.build();
-            try (Response response = new OkHttpClient().newCall(request).execute()) {
+            OkHttpClient client = new OkHttpClient()
+                    .newBuilder()
+                    .sslSocketFactory(manualConnectSSLContext.getSocketFactory(), (X509TrustManager) manualConnectTrustManager)
+                    .hostnameVerifier((hostname, session) -> true)
+                    .build();
+            try (Response response = client.newCall(request).execute()) {
                 ManualConnectPacket packet = GlobalVariables.jsonBuilder.fromJson(response.body().string(), ManualConnectPacket.class);
-                if(!packet.success){
-                    runOnUiThread(() -> new MaterialAlertDialogBuilder( this)
+                if(!packet.success) {
+                    runOnUiThread(() -> new MaterialAlertDialogBuilder(this)
                             .setTitle("连接失败")
                             .setMessage(packet.message)
                             .setCancelable(false)
@@ -743,7 +783,7 @@ public class NewMainActivity extends AppCompatActivity {
                     Snackbar.make(binding.getRoot(), "已发起连接", 1500).show();
                 });
                 //懒
-                connectByQRCode(url, packet.mainPort, packet.id, packet.certPort,packet.token);
+                connectByQRCode(url, packet.mainPort, packet.id, packet.certPort, packet.token);
             } catch (IOException | NullPointerException e) {
                 runOnUiThread(() -> new MaterialAlertDialogBuilder(this)
                         .setTitle("连接失败")
