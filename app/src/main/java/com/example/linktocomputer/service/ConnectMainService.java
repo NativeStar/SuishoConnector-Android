@@ -191,8 +191,9 @@ public class ConnectMainService extends Service implements INetworkService {
                         crtCertFile.delete();
                         p12CertFile.delete();
                         if(certDownloadPort == 0) {
-                            activityMethods.showAlert("连接失败", "下载证书异常", "确定");
+                            activityMethods.showAlert("连接失败", "PC端证书服务异常", "确定");
                             activityMethods.closeConnectingDialog();
+                            stopSelf();
                             return;
                         }
                         //下载
@@ -222,6 +223,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                 .url("https://" + computerAddress + ":" + certDownloadPort)
                                 .removeHeader("User-Agent")
                                 .addHeader("User-Agent", "I HATE YOU")
+                                .addHeader("suisho-pair-token",pairToken)
                                 .removeHeader("Accept-Encoding")
                                 .addHeader("Accept-Encoding", "identity")
                                 .method("GET", null)
@@ -235,8 +237,9 @@ public class ConnectMainService extends Service implements INetworkService {
                                 .build();
                         try (Response response = downloadClient.newCall(certRequest).execute()) {
                             if(response.code() != 200) {
-                                activityMethods.showAlert("连接失败", "下载证书异常:服务端返回异常", "确定");
+                                activityMethods.showAlert("连接失败", response.code() == 403?"下载证书异常:鉴权失败":"下载证书异常:服务端返回异常", "确定");
                                 activityMethods.closeConnectingDialog();
+                                stopSelf();
                                 return;
                             }
                             byte[] fileData = response.body().bytes();
