@@ -27,7 +27,6 @@ import com.example.linktocomputer.database.TransmitDatabaseEntity;
 import com.example.linktocomputer.service.ConnectMainService;
 import com.example.linktocomputer.view.ConfirmSeekBar;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.color.DynamicColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -46,9 +45,6 @@ public class StorageManageActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S){
-            DynamicColors.applyToActivityIfAvailable(this);
-        }
         setContentView(R.layout.activity_storage_manage);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         //只能再onCreate或其之后初始化

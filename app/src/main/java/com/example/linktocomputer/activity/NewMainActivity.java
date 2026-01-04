@@ -57,7 +57,6 @@ import com.example.linktocomputer.network.NetworkUtil;
 import com.example.linktocomputer.network.udp.AutoConnector;
 import com.example.linktocomputer.service.ConnectMainService;
 import com.example.linktocomputer.service.MediaProjectionService;
-import com.google.android.material.color.DynamicColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -109,10 +108,6 @@ public class NewMainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //动态色
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            DynamicColors.applyToActivityIfAvailable(this);
-        }
         binding = ActivityConnectedBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         //状态提示

@@ -10,6 +10,7 @@ import com.example.linktocomputer.activity.NewMainActivity;
 import com.example.linktocomputer.database.MyObjectBox;
 import com.example.linktocomputer.enums.ConnectionCloseCode;
 import com.example.linktocomputer.service.MediaProjectionService;
+import com.google.android.material.color.DynamicColors;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -23,6 +24,7 @@ public class Crystal extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        applyDynamicColorsIfAvailable();
         initDatabase();
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> new Thread(() -> {
             if(NewMainActivity.networkService!=null&&NewMainActivity.networkService.isConnected){
@@ -61,5 +63,15 @@ public class Crystal extends Application {
     }
     public BoxStore getDatabase(){
         return database;
+    }
+
+    private void applyDynamicColorsIfAvailable() {
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return;
+        try {
+            if(DynamicColors.isDynamicColorAvailable()) {
+                DynamicColors.applyToActivitiesIfAvailable(this);
+            }
+        } catch (Throwable ignored) {
+        }
     }
 }

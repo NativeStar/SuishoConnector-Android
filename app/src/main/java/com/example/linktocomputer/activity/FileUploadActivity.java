@@ -6,7 +6,6 @@ import android.app.NotificationManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.provider.OpenableColumns;
@@ -29,7 +28,6 @@ import com.example.linktocomputer.instances.transmit.TransmitMessageTypeText;
 import com.example.linktocomputer.jsonClass.MainServiceJson;
 import com.example.linktocomputer.jsonClass.TransmitMessage;
 import com.example.linktocomputer.service.ConnectMainService;
-import com.google.android.material.color.DynamicColors;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.gson.JsonObject;
 
@@ -44,9 +42,6 @@ public class FileUploadActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         notificationManager = getSystemService(NotificationManager.class);
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            DynamicColors.applyToActivityIfAvailable(this);
-        }
         //连接判断
         if(GlobalVariables.computerConfigManager == null || !GlobalVariables.computerConfigManager.getNetworkService().isConnected) {
             Toast.makeText(this, R.string.text_need_connect_first, Toast.LENGTH_LONG).show();
