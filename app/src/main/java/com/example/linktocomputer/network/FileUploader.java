@@ -44,7 +44,7 @@ public class FileUploader {
                 InputStream socketInputStream = socket.getInputStream();
                 this.socketOutputStream = socket.getOutputStream();
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socketInputStream));
-                socketOutputStream.write(GlobalVariables.androidId.getBytes());
+                socketOutputStream.write(GlobalVariables.computerConfigManager.getSessionId().getBytes());
                 String msg = bufferedReader.readLine();
                 if(msg != null) {
                     if(!msg.equals("START")) {

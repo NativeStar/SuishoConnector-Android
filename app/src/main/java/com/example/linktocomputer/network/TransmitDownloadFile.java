@@ -111,7 +111,7 @@ public class TransmitDownloadFile {
                         if (hasNotification){
                             activityMethods.getActivity().runOnUiThread(TransmitDownloadFile.this::createNotification);
                         }
-                        ws.send(GlobalVariables.androidId);
+                        ws.send(GlobalVariables.computerConfigManager.getSessionId());
                     }
 
                     @Override
