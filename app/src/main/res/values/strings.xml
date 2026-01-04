@@ -39,6 +39,7 @@
     <string name="service_connect_success">连接成功</string>
     <string name="text_not_connect">未连接</string>
     <string name="text_computer_id">计算机ID</string>
+    <string name="text_phone_id">当前设备ID</string>
     <string name="text_number_unknown" translatable="false">N/A</string>
     <string name="text_notification_forward">通知转发</string>
     <string name="text_address_connect_help">请点击PC端的\"切换连接方式\"按钮查看IP及端口号并在下方对应位置输入</string>

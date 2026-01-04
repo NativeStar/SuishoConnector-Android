@@ -302,6 +302,8 @@ public class NewMainActivity extends AppCompatActivity {
             } else {
                 if(!autoConnectorWorked) initAutoConnect();
             }
+            //显示设备AndroidId
+            ((TextView) findViewById(R.id.card_text_phone_id)).setText(GlobalVariables.androidId);
         });
     }
 
