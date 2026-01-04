@@ -8,7 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 public class ConfirmSeekBar extends androidx.appcompat.widget.AppCompatSeekBar {
-    private int lastProgress;
+    private boolean allowTracking;
     public ConfirmSeekBar(Context context) {
         super(context);
     }
@@ -17,31 +17,41 @@ public class ConfirmSeekBar extends androidx.appcompat.widget.AppCompatSeekBar {
     }
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()){
-            case MotionEvent.ACTION_DOWN:
-                super.onTouchEvent(event);
-                if(getProgress()>=6) {
+        switch(event.getAction()) {
+            case MotionEvent.ACTION_DOWN: {
+                allowTracking = isTouchInStartArea(event);
+                if(!allowTracking) {
+                    setPressed(false);
                     setProgress(0);
-                    lastProgress=0;
                     return true;
                 }
-                lastProgress=getProgress();
-                break;
-            case MotionEvent.ACTION_MOVE:
-                int progress=getProgress();
-                if(Math.abs(lastProgress-progress)<=4){
-                    super.onTouchEvent(event);
-                    lastProgress=progress;
-                }
-                break;
+                return super.onTouchEvent(event);
+            }
+            case MotionEvent.ACTION_MOVE: {
+                if(!allowTracking) return true;
+                return super.onTouchEvent(event);
+            }
             case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL:
+            case MotionEvent.ACTION_CANCEL: {
+                if(allowTracking) {
+                    super.onTouchEvent(event);
+                }
                 setPressed(false);
-                setProgress(0);
-                lastProgress=0;
-                break;
-
+                if(getProgress() < getMax()) {
+                    setProgress(0);
+                }
+                allowTracking = false;
+                return true;
+            }
         }
-        return true;
+        return super.onTouchEvent(event);
+    }
+
+    private boolean isTouchInStartArea(MotionEvent event) {
+        int availableWidth = getWidth() - getPaddingLeft() - getPaddingRight();
+        if(availableWidth <= 0) return true;
+        float x = event.getX() - getPaddingLeft();
+        float fraction = x / availableWidth;
+        return fraction <= 0.06f;
     }
 }
