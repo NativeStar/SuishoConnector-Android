@@ -28,6 +28,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class MediaProjectionService extends Service {
     private boolean readyExit = false;
@@ -158,6 +159,10 @@ public class MediaProjectionService extends Service {
                 
                 ByteBuffer audioBuffer = ByteBuffer.allocateDirect(minBufferSize);
                 MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+                int seq = 0;
+                final int headerSize = 4 + 4 + 8; // magic + seq + ptsUs
+                final int magic = 0x41463031; // "AF01"
+                final ByteOrder headerOrder = ByteOrder.BIG_ENDIAN;
 
                 while (!readyExit) {
                     try {
@@ -189,17 +194,27 @@ public class MediaProjectionService extends Service {
                         
                         int outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 10000);
                         while (outputBufferIndex >= 0) {
+                            if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                                mediaCodec.releaseOutputBuffer(outputBufferIndex, false);
+                                outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 0);
+                                continue;
+                            }
+
                             if (bufferInfo.size > 0) {
                                 ByteBuffer outputBuffer = mediaCodec.getOutputBuffer(outputBufferIndex);
                                 if (outputBuffer != null) {
-                                    byte[] encodedData = new byte[bufferInfo.size];
-                                    outputBuffer.get(encodedData);
-                                    
-                                    for (int offset = 0; offset < bufferInfo.size; offset += 1024) {
-                                        int length = Math.min(1024, bufferInfo.size - offset);
-                                        DatagramPacket packet = new DatagramPacket(encodedData, offset, length, targetAddress, 8899);
-                                        socket.send(packet);
-                                    }
+                                    outputBuffer.position(bufferInfo.offset);
+                                    outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
+
+                                    byte[] packetData = new byte[headerSize + bufferInfo.size];
+                                    ByteBuffer header = ByteBuffer.wrap(packetData).order(headerOrder);
+                                    header.putInt(magic);
+                                    header.putInt(seq++);
+                                    header.putLong(bufferInfo.presentationTimeUs);
+                                    outputBuffer.get(packetData, headerSize, bufferInfo.size);
+
+                                    DatagramPacket packet = new DatagramPacket(packetData, packetData.length, targetAddress, 8899);
+                                    socket.send(packet);
                                 }
                             } else {
                                 Log.w("Media Projection Service", "Empty encoded output: " + bufferInfo.size + " bytes");
