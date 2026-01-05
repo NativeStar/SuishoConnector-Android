@@ -38,6 +38,8 @@
     <string name="transmit_send_failed_network">请先连接计算机或检查网络状况</string>
     <string name="service_connect_success">连接成功</string>
     <string name="text_not_connect">未连接</string>
+    <string name="text_unauthorized">未授权</string>
+    <string name="text_authorized">已授权</string>
     <string name="text_computer_id">计算机ID</string>
     <string name="text_phone_id">当前设备ID</string>
     <string name="text_number_unknown" translatable="false">N/A</string>
@@ -138,6 +140,7 @@
     </string-array>
     <string name="dialog_transmit_file_save_location">文件存储位置</string>
     <string name="home_card_trust_mode">信任模式</string>
+    <string name="home_card_media_projection">音频转发(点击授权)</string>
     <string name="dialog_close_application_confirm_title">关闭应用</string>
     <string name="dialog_close_application_confirm_message">确认关闭应用?</string>
     <string name="text_connect_failed">连接失败</string>
@@ -172,5 +175,6 @@
     <string name="dialog_clear_auto_connect_file_desc">确认解绑设备?将不再进行自动连接</string>
     <string name="text_unbind_success">解绑完成 重启生效</string>
     <string name="text_unbind_failed_not_bound">当前未绑定任何设备</string>
+    <string name="error_media_projection_manager_null">授权失败:无法获取MediaProjectionManager</string>
 
 </resources>

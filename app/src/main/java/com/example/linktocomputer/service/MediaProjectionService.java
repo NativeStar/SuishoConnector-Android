@@ -14,7 +14,9 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
 import android.util.Log;
@@ -61,7 +63,12 @@ public class MediaProjectionService extends Service {
             } catch (Exception e) {
                 Log.e("Media Projection Service", "Error during service exit", e);
             }
-            Process.killProcess(Process.myPid());
+            Handler handler = new Handler(Looper.getMainLooper());
+            handler.postDelayed(() -> {
+                stopForeground(true);
+                stopSelf();
+                Process.killProcess(Process.myPid());
+            },300);
         }
     };
 

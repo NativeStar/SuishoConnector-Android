@@ -116,7 +116,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="15dp"
-                    android:layout_marginTop="3dp"/>
+                    android:layout_marginTop="3dp" />
             </LinearLayout>
 
             <LinearLayout
@@ -214,6 +214,31 @@
                     android:layout_marginStart="15dp"
                     android:layout_marginTop="3dp"
                     android:text="@string/text_not_connect" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/card_media_projection_clickable"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:paddingBottom="16dp">
+
+                <TextView
+                    android:id="@+id/card_title_media_projection_mode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="15dp"
+                    android:text="@string/home_card_media_projection"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/card_text_media_projection_mode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="15dp"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/text_unauthorized" />
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>

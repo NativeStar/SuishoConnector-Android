@@ -20,7 +20,6 @@ import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.Process;
-import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
@@ -38,7 +37,6 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.linktocomputer.GlobalVariables;
-import com.example.linktocomputer.IMediaProjectionServiceIPC;
 import com.example.linktocomputer.R;
 import com.example.linktocomputer.Util;
 import com.example.linktocomputer.abstracts.TransmitMessageAbstract;
@@ -56,7 +54,6 @@ import com.example.linktocomputer.network.NetworkStateCallback;
 import com.example.linktocomputer.network.NetworkUtil;
 import com.example.linktocomputer.network.udp.AutoConnector;
 import com.example.linktocomputer.service.ConnectMainService;
-import com.example.linktocomputer.service.MediaProjectionService;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
@@ -205,33 +202,6 @@ public class NewMainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         stateBarManager.onMenuClick();
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if(data == null) {
-            return;
-        }
-        if(networkService != null) networkService.setMediaProjectionIntent(data);
-        Intent intent = new Intent(this, MediaProjectionService.class);
-        //udp音频测试
-        bindService(intent, new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
-                IMediaProjectionServiceIPC projectionServiceIPC = IMediaProjectionServiceIPC.Stub.asInterface(service);
-                try {
-                    projectionServiceIPC.setScreenIntent(data);
-                    projectionServiceIPC.run();
-                } catch (RemoteException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-            }
-        }, BIND_AUTO_CREATE);
     }
 
     private void setViewsInteraction() {
@@ -462,6 +432,7 @@ public class NewMainActivity extends AppCompatActivity {
                                 ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_not_connect);
                                 ((TextView) findViewById(R.id.card_title_trust_mode)).setText(R.string.home_card_trust_mode);
                                 ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_close_24);
+                                ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(networkService.getMediaProjectionServiceIntent()==null ? R.string.text_unauthorized : R.string.text_authorized);
                             } catch (NullPointerException ignore) {
                                 finish();
                             }
@@ -627,6 +598,7 @@ public class NewMainActivity extends AppCompatActivity {
             ((TextView) findViewById(R.id.card_text_connection_state)).setText(R.string.text_connected);
             ((TextView) findViewById(R.id.card_text_connection_state_subtitle)).setText(GlobalVariables.computerName);
             ((TextView) findViewById(R.id.card_title_trust_mode)).setText(R.string.home_card_trust_mode_connected);
+            ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(networkService.getMediaProjectionServiceIntent()==null ? R.string.text_unauthorized : R.string.text_authorized);
             //图标
             ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_link_off_24);
             ((ImageView) findViewById(R.id.card_connection_state_icon)).setImageResource(R.drawable.baseline_signal_cellular_4_bar_24);

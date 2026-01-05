@@ -4,12 +4,12 @@ import android.app.Application;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Process;
+import android.os.RemoteException;
 
 import com.example.linktocomputer.activity.CrashDialogActivity;
 import com.example.linktocomputer.activity.NewMainActivity;
 import com.example.linktocomputer.database.MyObjectBox;
 import com.example.linktocomputer.enums.ConnectionCloseCode;
-import com.example.linktocomputer.service.MediaProjectionService;
 import com.google.android.material.color.DynamicColors;
 
 import java.io.File;
@@ -21,18 +21,25 @@ import io.objectbox.BoxStore;
 
 public class Crystal extends Application {
     private BoxStore database;
+
     @Override
     public void onCreate() {
         super.onCreate();
         applyDynamicColorsIfAvailable();
         initDatabase();
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> new Thread(() -> {
-            if(NewMainActivity.networkService!=null&&NewMainActivity.networkService.isConnected){
-                NewMainActivity.networkService.disconnect(ConnectionCloseCode.CloseFromClientCrash,null);
+            if(NewMainActivity.networkService != null && NewMainActivity.networkService.isConnected) {
+                NewMainActivity.networkService.disconnect(ConnectionCloseCode.CloseFromClientCrash, null);
+                //停止音频转发
+                if(NewMainActivity.networkService.projectionServiceIPC != null) {
+                    try {
+                        NewMainActivity.networkService.projectionServiceIPC.exit();
+                    } catch (RemoteException ignore) {
+                    }
+                }
             }
-            //停止音频转发
-            Intent audioProjectionServiceIntent=new Intent(this, MediaProjectionService.class);
-            stopService(audioProjectionServiceIntent);
+//            Intent audioProjectionServiceIntent=new Intent(this, MediaProjectionService.class);
+//            stopService(audioProjectionServiceIntent);
             File logDir = new File(getDataDir() + "/files/crash/");
             logDir.mkdirs();
             File logFile = new File(getDataDir() + "/files/crash/" + System.currentTimeMillis() + ".log");
@@ -58,10 +65,12 @@ public class Crystal extends Application {
             }
         }).start());
     }
-    private void initDatabase(){
-        database=MyObjectBox.builder().androidContext(this).build();
+
+    private void initDatabase() {
+        database = MyObjectBox.builder().androidContext(this).build();
     }
-    public BoxStore getDatabase(){
+
+    public BoxStore getDatabase() {
         return database;
     }
 

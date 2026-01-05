@@ -119,10 +119,14 @@ public class ConnectMainService extends Service implements INetworkService {
     //投屏同意返回intent
     private Intent mediaProjectionIntent;
     //投屏服务ipc通道
-    IMediaProjectionServiceIPC projectionServiceIPC;
+    public IMediaProjectionServiceIPC projectionServiceIPC;
 
     public void setMediaProjectionIntent(Intent mediaProjectionIntent) {
         this.mediaProjectionIntent = mediaProjectionIntent;
+    }
+
+    public Intent getMediaProjectionServiceIntent() {
+        return this.mediaProjectionIntent;
     }
 
     //传入通讯
@@ -135,7 +139,6 @@ public class ConnectMainService extends Service implements INetworkService {
     private com.example.linktocomputer.service.NotificationListenerService notificationListenerService;
     //状态 当前是否连接成功
     public boolean isConnected = false;
-//    public SharedPreferences preferences;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -223,7 +226,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                 .url("https://" + computerAddress + ":" + certDownloadPort)
                                 .removeHeader("User-Agent")
                                 .addHeader("User-Agent", "I HATE YOU")
-                                .addHeader("suisho-pair-token",pairToken)
+                                .addHeader("suisho-pair-token", pairToken)
                                 .removeHeader("Accept-Encoding")
                                 .addHeader("Accept-Encoding", "identity")
                                 .method("GET", null)
@@ -237,7 +240,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                 .build();
                         try (Response response = downloadClient.newCall(certRequest).execute()) {
                             if(response.code() != 200) {
-                                activityMethods.showAlert("连接失败", response.code() == 403?"下载证书异常:鉴权失败":"下载证书异常:服务端返回异常", "确定");
+                                activityMethods.showAlert("连接失败", response.code() == 403 ? "下载证书异常:鉴权失败" : "下载证书异常:服务端返回异常", "确定");
                                 activityMethods.closeConnectingDialog();
                                 stopSelf();
                                 return;
@@ -323,7 +326,7 @@ public class ConnectMainService extends Service implements INetworkService {
                 }
                 Request wsReq = new Request.Builder()
                         .url(url)
-                        .addHeader("suisho-pair-token",pairToken)
+                        .addHeader("suisho-pair-token", pairToken)
                         .build();
                 webSocketClient = new OkHttpClient()
                         .newBuilder()
@@ -339,14 +342,18 @@ public class ConnectMainService extends Service implements INetworkService {
                                 //握手
                                 webSocketClient.send(buildHandshakeJson());
                             }
+
                             @Override
                             public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
                                 super.onClosed(webSocket, code, reason);
-                                //关闭投屏
+                                //关闭音频
                                 if(projectionServiceIPC != null) {
                                     try {
                                         projectionServiceIPC.exit();
                                     } catch (RemoteException ignored) {
+                                    } finally {
+                                        ConnectMainService.this.projectionServiceIPC = null;
+                                        ConnectMainService.this.mediaProjectionIntent = null;
                                     }
                                 }
                                 if(webFileServer != null) webFileServer.stop();
@@ -563,17 +570,18 @@ public class ConnectMainService extends Service implements INetworkService {
                                             mediaProjectionPermissionQueryPacket.addProperty("hasPermission", mediaProjectionIntent != null);
                                             webSocketClient.send(mediaProjectionPermissionQueryPacket.toString());
                                             break;
-                                        case "main_initMediaProjection":
+                                        case "main_startAudioForward":
                                             JsonObject mediaProjectionPacket = new JsonObject();
                                             mediaProjectionPacket.addProperty("_isResponsePacket", true);
                                             mediaProjectionPacket.addProperty("_responseId", jsonObj._request_id);
                                             //是否已经授权
+                                            //TODO 支持使用shell或root授权
                                             if(mediaProjectionIntent == null) {
-                                                mediaProjectionPacket.addProperty("_result", false);
+                                                mediaProjectionPacket.addProperty("result", false);
                                                 webSocketClient.send(mediaProjectionPacket.toString());
                                                 return;
                                             }
-                                            mediaProjectionPacket.addProperty("_result", true);
+                                            mediaProjectionPacket.addProperty("result", true);
                                             Intent intent = new Intent(ConnectMainService.this, MediaProjectionService.class);
                                             bindServiceConnection = new ServiceConnection() {
                                                 @Override
@@ -583,7 +591,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                         projectionServiceIPC.setScreenIntent(mediaProjectionIntent);
                                                         projectionServiceIPC.run();
                                                     } catch (RemoteException e) {
-                                                        mediaProjectionPacket.addProperty("_result", false);
+                                                        mediaProjectionPacket.addProperty("result", false);
                                                         mediaProjectionPacket.addProperty("exception", true);
                                                         webSocketClient.send(mediaProjectionPacket.toString());
                                                     }
@@ -594,6 +602,26 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 }
                                             };
                                             bindService(intent, bindServiceConnection, BIND_AUTO_CREATE);
+                                            webSocketClient.send(mediaProjectionPacket.toString());
+                                            break;
+                                        case "main_stopAudioForward":
+                                            JsonObject stopProjectionPacket = new JsonObject();
+                                            stopProjectionPacket.addProperty("_isResponsePacket", true);
+                                            stopProjectionPacket.addProperty("_responseId", jsonObj._request_id);
+                                            if(projectionServiceIPC != null) {
+                                                try {
+                                                    projectionServiceIPC.exit();
+
+                                                } catch (RemoteException e) {
+                                                    Log.e("Projection", e.toString(), e);
+                                                } finally {
+                                                    mediaProjectionIntent = null;
+                                                    projectionServiceIPC = null;
+                                                    unbindService(bindServiceConnection);
+                                                }
+                                            }
+                                            webSocketClient.send(stopProjectionPacket.toString());
+                                            activityMethods.getActivity().showConnectedState();
                                             break;
                                         case "main_checkPermission":
                                             JsonObject permissionCheckPacket = new JsonObject();

@@ -17,6 +17,8 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -29,6 +31,7 @@ import com.example.linktocomputer.databinding.FragmentHomeBinding;
 import com.example.linktocomputer.enums.MainActivityResultEnum;
 import com.example.linktocomputer.interfaces.IQRCodeDetected;
 import com.example.linktocomputer.jsonClass.HandshakePacket;
+import com.example.linktocomputer.service.ConnectMainService;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
@@ -54,6 +57,7 @@ import java.util.regex.Pattern;
 public class HomeFragment extends Fragment {
     private boolean viewInitialized = false;
     private FragmentHomeBinding binding;
+    private ActivityResultLauncher<Intent> mediaProjectionRequestCallback;
     private CameraManager cameraManager;
     //二维码检测线程
     private Thread detectThread;
@@ -66,6 +70,15 @@ public class HomeFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mediaProjectionRequestCallback = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            //防止没连上
+            if(NewMainActivity.networkService!=null&&NewMainActivity.networkService.isConnected) {
+                Intent data = result.getData();
+                if(data == null) return;
+                NewMainActivity.networkService.setMediaProjectionIntent(data);
+                binding.cardTextMediaProjectionMode.setText(R.string.text_authorized);
+            }
+        });
     }
 
     @Override
@@ -183,7 +196,7 @@ public class HomeFragment extends Fragment {
         });
         //调试
         binding.cardConnectionStateIcon.setOnClickListener(v1 -> {
-            if(0 == (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE)){
+            if(0 == (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE)) {
                 return;
             }
             new MaterialAlertDialogBuilder(getActivity())
@@ -303,7 +316,7 @@ public class HomeFragment extends Fragment {
                     return;
                 }
                 //配对码
-                if(userInputPairCode.length()!=6){
+                if(userInputPairCode.length() != 6) {
                     ((TextInputEditText) bottomSheetView.findViewById(R.id.pairCodeInput)).setError(getText(R.string.pairCodeInput_invalid));
                     bottomSheetView.findViewById(R.id.pairCodeInput).requestFocus();
                     return;
@@ -340,6 +353,26 @@ public class HomeFragment extends Fragment {
                         GlobalVariables.computerConfigManager.changeTrustMode();
                         activity.showConnectedState();
                     }).show();
+        });
+        //音频转发授权
+        binding.cardMediaProjectionClickable.setOnClickListener(v -> {
+            ConnectMainService networkService = NewMainActivity.networkService;
+            if(networkService == null) {
+                Snackbar.make(binding.getRoot(), R.string.text_need_connect_first, Snackbar.LENGTH_LONG).show();
+                return;
+            }
+            if(networkService.getMediaProjectionServiceIntent() != null) {
+                Snackbar.make(binding.getRoot(), R.string.text_authorized, Snackbar.LENGTH_LONG).show();
+                return;
+            }
+            MediaProjectionManager manager = getActivity().getSystemService(MediaProjectionManager.class);
+            if(manager == null) {
+                Snackbar.make(binding.getRoot(), R.string.error_media_projection_manager_null, Snackbar.LENGTH_LONG).show();
+                return;
+            }
+            Intent intent = manager.createScreenCaptureIntent();
+            mediaProjectionRequestCallback.launch(intent);
+//            startActivityForResult(intent, MainActivityResultEnum.START_MEDIA_PROJECTION);
         });
     }
 
