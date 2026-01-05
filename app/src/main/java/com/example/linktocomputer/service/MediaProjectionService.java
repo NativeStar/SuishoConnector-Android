@@ -118,9 +118,13 @@ public class MediaProjectionService extends Service {
                 final int sampleRate = 48000;
                 final int channelCount = 2;
                 final int bitRate = 196000;
-                
-                int minBufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-                minBufferSize = Math.max(minBufferSize, 4096);
+
+                // 以较小的读取块降低采集链路延迟（20ms @ 48kHz, stereo, 16-bit -> 3840 bytes）
+                final int readChunkSize = 3840;
+
+                int minRecordBufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+                int recordBufferSize = Math.max(minRecordBufferSize, readChunkSize * 2);
+                recordBufferSize = Math.max(recordBufferSize, 4096);
 
                 AudioFormat audioFormat = new AudioFormat.Builder()
                         .setChannelMask(AudioFormat.CHANNEL_IN_STEREO)
@@ -131,7 +135,7 @@ public class MediaProjectionService extends Service {
                 audioRecord = new AudioRecord.Builder()
                         .setAudioFormat(audioFormat)
                         .setAudioPlaybackCaptureConfig(config)
-                        .setBufferSizeInBytes(minBufferSize * 2)
+                        .setBufferSizeInBytes(recordBufferSize)
                         .build();
                 
                 if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
@@ -144,7 +148,7 @@ public class MediaProjectionService extends Service {
                 mediaCodec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_OPUS);
                 MediaFormat format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_OPUS, sampleRate, channelCount);
                 format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
-                format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, minBufferSize);
+                format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, readChunkSize);
                 
                 Log.i("Media Projection Service", "Configuring MediaCodec with Opus format");
                 mediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
@@ -156,8 +160,8 @@ public class MediaProjectionService extends Service {
                 audioRecord.startRecording();
                 
                 Log.i("Media Projection Service", "AudioRecord started, beginning encoding loop");
-                
-                ByteBuffer audioBuffer = ByteBuffer.allocateDirect(minBufferSize);
+
+                ByteBuffer audioBuffer = ByteBuffer.allocateDirect(readChunkSize);
                 MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
                 int seq = 0;
                 final int headerSize = 4 + 4 + 8; // magic + seq + ptsUs
@@ -167,7 +171,7 @@ public class MediaProjectionService extends Service {
                 while (!readyExit) {
                     try {
                         audioBuffer.clear();
-                        int readLength = audioRecord.read(audioBuffer, minBufferSize, AudioRecord.READ_BLOCKING);
+                        int readLength = audioRecord.read(audioBuffer, readChunkSize, AudioRecord.READ_BLOCKING);
                         
                         if (readLength <= 0) {
                             Log.w("Media Projection Service", "AudioRecord read returned: " + readLength);
