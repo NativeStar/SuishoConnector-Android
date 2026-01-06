@@ -375,7 +375,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                     //检测是否在栈顶
                                                     am.getAppTasks().forEach(appTask -> {
                                                         if(appTask.getTaskInfo().baseIntent.getComponent().getShortClassName().equals(NewMainActivity.class.getName())) {
-                                                            activityMethods.showAlert("通讯关闭", reason, "确定");
+                                                            activityMethods.showAlert("通讯关闭", reason.isEmpty()?"计算机关闭连接":reason, "确定");
                                                             activityMethods.closeConnectingDialog();
                                                         }
                                                     });
@@ -612,8 +612,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 try {
                                                     projectionServiceIPC.exit();
 
-                                                } catch (RemoteException e) {
-                                                    Log.e("Projection", e.toString(), e);
+                                                } catch (RemoteException ignored) {
                                                 } finally {
                                                     mediaProjectionIntent = null;
                                                     projectionServiceIPC = null;
@@ -726,7 +725,6 @@ public class ConnectMainService extends Service implements INetworkService {
                                 super.onClosing(webSocket, code, reason);
                                 webSocketClient.close(ConnectionCloseCode.CloseFromClient, null);
                                 isConnected = false;
-                                Log.i("main", "closing");
                                 activityMethods.onDisconnect();
                                 //注销电池广播监听
                                 if(batteryStateReceiver != null)

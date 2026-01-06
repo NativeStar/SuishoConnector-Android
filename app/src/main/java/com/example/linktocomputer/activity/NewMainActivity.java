@@ -432,8 +432,9 @@ public class NewMainActivity extends AppCompatActivity {
                                 ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_not_connect);
                                 ((TextView) findViewById(R.id.card_title_trust_mode)).setText(R.string.home_card_trust_mode);
                                 ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_close_24);
-                                ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(networkService.getMediaProjectionServiceIntent()==null ? R.string.text_unauthorized : R.string.text_authorized);
-                            } catch (NullPointerException ignore) {
+                                ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(R.string.text_unauthorized);
+                            } catch (NullPointerException e) {
+                                Log.e("onDisconnect",e.toString(),e);
                                 finish();
                             }
                         });

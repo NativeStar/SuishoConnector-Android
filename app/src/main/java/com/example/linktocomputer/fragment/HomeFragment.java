@@ -15,7 +15,6 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -28,7 +27,6 @@ import com.example.linktocomputer.R;
 import com.example.linktocomputer.activity.NewMainActivity;
 import com.example.linktocomputer.constant.States;
 import com.example.linktocomputer.databinding.FragmentHomeBinding;
-import com.example.linktocomputer.enums.MainActivityResultEnum;
 import com.example.linktocomputer.interfaces.IQRCodeDetected;
 import com.example.linktocomputer.jsonClass.HandshakePacket;
 import com.example.linktocomputer.service.ConnectMainService;
@@ -202,22 +200,13 @@ public class HomeFragment extends Fragment {
             new MaterialAlertDialogBuilder(getActivity())
                     .setItems(new CharSequence[]{
                             "Edit desktop client state",
-                            "Request media projection permission & Test projection",
                             "Finish activity",
                             "Throw exception",
                             "Edit state"
                     }, (dialog, which) -> {
                         dialog.dismiss();
                         Log.d("main", String.valueOf(which));
-                        if(which == 1) {
-                            MediaProjectionManager manager = getActivity().getSystemService(MediaProjectionManager.class);
-                            if(manager == null) {
-                                Toast.makeText(getActivity(), "Error", Toast.LENGTH_LONG).show();
-                                return;
-                            }
-                            Intent intent = manager.createScreenCaptureIntent();
-                            getActivity().startActivityForResult(intent, MainActivityResultEnum.START_MEDIA_PROJECTION);
-                        } else if(which == 0) {
+                        if(which == 0) {
                             EditText editText = new EditText(getActivity());
                             editText.setHint("State id");
                             new MaterialAlertDialogBuilder(getActivity())
@@ -240,16 +229,11 @@ public class HomeFragment extends Fragment {
                                     .setNeutralButton("Cancel", (dialog1, which1) -> {
                                     })
                                     .show();
+                        } else if(which == 1) {
+                            getActivity().finish();
                         } else if(which == 2) {
-                            ((NewMainActivity) getActivity()).finish();
-                            /*List<UriPermission> persistedUriPermissions = getContext().getContentResolver().getPersistedUriPermissions();
-                            Log.i("debug","Persisted Uri Permissions Length:"+persistedUriPermissions.size());
-                            for(UriPermission uri:persistedUriPermissions){
-                                Log.i("debug",uri.getUri().toString());
-                            }*/
-                        } else if(which == 3) {
                             throw new RuntimeException("Test exception");
-                        } else if(which == 4) {
+                        } else if(which == 3) {
                             EditText editText = new EditText(getActivity());
                             editText.setHint("State id");
                             new MaterialAlertDialogBuilder(getActivity())
