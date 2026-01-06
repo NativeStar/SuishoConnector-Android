@@ -4,12 +4,11 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
-import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
-import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -21,6 +20,9 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -71,6 +73,8 @@ public class TransmitFragment extends Fragment {
     //static不能删 否则activity重建之后pc端消息无法实时显示
     public static TransmitMessagesListAdapter transmitMessagesListAdapter;
     private NotificationManager notificationManager;
+    private ActivityResultLauncher<String[]> filePickerLauncher;
+    private ActivityResultLauncher<PickVisualMediaRequest> imagePickerLauncher;
 
     public TransmitMessagesListAdapter getTransmitMessagesListAdapter() {
         return transmitMessagesListAdapter;
@@ -95,6 +99,8 @@ public class TransmitFragment extends Fragment {
         }
         //修复activity被销毁后用户操作列表崩溃
         if(transmitMessagesListAdapter != null) transmitMessagesListAdapter.setActivity(activity);
+        filePickerLauncher = registerForActivityResult(new ActivityResultContracts.OpenDocument(), this::onPickFile);
+        imagePickerLauncher = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), this::onPickFile);
     }
 
     @Override
@@ -137,11 +143,8 @@ public class TransmitFragment extends Fragment {
         });
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if(data == null) {
-            //啥都没做
+    private void onPickFile(@Nullable Uri uri) {
+        if(uri == null) {
             return;
         }
         if(networkService == null || !networkService.isConnected) {
@@ -149,124 +152,118 @@ public class TransmitFragment extends Fragment {
             Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
             return;
         }
-        switch (requestCode) {
-            case ACTIVITY_RESULT_IMAGE_PICK:/*图片*/
-//                两个仅仅是选择器有区别 可能后面代码能合一起
-//                break;
-            case ACTIVITY_RESULT_FILE_PICK:/*文件*/
-                try {
-                    ParcelFileDescriptor pickFile = getContext().getContentResolver().openFileDescriptor(data.getData(), "r");
-                    //获取文件名
-                    Cursor cursor = getContext().getContentResolver().query(data.getData(), null, null, null, null, null);
-                    cursor.moveToFirst();
-                    long fileSize = pickFile.getStatSize();
-                    /*异常的文件大小*/
-                    if(fileSize == -1) {
-                        throw new FileNotFoundException("File size is -1");
-                    }
-                    String fileName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
-                    cursor.close();
-                    //加密key
-                    EncryptionKey encryptionKey;
-                    try {
-                        encryptionKey = EncryptionKey.getInstance("AES", 128);
-                    } catch (NoSuchAlgorithmException e) {
+        try {
+            ParcelFileDescriptor pickFile = getContext().getContentResolver().openFileDescriptor(uri, "r");
+            //获取文件名
+            Cursor cursor = getContext().getContentResolver().query(uri, null, null, null, null, null);
+            cursor.moveToFirst();
+            long fileSize = pickFile.getStatSize();
+            /*异常的文件大小*/
+            if(fileSize == -1) {
+                throw new FileNotFoundException("File size is -1");
+            }
+            String fileName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
+            cursor.close();
+            //加密key
+            EncryptionKey encryptionKey;
+            try {
+                encryptionKey = EncryptionKey.getInstance("AES", 128);
+            } catch (NoSuchAlgorithmException e) {
+                activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
+                        .setMessage(e.getMessage())
+                        .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
+                        .show());
+                return;
+            }
+            //构建请求
+            JsonObject uploadRequestObject = new JsonObject();
+            /*基础参数*/
+            uploadRequestObject.addProperty("packetType", "action_transmit");
+            uploadRequestObject.addProperty("messageType", "file");
+            /*文件名*/
+            uploadRequestObject.addProperty("name", fileName);
+            /*大小*/
+            uploadRequestObject.addProperty("size", fileSize);
+            //密钥
+            uploadRequestObject.addProperty("encryptKey", encryptionKey.getKeyBase64());
+            //向量
+            uploadRequestObject.addProperty("encryptIv", encryptionKey.getIvBase64());
+            //发送请求
+            networkService.sendRequestPacket(uploadRequestObject, new RequestHandle() {
+                @Override
+                public void run(String responseData) {
+                    super.run(responseData);
+                    /*加上_result字段 分开报错和正常*/
+                    MainServiceJson jsonObj = GlobalVariables.jsonBuilder.fromJson(responseData, MainServiceJson.class);
+                    //检查是否发生异常
+                    if(jsonObj._result.equals("ERROR")) {
+                        //异常
                         activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
-                                .setMessage(e.getMessage())
+                                .setMessage(jsonObj.msg)
                                 .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
                                 .show());
                         return;
                     }
-                    //构建请求
-                    JsonObject uploadRequestObject = new JsonObject();
-                    /*基础参数*/
-                    uploadRequestObject.addProperty("packetType", "action_transmit");
-                    uploadRequestObject.addProperty("messageType", "file");
-                    /*文件名*/
-                    uploadRequestObject.addProperty("name", fileName);
-                    /*大小*/
-                    uploadRequestObject.addProperty("size", fileSize);
-                    //密钥
-                    uploadRequestObject.addProperty("encryptKey", encryptionKey.getKeyBase64());
-                    //向量
-                    uploadRequestObject.addProperty("encryptIv", encryptionKey.getIvBase64());
-                    //发送请求
-                    networkService.sendRequestPacket(uploadRequestObject, new RequestHandle() {
-                        @Override
-                        public void run(String responseData) {
-                            super.run(responseData);
-                            /*加上_result字段 分开报错和正常*/
-                            MainServiceJson jsonObj = GlobalVariables.jsonBuilder.fromJson(responseData, MainServiceJson.class);
-                            //检查是否发生异常
-                            if(jsonObj._result.equals("ERROR")) {
-                                //异常
+                    try {
+                        //上传文件
+                        networkService.uploadFile(getContext().getContentResolver().openInputStream(uri), jsonObj.port, fileSize <= 8192L, new FileUploadStateHandle() {
+                            @Override
+                            //上传服务异常处理
+                            public void onError(Exception error) {
+                                super.onError(error);
                                 activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
-                                        .setMessage(jsonObj.msg)
+                                        .setMessage(error.getMessage())
                                         .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
                                         .show());
-                                return;
                             }
-                            try {
-                                //上传文件
-                                networkService.uploadFile(getContext().getContentResolver().openInputStream(data.getData()), jsonObj.port, fileSize <= 8192L, new FileUploadStateHandle() {
-                                    @Override
-                                    //上传服务异常处理
-                                    public void onError(Exception error) {
-                                        super.onError(error);
-                                        activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
-                                                .setMessage(error.getMessage())
-                                                .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
-                                                .show());
-                                    }
 
-                                    @Override
-                                    public void onSuccess() {
-                                        super.onSuccess();
-                                        //activity是否被销毁
-                                        if(getActivity() == null || getActivity().isDestroyed())
-                                            return;
-                                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), "上传完成", 2000).show();
-                                        notificationManager.cancel(NotificationID.NOTIFICATION_TRANSMIT_UPLOAD_FILE);
-                                        TransmitDatabaseEntity message = new TransmitDatabaseEntity();
-                                        message.messageFrom = TransmitMessage.MESSAGE_FROM_PHONE;
-                                        message.type = TransmitMessage.MESSAGE_TYPE_FILE;
-                                        message.isDeleted = false;
-                                        message.fileName = fileName;
-                                        message.fileSize = fileSize;
-                                        //上传文件 该属性无效
-                                        message.filePath = "null";
-                                        message.timestamp = System.currentTimeMillis();
-                                        transmitMessagesListAdapter.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE, new TransmitMessageTypeFile(message));
-                                        scrollMessagesViewToBottom(false);
-                                    }
-
-                                    @Override
-                                    public void onProgress(long uploadedSize, Notification.Builder notificationBuilder) {
-                                        //每16次更新触发
-                                        super.onProgress(uploadedSize, notificationBuilder);
-                                        int uploadProgress = (int) (((float) uploadedSize / fileSize) * 100);
-                                        notificationBuilder.setProgress(100, uploadProgress, false);
-                                        notificationBuilder.setContentText("已上传" + uploadProgress + "%");
-                                        notificationManager.notify(1, notificationBuilder.build());
-                                    }
-                                }, fileSize, encryptionKey);
-                                //打开输入流捕捉
-                            } catch (FileNotFoundException | NullPointerException e) {
-                                new MaterialAlertDialogBuilder(getContext()).setTitle("打开文件异常")
-                                        .setMessage(e.getMessage())
-                                        .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
-                                        .show();
+                            @Override
+                            public void onSuccess() {
+                                super.onSuccess();
+                                //activity是否被销毁
+                                if(getActivity() == null || getActivity().isDestroyed())
+                                    return;
+                                Snackbar.make(activity.findViewById(R.id.transmit_message_list), "上传完成", 2000).show();
+                                notificationManager.cancel(NotificationID.NOTIFICATION_TRANSMIT_UPLOAD_FILE);
+                                TransmitDatabaseEntity message = new TransmitDatabaseEntity();
+                                message.messageFrom = TransmitMessage.MESSAGE_FROM_PHONE;
+                                message.type = TransmitMessage.MESSAGE_TYPE_FILE;
+                                message.isDeleted = false;
+                                message.fileName = fileName;
+                                message.fileSize = fileSize;
+                                //上传文件 该属性无效
+                                message.filePath = "null";
+                                message.timestamp = System.currentTimeMillis();
+                                transmitMessagesListAdapter.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE, new TransmitMessageTypeFile(message));
+                                scrollMessagesViewToBottom(false);
                             }
-                        }
-                    });
-                    //整个方法
-                } catch (FileNotFoundException | NullPointerException fe) {
-                    Log.i("main", "error", fe);
-                    new MaterialAlertDialogBuilder(getContext()).setTitle("打开文件异常")
-                            .setMessage(fe.getMessage())
-                            .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
-                            .show();
+
+                            @Override
+                            public void onProgress(long uploadedSize, Notification.Builder notificationBuilder) {
+                                //每16次更新触发
+                                super.onProgress(uploadedSize, notificationBuilder);
+                                int uploadProgress = (int) (((float) uploadedSize / fileSize) * 100);
+                                notificationBuilder.setProgress(100, uploadProgress, false);
+                                notificationBuilder.setContentText("已上传" + uploadProgress + "%");
+                                notificationManager.notify(1, notificationBuilder.build());
+                            }
+                        }, fileSize, encryptionKey);
+                        //打开输入流捕捉
+                    } catch (FileNotFoundException | NullPointerException e) {
+                        new MaterialAlertDialogBuilder(getContext()).setTitle("打开文件异常")
+                                .setMessage(e.getMessage())
+                                .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
+                                .show();
+                    }
                 }
+            });
+            //整个方法
+        } catch (FileNotFoundException | NullPointerException fe) {
+            Log.i("main", "error", fe);
+            new MaterialAlertDialogBuilder(getContext()).setTitle("打开文件异常")
+                    .setMessage(fe.getMessage())
+                    .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
+                    .show();
         }
     }
 
@@ -330,9 +327,7 @@ public class TransmitFragment extends Fragment {
                         Toast.makeText(networkService, R.string.transmit_upload_failed_has_uploading_file, Toast.LENGTH_LONG).show();
                         return;
                     }
-                    Intent filePickerIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                    filePickerIntent.setType("*/*");
-                    startActivityForResult(filePickerIntent, ACTIVITY_RESULT_FILE_PICK);
+                    filePickerLauncher.launch(new String[]{"*/*"});
                 });
                 menuLayout.findViewById(R.id.uploadImageButtton).setOnClickListener(buttonView -> {
                     popupWindow.dismiss();
@@ -341,15 +336,7 @@ public class TransmitFragment extends Fragment {
                         Toast.makeText(networkService, R.string.transmit_upload_failed_has_uploading_file, Toast.LENGTH_LONG).show();
                         return;
                     }
-                    //安卓版本
-                    Intent intent;
-                    if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                        intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
-                    } else {
-                        intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                    }
-                    intent.setType("image/*");
-                    startActivityForResult(intent, ACTIVITY_RESULT_IMAGE_PICK);
+                    imagePickerLauncher.launch(new PickVisualMediaRequest());
 
                 });
                 popupWindow.showAsDropDown(binding.sendMoreButton, -(binding.sendMoreButton.getWidth() + 50), -(binding.sendMoreButton.getHeight() * 2));

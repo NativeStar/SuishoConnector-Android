@@ -11,11 +11,9 @@ public interface IConnectedActivityMethods {
     void showAlert(int title,int content,int buttonText);
     NewMainActivity getActivity();
     TransmitFragment getTransmitFragment();
-//    void showSnackBar();
     void showConnectingDialog();
     void closeConnectingDialog();
     void onConnected(String sessionId);
     void onDisconnect();
     void onNotificationListenerServiceConnect();
-    void requestMediaProjectionPermission();
 }

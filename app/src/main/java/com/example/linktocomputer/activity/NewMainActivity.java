@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.hardware.biometrics.BiometricPrompt;
-import android.media.projection.MediaProjectionManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkRequest;
 import android.net.wifi.WifiManager;
@@ -42,7 +41,6 @@ import com.example.linktocomputer.Util;
 import com.example.linktocomputer.abstracts.TransmitMessageAbstract;
 import com.example.linktocomputer.constant.States;
 import com.example.linktocomputer.databinding.ActivityConnectedBinding;
-import com.example.linktocomputer.enums.MainActivityResultEnum;
 import com.example.linktocomputer.enums.TransmitRecyclerAddItemType;
 import com.example.linktocomputer.fragment.TransmitFragment;
 import com.example.linktocomputer.instances.ComputerConfigManager;
@@ -453,14 +451,6 @@ public class NewMainActivity extends AppCompatActivity {
                             notificationStateText.setText(R.string.text_not_permission);
                         }
                     }
-
-                    @Override
-                    public void requestMediaProjectionPermission() {
-                        MediaProjectionManager manager = getActivity().getSystemService(MediaProjectionManager.class);
-                        Intent intent = manager.createScreenCaptureIntent();
-                        startActivityForResult(intent, MainActivityResultEnum.START_MEDIA_PROJECTION);
-                    }
-
                 });
                 //连接
                 if(networkService != null && !networkService.isConnected)
