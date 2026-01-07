@@ -107,8 +107,8 @@
     <string name="dialog_change_trust_mode_title">切换信任模式</string>
     <string name="dialog_change_trust_mode_message">将此计算机调整为:</string>
     <string name="dialog_change_trust_mode_message2">将影响使用通知转发 文件管理等</string>
-    <string name="service_mediaProjection_notification_title">媒体转发服务</string>
-    <string name="service_mediaProjection_notification_content">正在运行 通知用于保活</string>
+    <string name="service_mediaProjection_notification_title">音频转发服务</string>
+    <string name="service_mediaProjection_notification_content">音频转发正在运行</string>
     <string name="text_send_file_not_data">无法发送文件:数据异常</string>
 
     <string name="text_accessibility_label">远程控制服务</string>
