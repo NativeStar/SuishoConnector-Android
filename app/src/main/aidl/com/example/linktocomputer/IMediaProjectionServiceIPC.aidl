@@ -6,5 +6,6 @@ import android.content.Intent;
 interface IMediaProjectionServiceIPC {
     void run();
     void setScreenIntent(in Intent data);
+    void setEncryptData(String keyBase64, String ivBase64);
     void exit();
 }

@@ -589,6 +589,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                     projectionServiceIPC = IMediaProjectionServiceIPC.Stub.asInterface(service);
                                                     try {
                                                         projectionServiceIPC.setScreenIntent(mediaProjectionIntent);
+                                                        projectionServiceIPC.setEncryptData(jsonObj.key,jsonObj.iv);
                                                         projectionServiceIPC.run();
                                                     } catch (RemoteException e) {
                                                         mediaProjectionPacket.addProperty("result", false);
@@ -596,7 +597,6 @@ public class ConnectMainService extends Service implements INetworkService {
                                                         webSocketClient.send(mediaProjectionPacket.toString());
                                                     }
                                                 }
-
                                                 @Override
                                                 public void onServiceDisconnected(ComponentName name) {
                                                 }
@@ -611,7 +611,6 @@ public class ConnectMainService extends Service implements INetworkService {
                                             if(projectionServiceIPC != null) {
                                                 try {
                                                     projectionServiceIPC.exit();
-
                                                 } catch (RemoteException ignored) {
                                                 } finally {
                                                     mediaProjectionIntent = null;
@@ -700,7 +699,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             break;
                                     }
                                 } catch (JsonSyntaxException e) {
-                                    webSocketClient.close(ConnectionCloseCode.CloseFromClientError, "移动端异常:解析数据包失败");
+                                    webSocketClient.close(ConnectionCloseCode.CloseFromClientError, "解析数据包失败");
                                     Log.e("main", e.toString());
                                 } catch (IOException e) {
                                     //文件浏览模块开启异常 读证书报错

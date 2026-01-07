@@ -19,6 +19,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
+import android.util.Base64;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -36,6 +37,8 @@ public class MediaProjectionService extends Service {
     private boolean readyExit = false;
     private Intent screenIntent;
     private AudioRecord audioRecord;
+    private byte[] encryptKey;
+    private byte[] encryptIv;
     private final IMediaProjectionServiceIPC.Stub mediaProjectionServiceIPC = new IMediaProjectionServiceIPC.Stub() {
         @Override
         public void run() {
@@ -46,6 +49,12 @@ public class MediaProjectionService extends Service {
         @Override
         public void setScreenIntent(Intent data) throws RemoteException {
             screenIntent = data;
+        }
+
+        @Override
+        public void setEncryptData(String keyBase64, String ivBase64) throws RemoteException {
+            encryptKey = Base64.decode(keyBase64, Base64.DEFAULT);
+            encryptIv = Base64.decode(ivBase64, Base64.DEFAULT);
         }
 
         //关闭进程
@@ -68,7 +77,7 @@ public class MediaProjectionService extends Service {
                 stopForeground(true);
                 stopSelf();
                 Process.killProcess(Process.myPid());
-            },300);
+            }, 300);
         }
     };
 
@@ -98,6 +107,7 @@ public class MediaProjectionService extends Service {
             startAudioRecord(mediaProjection);
         }).start();
     }
+
     //编码部分是ai写的 玩不明白
     private void startAudioRecord(MediaProjection mediaProjection) {
         new Thread(() -> {
@@ -134,7 +144,7 @@ public class MediaProjectionService extends Service {
                         .setAudioPlaybackCaptureConfig(config)
                         .setBufferSizeInBytes(recordBufferSize)
                         .build();
-                if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
+                if(audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
                     Log.e("Media Projection Service", "AudioRecord initialization failed");
                     return;
                 }
@@ -157,15 +167,15 @@ public class MediaProjectionService extends Service {
                     try {
                         audioBuffer.clear();
                         int readLength = audioRecord.read(audioBuffer, readChunkSize, AudioRecord.READ_BLOCKING);
-                        
-                        if (readLength <= 0) {
+
+                        if(readLength <= 0) {
                             Log.w("Media Projection Service", "AudioRecord read returned: " + readLength);
                             continue;
                         }
                         int inputBufferIndex = mediaCodec.dequeueInputBuffer(10000);
-                        if (inputBufferIndex >= 0) {
+                        if(inputBufferIndex >= 0) {
                             ByteBuffer inputBuffer = mediaCodec.getInputBuffer(inputBufferIndex);
-                            if (inputBuffer != null) {
+                            if(inputBuffer != null) {
                                 inputBuffer.clear();
                                 // 正确设置audioBuffer的读取范围
                                 audioBuffer.position(0);
@@ -180,14 +190,14 @@ public class MediaProjectionService extends Service {
                         }
                         int outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 10000);
                         while (outputBufferIndex >= 0) {
-                            if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                            if((bufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
                                 mediaCodec.releaseOutputBuffer(outputBufferIndex, false);
                                 outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 0);
                                 continue;
                             }
-                            if (bufferInfo.size > 0) {
+                            if(bufferInfo.size > 0) {
                                 ByteBuffer outputBuffer = mediaCodec.getOutputBuffer(outputBufferIndex);
-                                if (outputBuffer != null) {
+                                if(outputBuffer != null) {
                                     outputBuffer.position(bufferInfo.offset);
                                     outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
                                     byte[] packetData = new byte[headerSize + bufferInfo.size];
@@ -220,14 +230,14 @@ public class MediaProjectionService extends Service {
                 Log.e("Media Projection Service", "Fatal error in audio recording", e);
             } finally {
                 try {
-                    if (audioRecord != null && audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+                    if(audioRecord != null && audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
                         audioRecord.stop();
                     }
-                    if (mediaCodec != null) {
+                    if(mediaCodec != null) {
                         mediaCodec.stop();
                         mediaCodec.release();
                     }
-                    if (socket != null && !socket.isClosed()) {
+                    if(socket != null && !socket.isClosed()) {
                         socket.close();
                     }
                 } catch (Exception e) {
