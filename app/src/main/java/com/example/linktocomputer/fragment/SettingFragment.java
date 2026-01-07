@@ -57,11 +57,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class SettingFragment extends PreferenceFragmentCompat {
-    //    private SharedPreferences sharedPreferences;
     private ActivityResultLauncher<Intent> pickDirectoryCallback;
 
     public SettingFragment() {
-        // Required empty public constructor
     }
 
     @Override
@@ -448,6 +446,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
             }
         }).start();
     }
+    //todo 关于页
 
     @Override
     public void onCreatePreferences(@Nullable Bundle savedInstanceState, String rootKey) {

@@ -1,6 +1,8 @@
 package com.example.linktocomputer.fragment;
 
 import android.app.Activity;
+import android.app.DownloadManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -8,6 +10,7 @@ import android.graphics.Rect;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
@@ -400,10 +403,21 @@ public class HomeFragment extends Fragment {
                 new MaterialAlertDialogBuilder(getActivity())
                         .setTitle(getActivity().getResources().getString(R.string.text_connect_failed))
                         .setMessage(getActivity().getResources().getString(R.string.dialog_scanned_wrong_qrcode))
-                        .setPositiveButton(R.string.text_ok, (dialog, which) -> {
+                        .setPositiveButton(R.string.text_open_in_browser, (dialog, which) -> {
                             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(content));
                             startActivity(intent);
                         }).setNegativeButton(R.string.text_cancel, (dialog, which) -> dialog.dismiss())
+                        .setNeutralButton(R.string.text_direct_download,(dialog, which)->{
+                            DownloadManager downloadManager = (DownloadManager) getActivity().getSystemService(Context.DOWNLOAD_SERVICE);
+                            //下载地址和访问地址不一样 替换
+                            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(content.replace("suishoPkgDownload","dlPackage")));
+                            request.setTitle(getString(R.string.app_name));
+                            request.setDescription(getString(R.string.direct_download_desc));
+                            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "SuishoConnectorPackage.apk");
+                            request.setMimeType("application/vnd.android.package-archive");
+                            downloadManager.enqueue(request);
+                        })
                         .setCancelable(false)
                         .show();
                 return;
