@@ -39,10 +39,16 @@ public class MediaProjectionService extends Service {
     private AudioRecord audioRecord;
     private byte[] encryptKey;
     private byte[] encryptIv;
+    private String audioTargetAddress;
     private final IMediaProjectionServiceIPC.Stub mediaProjectionServiceIPC = new IMediaProjectionServiceIPC.Stub() {
         @Override
         public void run() {
             start();
+        }
+
+        @Override
+        public void setTargetAddress(String targetAddress) throws RemoteException {
+            audioTargetAddress = targetAddress;
         }
 
         //设置投屏intent
@@ -155,7 +161,7 @@ public class MediaProjectionService extends Service {
                 format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, readChunkSize);
                 mediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
                 mediaCodec.start();
-                final InetAddress targetAddress = InetAddress.getByName("192.168.3.10");
+                final InetAddress targetAddress = InetAddress.getByName(audioTargetAddress);
                 audioRecord.startRecording();
                 ByteBuffer audioBuffer = ByteBuffer.allocateDirect(readChunkSize);
                 MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
