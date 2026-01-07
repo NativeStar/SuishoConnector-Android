@@ -33,6 +33,10 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 public class MediaProjectionService extends Service {
     private boolean readyExit = false;
     private Intent screenIntent;
@@ -121,6 +125,11 @@ public class MediaProjectionService extends Service {
             DatagramSocket socket = null;
             MediaCodec mediaCodec = null;
             try {
+                if(encryptKey == null || encryptIv == null || encryptKey.length != 16 || encryptIv.length != 12) {
+                    Log.e("Media Projection Service", "Invalid encrypt key/iv, refuse to start audio forward");
+                    Process.killProcess(Process.myPid());
+                    return;
+                }
                 if(checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                     Log.w("Media Projection Service", "No RECORD_AUDIO permission");
                     Process.killProcess(Process.myPid());
@@ -166,14 +175,21 @@ public class MediaProjectionService extends Service {
                 ByteBuffer audioBuffer = ByteBuffer.allocateDirect(readChunkSize);
                 MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
                 int seq = 0;
-                final int headerSize = 4 + 4 + 8; // magic + seq + ptsUs
-                final int magic = 0x41463031; // "AF01"
+                long nonceCounter = 0;
+                final int headerSize = 4 + 4 + 8 + 8; // magic + seq + ptsUs + nonceCtr
+                final int magic = 0x41463032; // "AF02"
                 final ByteOrder headerOrder = ByteOrder.BIG_ENDIAN;
+                final Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+                final SecretKeySpec keySpec = new SecretKeySpec(encryptKey, "AES");
+                final byte[] nonce = new byte[12];
+                final int tagSize = 16;
+                byte[] plainBuffer = new byte[1024];
+                byte[] packetData = new byte[headerSize + 1024 + tagSize];
+                ByteBuffer header = ByteBuffer.wrap(packetData).order(headerOrder);
                 while (!readyExit) {
                     try {
                         audioBuffer.clear();
                         int readLength = audioRecord.read(audioBuffer, readChunkSize, AudioRecord.READ_BLOCKING);
-
                         if(readLength <= 0) {
                             Log.w("Media Projection Service", "AudioRecord read returned: " + readLength);
                             continue;
@@ -206,13 +222,35 @@ public class MediaProjectionService extends Service {
                                 if(outputBuffer != null) {
                                     outputBuffer.position(bufferInfo.offset);
                                     outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
-                                    byte[] packetData = new byte[headerSize + bufferInfo.size];
-                                    ByteBuffer header = ByteBuffer.wrap(packetData).order(headerOrder);
+                                    final int plainSize = bufferInfo.size;
+                                    if(plainBuffer.length < plainSize) {
+                                        plainBuffer = new byte[plainSize];
+                                    }
+                                    outputBuffer.get(plainBuffer, 0, plainSize);
+                                    final long ctr = nonceCounter++;
+                                    final int packetSize = headerSize + plainSize + tagSize;
+                                    if(packetData.length < packetSize) {
+                                        packetData = new byte[packetSize];
+                                        header = ByteBuffer.wrap(packetData).order(headerOrder);
+                                    }
+                                    header.position(0);
                                     header.putInt(magic);
                                     header.putInt(seq++);
                                     header.putLong(bufferInfo.presentationTimeUs);
-                                    outputBuffer.get(packetData, headerSize, bufferInfo.size);
-                                    DatagramPacket packet = new DatagramPacket(packetData, packetData.length, targetAddress, 8899);
+                                    header.putLong(ctr);
+                                    System.arraycopy(encryptIv, 0, nonce, 0, 12);
+                                    nonce[4] = (byte) (encryptIv[4] ^ ((ctr >>> 56) & 0xFF));
+                                    nonce[5] = (byte) (encryptIv[5] ^ ((ctr >>> 48) & 0xFF));
+                                    nonce[6] = (byte) (encryptIv[6] ^ ((ctr >>> 40) & 0xFF));
+                                    nonce[7] = (byte) (encryptIv[7] ^ ((ctr >>> 32) & 0xFF));
+                                    nonce[8] = (byte) (encryptIv[8] ^ ((ctr >>> 24) & 0xFF));
+                                    nonce[9] = (byte) (encryptIv[9] ^ ((ctr >>> 16) & 0xFF));
+                                    nonce[10] = (byte) (encryptIv[10] ^ ((ctr >>> 8) & 0xFF));
+                                    nonce[11] = (byte) (encryptIv[11] ^ (ctr & 0xFF));
+                                    cipher.init(Cipher.ENCRYPT_MODE, keySpec, new GCMParameterSpec(128, nonce));
+                                    cipher.updateAAD(packetData, 0, headerSize);
+                                    final int encryptedLen = cipher.doFinal(plainBuffer, 0, plainSize, packetData, headerSize);
+                                    DatagramPacket packet = new DatagramPacket(packetData, headerSize + encryptedLen, targetAddress, 26010);
                                     socket.send(packet);
                                 }
                             } else {

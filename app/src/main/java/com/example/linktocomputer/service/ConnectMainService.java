@@ -588,6 +588,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 public void onServiceConnected(ComponentName name, IBinder service) {
                                                     projectionServiceIPC = IMediaProjectionServiceIPC.Stub.asInterface(service);
                                                     try {
+                                                        projectionServiceIPC.setTargetAddress(computerAddress);
                                                         projectionServiceIPC.setScreenIntent(mediaProjectionIntent);
                                                         projectionServiceIPC.setEncryptData(jsonObj.key,jsonObj.iv);
                                                         projectionServiceIPC.run();
