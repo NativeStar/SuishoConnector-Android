@@ -147,8 +147,9 @@ public class MediaProjectionService extends Service {
                 // 以较小的读取块降低采集链路延迟（20ms @ 48kHz, stereo, 16-bit -> 3840 bytes）
                 final int readChunkSize = 3840;
                 int minRecordBufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-                int recordBufferSize = Math.max(minRecordBufferSize, readChunkSize * 2);
-                recordBufferSize = Math.max(recordBufferSize, 4096);
+                // 录音缓冲尽量贴近最小值，并按 readChunkSize 向上对齐，避免额外引入固定延迟
+                int recordBufferSize = Math.max(minRecordBufferSize, readChunkSize);
+                recordBufferSize = ((recordBufferSize + readChunkSize - 1) / readChunkSize) * readChunkSize;
                 AudioFormat audioFormat = new AudioFormat.Builder()
                         .setChannelMask(AudioFormat.CHANNEL_IN_STEREO)
                         .setSampleRate(sampleRate)
