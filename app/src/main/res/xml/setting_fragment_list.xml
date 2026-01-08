@@ -69,5 +69,9 @@
             android:key="key_export_crash_logs"
             android:summary="将崩溃日志打包导出"
             android:title="导出崩溃日志"/>
+        <Preference
+            android:icon="@drawable/outline_info_24"
+            android:key="key_about"
+            android:title="关于" />
     </PreferenceCategory>
 </androidx.preference.PreferenceScreen>

@@ -884,7 +884,7 @@ public class ConnectMainService extends Service implements INetworkService {
         PendingIntent notificationBodyPendingIntent = PendingIntent.getActivity(activity, 126, notificationBodyIntent, PendingIntent.FLAG_IMMUTABLE);
         Intent notificationButtonIntent = new Intent("close_connection");
         PendingIntent notificationButtonPendingIntent = PendingIntent.getBroadcast(this, 127, notificationButtonIntent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_ONE_SHOT);
-        nBuilder.setSmallIcon(R.drawable.ic_launcher_foreground)
+        nBuilder.setSmallIcon(R.mipmap.ic_launcher_foreground)
                 .setContentTitle(getText(R.string.service_notification_title))
                 .setContentText(getText(R.string.service_notification_content))
                 .setWhen(System.currentTimeMillis())

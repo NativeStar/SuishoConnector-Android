@@ -177,7 +177,7 @@ public class TransmitUploadFile {
                 .setAutoCancel(false)
                 .setContentTitle("文件上传中...")
                 .setContentText("请等待上传完成")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setProgress(100,0,false);
         notificationBuilder=builder;
         notificationManager.notify(NotificationID.NOTIFICATION_TRANSMIT_UPLOAD_FILE, notificationBuilder.build());

@@ -185,7 +185,7 @@ public class TransmitDownloadFile {
                 .setAutoCancel(false)
                 .setContentTitle("文件接收中...")
                 .setContentText("请在PC端查看接收进度")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setProgress(100,0,true);
         notificationManager.notify(NotificationID.NOTIFICATION_TRANSMIT_DOWNLOAD_FILE,builder.build());
     }

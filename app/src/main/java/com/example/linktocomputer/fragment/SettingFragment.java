@@ -10,6 +10,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.UriPermission;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.hardware.biometrics.BiometricPrompt;
 import android.net.Uri;
@@ -21,6 +22,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
@@ -67,6 +69,22 @@ public class SettingFragment extends PreferenceFragmentCompat {
         super.onCreate(savedInstanceState);
         //底部弹窗布局
         View trustDeviceManagerDialogLayout = getLayoutInflater().inflate(R.layout.bottom_trust_device_manager, null);
+        View aboutDialogLayout = getLayoutInflater().inflate(R.layout.bottom_about_layout, null);
+        aboutDialogLayout.findViewById(R.id.project_url_button).setOnClickListener(v->{
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse("https://github.com/NativeStar/SuishoConnector-Android"));
+            startActivity(intent);
+        });
+        //版本名称
+        try {
+            PackageManager packageManager = getActivity().getPackageManager();
+            PackageInfo pkgInfo = packageManager.getPackageInfo(getActivity().getPackageName(), 0);
+            String versionName = pkgInfo.versionName;
+            String versionCode = String.valueOf(pkgInfo.getLongVersionCode());
+            String finalDisplayName = String.format("%s(%s)",versionName, versionCode);
+            ((TextView)aboutDialogLayout.findViewById(R.id.versionNameText)).setText(finalDisplayName);
+        } catch (Exception ignore) {
+        }
         //设备列表view
         RecyclerView trustedDeviceRecyclerView = trustDeviceManagerDialogLayout.findViewById(R.id.trusted_device_list_recycler_view);
         pickDirectoryCallback = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback() {
@@ -310,6 +328,14 @@ public class SettingFragment extends PreferenceFragmentCompat {
                     .show();
             return true;
         }));
+        findPreference("key_about").setOnPreferenceClickListener((v) -> {
+            BottomSheetDialog aboutSheetDialog = new BottomSheetDialog(getActivity());
+            aboutSheetDialog.setContentView(aboutDialogLayout);
+            aboutSheetDialog.setCanceledOnTouchOutside(true);
+            aboutSheetDialog.setOnDismissListener(dialog -> ((ViewGroup) aboutDialogLayout.getParent()).removeAllViews());
+            aboutSheetDialog.show();
+            return true;
+        });
         try {
             initLaunchVerifySwitch();
         } catch (Exception e) {
@@ -446,7 +472,6 @@ public class SettingFragment extends PreferenceFragmentCompat {
             }
         }).start();
     }
-    //todo 关于页
 
     @Override
     public void onCreatePreferences(@Nullable Bundle savedInstanceState, String rootKey) {

@@ -99,7 +99,7 @@ public class MediaProjectionService extends Service {
 
     private void start() {
         Notification.Builder nBuilder = new Notification.Builder(getApplicationContext(), "MainServiceNotification");
-        nBuilder.setSmallIcon(R.drawable.ic_launcher_foreground)
+        nBuilder.setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(getText(R.string.service_mediaProjection_notification_title))
                 .setContentText(getText(R.string.service_mediaProjection_notification_content))
                 .setWhen(System.currentTimeMillis())

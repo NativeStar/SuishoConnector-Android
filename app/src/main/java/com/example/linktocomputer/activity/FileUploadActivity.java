@@ -222,7 +222,7 @@ public class FileUploadActivity extends Activity {
                 } catch (FileNotFoundException e) {
                     if(FileUploadActivity.this.isDestroyed()) return;
                     Notification.Builder builder = new Notification.Builder(FileUploadActivity.this, "fileUploadProgress");
-                    builder.setSmallIcon(R.drawable.ic_launcher_foreground)
+                    builder.setSmallIcon(R.mipmap.ic_launcher)
                             .setContentTitle("文件上传失败")
                             .setContentText(name + "上传失败")
                             .setWhen(System.currentTimeMillis())
