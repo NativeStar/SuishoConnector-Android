@@ -143,7 +143,7 @@ public class MediaProjectionService extends Service {
                         .build();
                 final int sampleRate = 48000;
                 final int channelCount = 2;
-                final int bitRate = 196000;
+                final int bitRate = 128000;
                 // 以较小的读取块降低采集链路延迟（20ms @ 48kHz, stereo, 16-bit -> 3840 bytes）
                 final int readChunkSize = 3840;
                 int minRecordBufferSize = AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
@@ -169,6 +169,8 @@ public class MediaProjectionService extends Service {
                 MediaFormat format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_OPUS, sampleRate, channelCount);
                 format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
                 format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, readChunkSize);
+                format.setInteger(MediaFormat.KEY_LATENCY, 0);
+                format.setInteger(MediaFormat.KEY_COMPLEXITY, 2);
                 mediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
                 mediaCodec.start();
                 final InetAddress targetAddress = InetAddress.getByName(audioTargetAddress);
