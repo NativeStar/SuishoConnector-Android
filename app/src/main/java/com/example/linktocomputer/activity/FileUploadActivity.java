@@ -31,12 +31,17 @@ import com.example.linktocomputer.service.ConnectMainService;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.gson.JsonObject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 public class FileUploadActivity extends Activity {
     private NotificationManager notificationManager;
+    private final Logger logger = LoggerFactory.getLogger(FileUploadActivity.class);
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +50,7 @@ public class FileUploadActivity extends Activity {
         //连接判断
         if(GlobalVariables.computerConfigManager == null || !GlobalVariables.computerConfigManager.getNetworkService().isConnected) {
             Toast.makeText(this, R.string.text_need_connect_first, Toast.LENGTH_LONG).show();
+            logger.debug("Computer not connected");
             finish();
             return;
         }
@@ -53,18 +59,23 @@ public class FileUploadActivity extends Activity {
         if(checkFromSelf(intent)) {
             Toast.makeText(this, R.string.text_send_file_from_self, Toast.LENGTH_LONG).show();
             finish();
+            logger.debug("Blocked file upload from self");
             return;
         }
         if(intent.getAction().equals(Intent.ACTION_SEND)) {
             if(intent.getStringExtra(Intent.EXTRA_TEXT) != null) {
                 confirmSendText(intent.getStringExtra(Intent.EXTRA_TEXT));
+                logger.debug("Show text send confirm dialog");
                 return;
             }
+            logger.debug("Show file send confirm dialog with ACTION_SEND");
             checkFile(intent.getParcelableExtra(Intent.EXTRA_STREAM));
         } else if(intent.getAction().equals(Intent.ACTION_VIEW)) {
+            logger.debug("Show file send confirm dialog with ACTION_VIEW");
             checkFile(intent.getData());
         } else {
             Toast.makeText(this, "不支持的操作", Toast.LENGTH_LONG).show();
+            logger.info("Unsupported action:{}", intent.getAction());
             finish();
         }
     }
@@ -95,6 +106,7 @@ public class FileUploadActivity extends Activity {
         //以防万一 以及修复一个奇怪的bug
         if(data == null || data.getAuthority().contains("com.android.calendar")) {
             Toast.makeText(this, R.string.text_send_file_not_data, Toast.LENGTH_LONG).show();
+            logger.info("Invalid data");
             finish();
             return;
         }
@@ -105,6 +117,7 @@ public class FileUploadActivity extends Activity {
                 if(cursor == null || pickFile == null) {
                     runOnUiThread(() -> {
                         Toast.makeText(this, R.string.text_send_file_not_data, Toast.LENGTH_LONG).show();
+                        logger.warn("Failed to send file because cursor or fd is null");
                         finish();
                     });
                     return;
@@ -115,12 +128,15 @@ public class FileUploadActivity extends Activity {
                 if(fileSize == -1) {
                     runOnUiThread(() -> {
                         Toast.makeText(this, R.string.text_send_file_not_data, Toast.LENGTH_LONG).show();
+                        logger.warn("Failed to send file because invalid file size");
                         finish();
                     });
                     return;
                 }
                 String fileName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
                 cursor.close();
+                logger.debug("File name:{}. File size:{}", fileName,fileSize);
+                logger.debug("Show upload file confirm dialog");
                 runOnUiThread(() -> {
                     new MaterialAlertDialogBuilder(this)
                             .setTitle(R.string.text_send_file)

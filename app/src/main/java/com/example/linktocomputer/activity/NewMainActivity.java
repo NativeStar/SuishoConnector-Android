@@ -57,6 +57,9 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.JsonObject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -98,11 +101,13 @@ public class NewMainActivity extends AppCompatActivity {
     private final int[] navigationIds = {R.id.connected_activity_navigation_bar_menu_home, R.id.connected_activity_navigation_bar_menu_transmit, R.id.connected_activity_navigation_bar_menu_setting};
     public AutoConnector autoConnector;
     private boolean autoConnectorWorked = false;
-
+    private final Logger logger = LoggerFactory.getLogger(NewMainActivity.class);
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        logger.debug("onCreate Test debug");
+        logger.info("onCreate Test info");
         binding = ActivityConnectedBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         //状态提示
@@ -113,7 +118,7 @@ public class NewMainActivity extends AppCompatActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         //设置
         GlobalVariables.settings = getSharedPreferences("settings", MODE_PRIVATE);
-        GlobalVariables.preferences = getSharedPreferences(getPackageName() + "_preferences", MODE_PRIVATE);
+//        GlobalVariables.preferences = getSharedPreferences(getPackageName() + "_preferences", MODE_PRIVATE);
         //将id设为全局变量
         GlobalVariables.androidId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         //初始化viewpager

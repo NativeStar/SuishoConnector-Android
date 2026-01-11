@@ -64,6 +64,13 @@
             android:title="保存传输记录" />
     </PreferenceCategory>
     <PreferenceCategory android:title="杂项">
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:icon="@drawable/baseline_bug_report_24"
+            android:key="enable_debug_log"
+            android:summary="可能影响性能 建议仅在需要反馈异常时使用(重启后生效)"
+            android:title="开启调试日志" />
+        <!--   TODO 改成导出所有日志     -->
         <Preference
             android:icon="@drawable/baseline_bug_report_24"
             android:key="key_export_crash_logs"

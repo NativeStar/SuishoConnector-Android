@@ -12,22 +12,30 @@ import com.example.linktocomputer.database.MyObjectBox;
 import com.example.linktocomputer.enums.ConnectionCloseCode;
 import com.google.android.material.color.DynamicColors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import io.objectbox.BoxStore;
 
 public class Crystal extends Application {
     private BoxStore database;
+    private Logger logger;
 
     @Override
     public void onCreate() {
         super.onCreate();
+        initLogger();
         applyDynamicColorsIfAvailable();
         initDatabase();
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> new Thread(() -> {
+            logger.error("Fatal error!!!", e);
             if(NewMainActivity.networkService != null && NewMainActivity.networkService.isConnected) {
                 NewMainActivity.networkService.disconnect(ConnectionCloseCode.CloseFromClientCrash, null);
                 //停止音频转发
@@ -38,8 +46,6 @@ public class Crystal extends Application {
                     }
                 }
             }
-//            Intent audioProjectionServiceIntent=new Intent(this, MediaProjectionService.class);
-//            stopService(audioProjectionServiceIntent);
             File logDir = new File(getDataDir() + "/files/crash/");
             logDir.mkdirs();
             File logFile = new File(getDataDir() + "/files/crash/" + System.currentTimeMillis() + ".log");
@@ -49,6 +55,7 @@ public class Crystal extends Application {
                 fileWriter.write("OEM:" + Build.BRAND + "\n");
                 fileWriter.write("Model:" + Build.MODEL + "\n");
                 fileWriter.write("SDK version:" + Build.VERSION.SDK_INT + "\n");
+                fileWriter.write("App version:" + BuildConfig.VERSION_NAME + "-" + BuildConfig.VERSION_CODE + "\n");
                 fileWriter.write("----------CRASH LOG HEADER END----------\n");
                 PrintWriter printWriter = new PrintWriter(fileWriter);
                 e.printStackTrace(printWriter);
@@ -79,8 +86,27 @@ public class Crystal extends Application {
         try {
             if(DynamicColors.isDynamicColorAvailable()) {
                 DynamicColors.applyToActivitiesIfAvailable(this);
+                logger.debug("Dynamic colors applied");
+                return;
             }
-        } catch (Throwable ignored) {
+            logger.debug("Dynamic colors unavailable");
+        } catch (Throwable error) {
+            logger.error("Dynamic colors apply crash", error);
         }
+    }
+
+    private void initLogger() {
+        GlobalVariables.preferences = getSharedPreferences(getPackageName() + "_preferences", MODE_PRIVATE);
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        ch.qos.logback.classic.Logger settingLevelLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
+        boolean enableDebugLog = GlobalVariables.preferences.getBoolean("enable_debug_log", false);
+        settingLevelLogger.setLevel(enableDebugLog ? Level.DEBUG : Level.INFO);
+        logger = LoggerFactory.getLogger(Crystal.class);
+        logger.info("Application init");
+        String infoStr = "\nOEM:" + Build.BRAND + "\n" +
+                "Model:" + Build.MODEL + "\n" +
+                "SDK version:" + Build.VERSION.SDK_INT + "\n" +
+                "App version:" + BuildConfig.VERSION_NAME + "-" + BuildConfig.VERSION_CODE + "\n";
+        logger.info(infoStr);
     }
 }

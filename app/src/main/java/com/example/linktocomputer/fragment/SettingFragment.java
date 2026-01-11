@@ -10,7 +10,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.UriPermission;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.hardware.biometrics.BiometricPrompt;
 import android.net.Uri;
@@ -35,6 +34,7 @@ import androidx.preference.SwitchPreferenceCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.linktocomputer.BuildConfig;
 import com.example.linktocomputer.GlobalVariables;
 import com.example.linktocomputer.R;
 import com.example.linktocomputer.activity.NewMainActivity;
@@ -70,21 +70,14 @@ public class SettingFragment extends PreferenceFragmentCompat {
         //底部弹窗布局
         View trustDeviceManagerDialogLayout = getLayoutInflater().inflate(R.layout.bottom_trust_device_manager, null);
         View aboutDialogLayout = getLayoutInflater().inflate(R.layout.bottom_about_layout, null);
-        aboutDialogLayout.findViewById(R.id.project_url_button).setOnClickListener(v->{
+        aboutDialogLayout.findViewById(R.id.project_url_button).setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setData(Uri.parse("https://github.com/NativeStar/SuishoConnector-Android"));
             startActivity(intent);
         });
         //版本名称
-        try {
-            PackageManager packageManager = getActivity().getPackageManager();
-            PackageInfo pkgInfo = packageManager.getPackageInfo(getActivity().getPackageName(), 0);
-            String versionName = pkgInfo.versionName;
-            String versionCode = String.valueOf(pkgInfo.getLongVersionCode());
-            String finalDisplayName = String.format("%s(%s)",versionName, versionCode);
-            ((TextView)aboutDialogLayout.findViewById(R.id.versionNameText)).setText(finalDisplayName);
-        } catch (Exception ignore) {
-        }
+        String finalDisplayName = String.format("%s(%s)", BuildConfig.VERSION_NAME, String.valueOf(BuildConfig.VERSION_CODE));
+        ((TextView) aboutDialogLayout.findViewById(R.id.versionNameText)).setText(finalDisplayName);
         //设备列表view
         RecyclerView trustedDeviceRecyclerView = trustDeviceManagerDialogLayout.findViewById(R.id.trusted_device_list_recycler_view);
         pickDirectoryCallback = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback() {
