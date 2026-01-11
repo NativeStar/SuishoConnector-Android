@@ -59,6 +59,7 @@
     <string name="text_copy_free">自由选择</string>
     <string name="text_delete">删除</string>
     <string name="text_multiple_choice">多选</string>
+    <string name="error_camera_init">初始化相机失败!</string>
     <string name="text_share">分享</string>
     <string name="text_ssl_verify_error">SSL验证失败 双端证书不匹配 请尝试清理手机端证书后重试</string>
     <string name="text_running">运行中</string>

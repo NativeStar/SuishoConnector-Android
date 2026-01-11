@@ -11,7 +11,6 @@ import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -50,6 +49,9 @@ import com.journeyapps.barcodescanner.camera.CameraManager;
 import com.journeyapps.barcodescanner.camera.CameraSettings;
 import com.journeyapps.barcodescanner.camera.PreviewCallback;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -63,7 +65,7 @@ public class HomeFragment extends Fragment {
     //二维码检测线程
     private Thread detectThread;
     private final String ipAddressRegexp = "^(((25[0-5]|2[0-4]d|((1\\d{2})|([1-9]?\\d)))\\.){3}(25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d))))$";
-
+    private final Logger logger = LoggerFactory.getLogger(HomeFragment.class);
 
     public HomeFragment() {
     }
@@ -72,10 +74,12 @@ public class HomeFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mediaProjectionRequestCallback = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            logger.debug("Media project permission callback result");
             //防止没连上
             if(NewMainActivity.networkService!=null&&NewMainActivity.networkService.isConnected) {
                 Intent data = result.getData();
                 if(data == null) return;
+                logger.info("Set media projection callback intent");
                 NewMainActivity.networkService.setMediaProjectionIntent(data);
                 binding.cardTextMediaProjectionMode.setText(R.string.text_authorized);
             }
@@ -85,8 +89,6 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-//         检查保活
-//        ((NewMainActivity) getActivity()).checkKeepAlivePermissionAndShowTips();
     }
 
     @Override
@@ -105,6 +107,7 @@ public class HomeFragment extends Fragment {
     public void setAutoConnecting(boolean autoConnecting) {
         //偶尔的空指针
         if(!viewInitialized) return;
+        logger.debug("Update auto connection state display");
         binding.cardConnectionStateIcon.setImageResource(autoConnecting ? R.drawable.baseline_cell_tower_24 : R.drawable.baseline_signal_cellular_off_24);
         binding.cardTextConnectionStateSubtitle.setText(autoConnecting ? R.string.connection_auto_mode : R.string.text_connection_state_subtitle_not_connect);
     }
@@ -116,6 +119,7 @@ public class HomeFragment extends Fragment {
         //卡片内连接按钮
         binding.buttonConnectMethodQrcode.setOnClickListener(v -> {
             if(!(getActivity().checkSelfPermission("android.permission.CAMERA") == PackageManager.PERMISSION_GRANTED)) {
+                logger.info("Not camera permission,Show request dialog");
                 new MaterialAlertDialogBuilder(getActivity()).setMessage(R.string.permission_scanCode_camera_message).setTitle(R.string.permission_request_alert_title).setPositiveButton(R.string.text_ok, (dialog, which) -> {
                     requestPermissions(new String[]{"android.permission.CAMERA"}, 1);
                 }).setNegativeButton(R.string.text_cancel, (dialog, which) -> dialog.cancel()).show();
@@ -134,10 +138,12 @@ public class HomeFragment extends Fragment {
             //停止接收广播 避免一堆bug
             NewMainActivity newMainActivity = (NewMainActivity) activity;
             if(newMainActivity.autoConnector != null) {
+                logger.info("Stop auto connect listener by QRCode scanner");
                 newMainActivity.autoConnector.stopListener();
                 setAutoConnecting(false);
             }
             //拉起相机view
+            logger.info("Show QRCode scan view");
             cameraManager = new CameraManager(activity);
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(getActivity());
             View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_qrcode_scan, getActivity().findViewById(R.id.coordinatorLayout3), false);
@@ -145,6 +151,7 @@ public class HomeFragment extends Fragment {
             surfaceHolder.addCallback(new SurfaceHolder.Callback() {
                 @Override
                 public void surfaceCreated(@NonNull SurfaceHolder holder) {
+                    logger.debug("Camera surface created.Init camera");
                     CameraSettings settings = new CameraSettings();
                     settings.setBarcodeSceneModeEnabled(false);
                     settings.setAutoFocusEnabled(true);
@@ -169,7 +176,9 @@ public class HomeFragment extends Fragment {
                         cameraManager.setPreviewDisplay(holder);
                     } catch (IOException | NoSuchMethodException | IllegalAccessException |
                              InvocationTargetException e) {
-                        throw new RuntimeException(e);
+                        logger.error("Error when init camera", e);
+                        bottomSheetDialog.cancel();
+                        Snackbar.make(binding.getRoot(), R.string.error_camera_init, 2000).show();
                     }
                 }
 
@@ -179,6 +188,7 @@ public class HomeFragment extends Fragment {
 
                 @Override
                 public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+                    logger.debug("Camera surface destroyed");
                     cameraManager.stopPreview();
                     cameraManager.close();
                 }
@@ -186,10 +196,12 @@ public class HomeFragment extends Fragment {
             bottomSheetDialog.setContentView(bottomSheetView);
             bottomSheetDialog.setCanceledOnTouchOutside(true);
             bottomSheetDialog.setOnCancelListener(dialog -> {
+                logger.debug("QRCode scan view cancelled");
                 cameraManager.stopPreview();
                 cameraManager.close();
             });
             bottomSheetDialog.setOnDismissListener(dialog -> {
+                logger.debug("QRCode scan view dismissed");
                 cameraManager.stopPreview();
                 cameraManager.close();
             });
@@ -198,8 +210,10 @@ public class HomeFragment extends Fragment {
         //调试
         binding.cardConnectionStateIcon.setOnClickListener(v1 -> {
             if(0 == (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE)) {
+                logger.debug("Not debug mode,Ignore debug menu create");
                 return;
             }
+            logger.debug("Show debug menu");
             new MaterialAlertDialogBuilder(getActivity())
                     .setItems(new CharSequence[]{
                             "Edit desktop client state",
@@ -208,7 +222,6 @@ public class HomeFragment extends Fragment {
                             "Edit state"
                     }, (dialog, which) -> {
                         dialog.dismiss();
-                        Log.d("main", String.valueOf(which));
                         if(which == 0) {
                             EditText editText = new EditText(getActivity());
                             editText.setHint("State id");
@@ -266,23 +279,28 @@ public class HomeFragment extends Fragment {
             //关闭广播
             NewMainActivity newMainActivity = (NewMainActivity) getActivity();
             if(newMainActivity.autoConnector != null) {
+                logger.debug("Stop auto connect listener by manual connect");
                 newMainActivity.autoConnector.stopListener();
                 setAutoConnecting(false);
             }
+            logger.debug("Show address input dialog");
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(getActivity());
             View bottomSheetView = getLayoutInflater().inflate(R.layout.connect_input_address_bottom_sheet, getActivity().findViewById(R.id.coordinatorLayout3), false);
             bottomSheetView.findViewById(R.id.bottom_sheet_address_connect_button).setOnClickListener(callback -> {
                 String userInputIP = ((TextInputEditText) bottomSheetView.findViewById(R.id.urlInput)).getText().toString();
                 String userInputPort = ((TextInputEditText) bottomSheetView.findViewById(R.id.portInput)).getText().toString();
                 String userInputPairCode = ((TextInputEditText) bottomSheetView.findViewById(R.id.pairCodeInput)).getText().toString();
+                logger.debug("User input ip: " + userInputIP + " port: " + userInputPort + " pairCode: " + userInputPairCode);
                 if(userInputIP.isEmpty()) {
                     //设置提示内容并给予输入框焦点
+                    logger.debug("IP input empty");
                     ((TextInputEditText) bottomSheetView.findViewById(R.id.urlInput)).setError(getText(R.string.error_emptyInput_pleaseInputAddressHere));
                     bottomSheetView.findViewById(R.id.urlInput).requestFocus();
                     return;
                 }
                 //判断是否符合格式要求
                 if(!Pattern.matches(ipAddressRegexp, userInputIP)) {
+                    logger.debug("IP input invalid");
                     ((TextInputEditText) bottomSheetView.findViewById(R.id.urlInput)).setError(getText(R.string.ipAddressInput_invalid));
                     bottomSheetView.findViewById(R.id.urlInput).requestFocus();
                     return;
@@ -290,12 +308,14 @@ public class HomeFragment extends Fragment {
                 //端口号合规性
                 try {
                     if(Integer.parseInt(userInputPort) > 65535) {
+                        logger.debug("Port input invalid(too large)");
                         ((TextInputEditText) bottomSheetView.findViewById(R.id.portInput)).setError(getText(R.string.portInput_invalid));
                         ((TextInputEditText) bottomSheetView.findViewById(R.id.portInput)).setText("");
                         bottomSheetView.findViewById(R.id.portInput).requestFocus();
                         return;
                     }
                 } catch (NumberFormatException exception) {
+                    logger.debug("Port input invalid(not number)");
                     /*当输入为空字符串时触发*/
                     ((TextInputEditText) bottomSheetView.findViewById(R.id.portInput)).setError(getText(R.string.portInput_invalid));
                     ((TextInputEditText) bottomSheetView.findViewById(R.id.portInput)).setText("");
@@ -304,6 +324,7 @@ public class HomeFragment extends Fragment {
                 }
                 //配对码
                 if(userInputPairCode.length() != 6) {
+                    logger.debug("Pair code input invalid");
                     ((TextInputEditText) bottomSheetView.findViewById(R.id.pairCodeInput)).setError(getText(R.string.pairCodeInput_invalid));
                     bottomSheetView.findViewById(R.id.pairCodeInput).requestFocus();
                     return;
@@ -323,7 +344,9 @@ public class HomeFragment extends Fragment {
             if(activity == null || !activity.isServerConnected()) {
                 return;
             }
+            logger.info("Show change trust mode dialog");
             boolean trusted = GlobalVariables.computerConfigManager.isTrustedComputer();
+            logger.debug("Computer current is trusted: {}", trusted);
             //构建对话框消息
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append(activity.getResources().getString(R.string.dialog_change_trust_mode_message));
@@ -338,6 +361,7 @@ public class HomeFragment extends Fragment {
                     })
                     .setPositiveButton(R.string.text_ok, (dialog, which) -> {
                         GlobalVariables.computerConfigManager.changeTrustMode();
+                        logger.debug("Change trust mode to {}", !trusted);
                         activity.showConnectedState();
                     }).show();
         });
@@ -349,17 +373,19 @@ public class HomeFragment extends Fragment {
                 return;
             }
             if(networkService.getMediaProjectionServiceIntent() != null) {
+                logger.debug("Already has media projection permission");
                 Snackbar.make(binding.getRoot(), R.string.text_authorized, Snackbar.LENGTH_LONG).show();
                 return;
             }
             MediaProjectionManager manager = getActivity().getSystemService(MediaProjectionManager.class);
             if(manager == null) {
+                logger.warn("Filed to get media projection manager");
                 Snackbar.make(binding.getRoot(), R.string.error_media_projection_manager_null, Snackbar.LENGTH_LONG).show();
                 return;
             }
+            logger.debug("Request media projection permission");
             Intent intent = manager.createScreenCaptureIntent();
             mediaProjectionRequestCallback.launch(intent);
-//            startActivityForResult(intent, MainActivityResultEnum.START_MEDIA_PROJECTION);
         });
     }
 
@@ -385,7 +411,7 @@ public class HomeFragment extends Fragment {
                     }
 
                     @Override
-                    public void onPreviewError(Exception e) {
+                    public void onPreviewError(Exception ignore) {
                         cameraManager.stopPreview();
                         cameraManager.close();
                     }
@@ -400,14 +426,17 @@ public class HomeFragment extends Fragment {
             //判断是否误扫pc端上的下载二维码
             //如果是 直接启动浏览器
             if(content.endsWith("/suishoPkgDownload")) {
+                logger.info("User scanned package download QRCode");
                 new MaterialAlertDialogBuilder(getActivity())
                         .setTitle(getActivity().getResources().getString(R.string.text_connect_failed))
                         .setMessage(getActivity().getResources().getString(R.string.dialog_scanned_wrong_qrcode))
                         .setPositiveButton(R.string.text_open_in_browser, (dialog, which) -> {
+                            logger.info("Open download url in browser");
                             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(content));
                             startActivity(intent);
                         }).setNegativeButton(R.string.text_cancel, (dialog, which) -> dialog.dismiss())
                         .setNeutralButton(R.string.text_direct_download,(dialog, which)->{
+                            logger.info("Download package with system download manager");
                             DownloadManager downloadManager = (DownloadManager) getActivity().getSystemService(Context.DOWNLOAD_SERVICE);
                             //下载地址和访问地址不一样 替换
                             DownloadManager.Request request = new DownloadManager.Request(Uri.parse(content.replace("suishoPkgDownload","dlPackage")));
@@ -426,6 +455,7 @@ public class HomeFragment extends Fragment {
             if(jsonObject.id.length() != 32) throw new Exception("Invalid QRCode");
             ((NewMainActivity) getActivity()).connectByQRCode(jsonObject.address, jsonObject.port, jsonObject.id, jsonObject.certDownloadPort, jsonObject.token);
         } catch (Exception e) {
+            logger.warn("Invalid QRCode",e);
             new MaterialAlertDialogBuilder(getActivity())
                     .setTitle(getActivity().getResources().getString(R.string.text_connect_failed))
                     .setMessage(getActivity().getResources().getString(R.string.text_invalid_qrcode))

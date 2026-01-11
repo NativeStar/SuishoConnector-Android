@@ -9,7 +9,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.provider.OpenableColumns;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -143,7 +142,6 @@ public class FileUploadActivity extends Activity {
                             .setMessage("确认将文件:\"" + fileName + "\"发送至计算机?")
                             .setPositiveButton("发送", (dialog, which) -> {
                                 sendFile(fileName, fileSize, data);
-//                                finish();
                             })
                             .setNegativeButton("取消", (dialog, which) -> {
                                 finish();
@@ -152,11 +150,13 @@ public class FileUploadActivity extends Activity {
                             .show();
                 });
             } catch (IOException ioe) {
+                logger.error("Failed to send file(IOException)", ioe);
                 runOnUiThread(() -> {
                     Toast.makeText(this, "上传文件失败:发生异常", Toast.LENGTH_LONG).show();
                     finish();
                 });
             } catch (Exception e) {
+                logger.error("Failed to send file(Exception)", e);
                 runOnUiThread(() -> {
                     Toast.makeText(this, "不支持的上传类型:" + data.getAuthority(), Toast.LENGTH_LONG).show();
                     finish();
@@ -171,7 +171,7 @@ public class FileUploadActivity extends Activity {
         try {
             encryptionKey = EncryptionKey.getInstance("AES", 128);
         } catch (NoSuchAlgorithmException e) {
-            Log.e("main", e.getMessage(), e);
+            logger.error("Failed to create encryption key",e);
             runOnUiThread(() -> new MaterialAlertDialogBuilder(FileUploadActivity.this).setTitle("上传文件发生异常")
                     .setMessage("发生异常:" + e.getMessage())
                     .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
@@ -190,6 +190,7 @@ public class FileUploadActivity extends Activity {
         uploadRequest.addProperty("encryptKey", encryptionKey.getKeyBase64());
         //向量
         uploadRequest.addProperty("encryptIv", encryptionKey.getIvBase64());
+        logger.debug("Send upload file request packet");
         networkService.sendRequestPacket(uploadRequest, new RequestHandle() {
             @Override
             public void run(String data) {
@@ -199,28 +200,33 @@ public class FileUploadActivity extends Activity {
                 //检查是否发生异常
                 if(jsonObj._result.equals("ERROR")) {
                     //异常
+                    logger.warn("Upload file request failed with message:{}",jsonObj.msg);
                     runOnUiThread(() -> new MaterialAlertDialogBuilder(FileUploadActivity.this).setTitle("上传文件发生异常")
                             .setMessage(jsonObj.msg)
                             .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
                             .show());
                     return;
                 }
+                logger.info("Start upload file data");
                 try {
                     networkService.uploadFile(getContentResolver().openInputStream(file), jsonObj.port, size <= 8192L, new FileUploadStateHandle() {
                         @Override
                         public void onStart() {
                             super.onStart();
+                            logger.debug("Upload file started.Finish upload activity");
                             FileUploadActivity.this.finish();
                         }
 
                         @Override
                         public void onError(Exception error) {
+                            logger.error("Upload file failed",error);
                             super.onError(error);
                         }
 
                         @Override
                         public void onSuccess() {
                             super.onSuccess();
+                            logger.info("Upload file success");
                             notificationManager.cancel(NotificationID.NOTIFICATION_TRANSMIT_UPLOAD_FILE);
                             if(TransmitFragment.transmitMessagesListAdapter == null) return;
                             TransmitDatabaseEntity message = new TransmitDatabaseEntity();
@@ -236,6 +242,7 @@ public class FileUploadActivity extends Activity {
                         }
                     }, size, encryptionKey);
                 } catch (FileNotFoundException e) {
+                    logger.error("Failed to open file",e);
                     if(FileUploadActivity.this.isDestroyed()) return;
                     Notification.Builder builder = new Notification.Builder(FileUploadActivity.this, "fileUploadProgress");
                     builder.setSmallIcon(R.mipmap.ic_launcher)
@@ -250,6 +257,7 @@ public class FileUploadActivity extends Activity {
     }
 
     private void sendText(String text) {
+        logger.info("Send text message");
         ConnectMainService networkService = GlobalVariables.computerConfigManager.getNetworkService();
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("packetType", "action_transmit");

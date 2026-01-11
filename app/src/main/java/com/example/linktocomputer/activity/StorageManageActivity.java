@@ -11,7 +11,6 @@ import android.os.Bundle;
 import android.os.Process;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
-import android.util.Log;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -30,6 +29,9 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -41,9 +43,12 @@ public class StorageManageActivity extends AppCompatActivity {
     private StorageStatsManager storageStatsManager;
     private List<StorageVolume> storageVolumes;
     //退出时终止进程标志
-    private boolean requestSuicide=false;
+    private boolean requestSuicide = false;
+    private final Logger logger = LoggerFactory.getLogger(StorageManageActivity.class);
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        logger.debug("onCreate called");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_storage_manage);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
@@ -58,22 +63,27 @@ public class StorageManageActivity extends AppCompatActivity {
     public void onBackPressed() {
         super.onBackPressed();
         if(requestSuicide) {
+            logger.debug("User pressed back and application request suicide");
             moveTaskToBack(true);
             finishAffinity();
             System.exit(0);
-        }else{
+        } else {
+            logger.debug("User pressed back.Only common finish activity");
             finish();
         }
     }
+
     private void init() {
         //Android13适配
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT,()->{
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, () -> {
                 if(requestSuicide) {
+                    logger.debug("User pressed Invoke(Tiramisu) and application request suicide");
                     moveTaskToBack(true);
                     finishAffinity();
                     System.exit(0);
-                }else{
+                } else {
+                    logger.debug("User pressed Invoke(Tiramisu).Only common finish activity");
                     finish();
                 }
             });
@@ -88,6 +98,7 @@ public class StorageManageActivity extends AppCompatActivity {
                     closeConnectionDialog();
                     return;
                 }
+                logger.info("User request clear cache");
                 File cacheDir = new File(getCacheDir() + "/");
                 if(cacheDir.exists()) {
                     if(!clearFolder(cacheDir)) {
@@ -106,22 +117,24 @@ public class StorageManageActivity extends AppCompatActivity {
                     closeConnectionDialog();
                     return;
                 }
+                logger.debug("Open transmit data clear confirm");
                 new MaterialAlertDialogBuilder(this)
                         .setTitle("清理确认")
                         .setMessage("将清空互传接收的文件和传输记录\n确认继续?")
                         .setNegativeButton("取消", (dialog, which) -> {
                         })
                         .setPositiveButton("确认", (dialog, which) -> {
+                            logger.info("User request clear transmit data");
                             //再次终止Activity
                             finishActivity();
                             //接收文件文件夹
                             File transmitDataPath = new File(getExternalFilesDir(null).getAbsolutePath() + "/transmit/files/");
-                            Box<TransmitDatabaseEntity> database =((Crystal)getApplication()).getDatabase().boxFor(TransmitDatabaseEntity.class);
+                            Box<TransmitDatabaseEntity> database = ((Crystal) getApplication()).getDatabase().boxFor(TransmitDatabaseEntity.class);
                             database.removeAll();
                             clearFolder(transmitDataPath);
                             Snackbar.make(findViewById(R.id.storage_manage_activity_root), getString(R.string.text_cleared), 2000).show();
                             //确保显示内容刷新 否则可能误以为清理失败
-                            requestSuicide=true;
+                            requestSuicide = true;
                             finishActivity();
                             initTextShow();
                         }).show();
@@ -131,20 +144,23 @@ public class StorageManageActivity extends AppCompatActivity {
                     closeConnectionDialog();
                     return;
                 }
+                logger.debug("Open chaos data clear confirm");
                 new MaterialAlertDialogBuilder(this)
                         .setTitle("清理确认")
                         .setMessage("确认清除杂项数据?")
                         .setNegativeButton("取消", (dialog, which) -> {
                         })
                         .setPositiveButton("确认", (dialog, which) -> {
+                            logger.info("User request clear chaos data");
                             //加密连接用证书
                             File certFolder = new File(getDataDir().getAbsolutePath() + "/files/cert/");
                             clearFolder(certFolder);
                             //崩溃日志
-                            File crashLogsFolder=new File(getDataDir().getAbsolutePath()+"/files/crash/");
+                            File crashLogsFolder = new File(getDataDir().getAbsolutePath() + "/files/crash/");
                             clearFolder(crashLogsFolder);
                             Snackbar.make(findViewById(R.id.storage_manage_activity_root), getString(R.string.text_cleared), 2000).show();
                             initTextShow();
+                            //TODO 运行时日志 记得跳过本次运行产生的日志
                         }).show();
             });
             findViewById(R.id.button_storage_manage_wipe_data).setOnClickListener(v -> {
@@ -155,6 +171,7 @@ public class StorageManageActivity extends AppCompatActivity {
                     @Override
                     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                         if(progress == 100 && fromUser) {
+                            logger.info("User request wipe data,all logs will delete.Goodbye World");
                             bottomSheetDialog.cancel();
                             new MaterialAlertDialogBuilder(StorageManageActivity.this)
                                     .setTitle(getString(R.string.dialog_wipe_data_title))
@@ -166,26 +183,33 @@ public class StorageManageActivity extends AppCompatActivity {
                                 try {
                                     //大概让人看清字
                                     Thread.sleep(750);
-                                } catch (InterruptedException ignored) {
+                                } catch (InterruptedException err) {
+                                    logger.error("Error when thread sleep,But nothing happened.Call wiping data", err);
                                 } finally {
                                     activityManager.clearApplicationUserData();
                                 }
                             }).start();
                         }
                     }
+
                     @Override
-                    public void onStartTrackingTouch(SeekBar seekBar) {}
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+                    }
+
                     @Override
-                    public void onStopTrackingTouch(SeekBar seekBar) {}
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                    }
                 });
                 bottomSheetDialog.setContentView(wipeDataLayout);
                 bottomSheetDialog.setCanceledOnTouchOutside(true);
+                logger.debug("Open all data clear confirm sheet");
                 bottomSheetDialog.show();
             });
         }).start();
     }
 
     private boolean initTextShow() {
+        logger.debug("Calc storage usage...");
         StorageStats selfStorageState = null;
         for(StorageVolume volume : storageVolumes) {
             UUID volumeUuid;
@@ -200,12 +224,12 @@ public class StorageManageActivity extends AppCompatActivity {
                 //如果拿不到数据上面就崩了
                 break;
             } catch (IOException e) {
-                Log.e("StorageManagerActivityError", e.getMessage(), e);
+                logger.error("Error when query storage state", e);
                 exceptionOnInitDialog(e.getMessage());
                 return true;
             } catch (PackageManager.NameNotFoundException e) {
                 //正常应该不会吧
-                Log.e("StorageManagerActivityError", "WTF???", e);
+                logger.error("What the fuck???Cannot query self package name???", e);
                 exceptionOnInitDialog(e.getMessage());
                 return true;
             }
@@ -231,13 +255,13 @@ public class StorageManageActivity extends AppCompatActivity {
         //互传占用 文本
         ((TextView) findViewById(R.id.text_storage_usage_transmit)).setText(Util.coverFileSize(transmitFilesTotalSize));
         //杂项占用
-        long chaosFilesTotalSize=0L;
+        long chaosFilesTotalSize = 0L;
         //证书
         File certFolder = new File(getDataDir().getAbsolutePath() + "/files/cert/");
-        chaosFilesTotalSize+=getFolderSize(certFolder);
+        chaosFilesTotalSize += getFolderSize(certFolder);
         //崩溃日志
-        File crashLogsFolder=new File(getDataDir().getAbsolutePath()+"/files/crash/");
-        chaosFilesTotalSize+=getFolderSize(crashLogsFolder);
+        File crashLogsFolder = new File(getDataDir().getAbsolutePath() + "/files/crash/");
+        chaosFilesTotalSize += getFolderSize(crashLogsFolder);
         ((TextView) findViewById(R.id.text_storage_usage_chaos_data)).setText(Util.coverFileSize(chaosFilesTotalSize));
         //设置按钮可用
         runOnUiThread(() -> {
@@ -246,10 +270,12 @@ public class StorageManageActivity extends AppCompatActivity {
             findViewById(R.id.button_storage_manage_clear_chaos_data).setEnabled(true);
             findViewById(R.id.button_storage_manage_wipe_data).setEnabled(true);
         });
+        logger.debug("Storage usage calc done");
         return false;
     }
 
     private void exceptionOnInitDialog(String message) {
+        logger.warn("Show error dialog with message:{}", message);
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Error")
                 .setMessage(message)
@@ -264,13 +290,14 @@ public class StorageManageActivity extends AppCompatActivity {
      */
     private long getFolderSize(File path) {
         long tempFilesSize = 0L;
-        if(path.exists()&&path.isDirectory()) {
+        if(path.exists() && path.isDirectory()) {
             File[] filesList = path.listFiles();
             if(filesList == null) return tempFilesSize;
             for(File file : filesList) {
                 tempFilesSize += file.length();
             }
         }
+        logger.debug("Calc folder '{}' size {}",path.getName(), tempFilesSize);
         return tempFilesSize;
     }
 
@@ -298,6 +325,7 @@ public class StorageManageActivity extends AppCompatActivity {
     }
 
     private void closeConnectionDialog() {
+        logger.debug("Show close connection dialog");
         new MaterialAlertDialogBuilder(this)
                 .setTitle("关闭连接")
                 .setMessage("执行该清理项前需要关闭连接且清理后软件将关闭\n确认继续?")
@@ -313,6 +341,7 @@ public class StorageManageActivity extends AppCompatActivity {
      * 结束主activity
      */
     private void finishActivity() {
+        logger.debug("Finishing main activity");
         ActivityManager activityManager = getSystemService(ActivityManager.class);
         activityManager.getAppTasks().forEach(appTask -> {
             if(appTask.getTaskInfo().baseIntent.getComponent().getShortClassName().equals(NewMainActivity.class.getName())) {

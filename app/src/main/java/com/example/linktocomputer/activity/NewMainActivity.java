@@ -20,7 +20,6 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.Process;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
@@ -102,12 +101,12 @@ public class NewMainActivity extends AppCompatActivity {
     public AutoConnector autoConnector;
     private boolean autoConnectorWorked = false;
     private final Logger logger = LoggerFactory.getLogger(NewMainActivity.class);
+
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        logger.debug("onCreate Test debug");
-        logger.info("onCreate Test info");
+        logger.debug("onCreate called");
         binding = ActivityConnectedBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         //状态提示
@@ -118,32 +117,22 @@ public class NewMainActivity extends AppCompatActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         //设置
         GlobalVariables.settings = getSharedPreferences("settings", MODE_PRIVATE);
-//        GlobalVariables.preferences = getSharedPreferences(getPackageName() + "_preferences", MODE_PRIVATE);
         //将id设为全局变量
         GlobalVariables.androidId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         //初始化viewpager
         setViewsInteraction();
         //activity被回收
-        if(savedInstanceState != null) {
-            ConnectMainService.MyBinder binder = (ConnectMainService.MyBinder) savedInstanceState.getBinder("network");
-//            Intent networkIntent = savedInstanceState.getParcelable("networkIntent", Intent.class);
-            //参数没问题开始恢复
-            if(binder != null /*&& networkIntent != null*/) {
-//                networkServiceIntent = networkIntent;
-                bindNetworkService();
-                showConnectedState();
-            }
-            return;
-        }
-        //也是被回收
         if(networkService != null && networkService.isConnected) {
+            logger.debug("Has network service.Resuming state");
             bindNetworkService();
             showConnectedState();
         }
         //返回键事件 高版本安卓用
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            logger.debug("Registering onBackInvokedCallback");
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, () -> {
                 if(networkService == null || !networkService.isConnected) {
+                    logger.debug("onBackInvokedCallback called.Show exit confirm dialog");
                     new MaterialAlertDialogBuilder(this)
                             .setMessage("当前未连接任何设备\n你是希望退出程序还是希望其继续后台运行?")
                             .setPositiveButton("后台运行", (dialog, which) -> {
@@ -156,14 +145,11 @@ public class NewMainActivity extends AppCompatActivity {
                             })
                             .show();
                 } else {
+                    logger.debug("onBackInvokedCallback called.Move task to back");
                     moveTaskToBack(true);
                 }
             });
         }
-//        networkServiceIntent = new Intent(this, ConnectMainService.class);
-        //没有服务 拉起
-//        if(networkService==null) startService(networkServiceIntent);
-//        bindNetworkService();
     }
 
 
@@ -172,6 +158,7 @@ public class NewMainActivity extends AppCompatActivity {
         //低版本安卓可能有用
         //如果未进行任何连接 弹出提示
         if(networkService == null || !networkService.isConnected) {
+            logger.debug("onBackPressed called.Show exit confirm dialog");
             new MaterialAlertDialogBuilder(this)
                     .setMessage("当前未连接任何设备\n你是希望退出程序还是希望其继续后台运行?")
                     .setPositiveButton("后台运行", (dialog, which) -> {
@@ -184,6 +171,7 @@ public class NewMainActivity extends AppCompatActivity {
                     })
                     .show();
         } else {
+            logger.debug("onBackPressed called.Move task to back");
             moveTaskToBack(true);
         }
     }
@@ -198,6 +186,7 @@ public class NewMainActivity extends AppCompatActivity {
                 stateBarManager.init();
             }
         }, 500);
+        logger.debug("onCreateOptionsMenu called");
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -208,6 +197,7 @@ public class NewMainActivity extends AppCompatActivity {
     }
 
     private void setViewsInteraction() {
+        logger.debug("Init views interaction");
         stateBarManager = new StateBarManager(this);
         //fragment适配器
         viewPagerAdapter = new HomeViewPagerAdapter(this);
@@ -215,7 +205,6 @@ public class NewMainActivity extends AppCompatActivity {
         //如果是重新创建就不在这设置了
         binding.homeViewPager2.setOffscreenPageLimit(1);
         viewPagerAdapter.getTransmitFragment().setActivity(this);
-//        viewPagerAdapter.getTransmitFragment().initTransmitMessages(null);
         //尝试修复进软件初始化失败
         binding.getRoot().post(() -> {
             //点击导航栏更改fragment显示
@@ -227,6 +216,7 @@ public class NewMainActivity extends AppCompatActivity {
                     if(binding.homeViewPager2.getCurrentItem() == 1) {
                         //到底部
                         viewPagerAdapter.getTransmitFragment().scrollMessagesViewToBottom(true);
+                        logger.debug("Transmit page scroll to bottom by navigation double click");
                     } else {
                         binding.homeViewPager2.setCurrentItem(1);
                     }
@@ -248,6 +238,7 @@ public class NewMainActivity extends AppCompatActivity {
             System.gc();
             checkState();
             if(GlobalVariables.preferences.getBoolean("function_launch_verify", false)) {
+                logger.debug("User enabled launch verify");
                 ((TextView) findViewById(R.id.card_text_connection_state_subtitle)).setText(R.string.card_text_waiting_verify);
                 AlertDialog verifyDialog = new MaterialAlertDialogBuilder(this)
                         .setTitle(R.string.auth_dialog_title)
@@ -259,14 +250,17 @@ public class NewMainActivity extends AppCompatActivity {
                 verifyDialog.show();
                 //手动验证
                 verifyDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                    logger.debug("Clicked dialog verify button");
                     showLaunchVerifyPrompt(verifyDialog);
                 });
                 //退出
                 verifyDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
                     if(networkService == null || !networkService.isConnected) {
+                        logger.info("User cancelled verify with not connection.Exiting");
                         finishAffinity();
                         System.exit(0);
                     } else {
+                        logger.info("User cancelled verify with connection.Move task to back");
                         moveTaskToBack(true);
                     }
                 });
@@ -281,6 +275,7 @@ public class NewMainActivity extends AppCompatActivity {
     }
 
     private void showLaunchVerifyPrompt(DialogInterface dialog) {
+        logger.info("Showed launch verify prompt");
         BiometricPrompt prompt = new BiometricPrompt.Builder(this)
                 .setTitle(getString(R.string.auth_dialog_title))
                 .setSubtitle(getString(R.string.auth_dialog_desc))
@@ -293,6 +288,7 @@ public class NewMainActivity extends AppCompatActivity {
                 dialog.dismiss();
                 Snackbar.make(getBinding().getRoot(), R.string.text_verify_success, 1500).show();
                 if(!autoConnectorWorked) {
+                    logger.debug("User verify success and enabled auto connect");
                     initAutoConnect();
                 } else {
                     ((TextView) findViewById(R.id.card_text_connection_state_subtitle)).setText(R.string.text_connection_state_subtitle_not_connect);
@@ -305,10 +301,12 @@ public class NewMainActivity extends AppCompatActivity {
     private void initAutoConnect() {
         //检测是否已有绑定设备且目前未连接任何设备
         if(GlobalVariables.settings.getBoolean("boundDevice", false) && (networkService == null || !networkService.isConnected)) {
+            logger.debug("Auto connect enabled and not connection");
             //网络检测
             if(!NetworkUtil.checkNetworkUsable(this)) {
                 //提示
                 stateBarManager.addState(States.getStateList().get("info_auto_connect_not_wifi"));
+                logger.debug("Auto connect not wifi.Returned");
                 return;
             }
             //更改view
@@ -321,8 +319,10 @@ public class NewMainActivity extends AppCompatActivity {
                 //刚启动
                 autoConnector = new AutoConnector(getFilesDir() + "/bind.key", this, lock);
                 autoConnector.start();
+                logger.info("Receiving auto connect broadcast");
             } else if(autoConnector.isWorking()) {
                 //activity被销毁重建 更新它
+                logger.info("Updating auto connect broadcaster activity");
                 autoConnector.setActivity(this);
             }
             //监听网络状态更改
@@ -333,11 +333,12 @@ public class NewMainActivity extends AppCompatActivity {
     }
 
     private void bindNetworkService() {
+        logger.debug("Binding network service");
         networkServiceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
+                logger.info("Network service connected");
                 ConnectMainService.MyBinder myBinder = (ConnectMainService.MyBinder) service;
-//                networkServiceBinder = myBinder;
                 networkService = myBinder.getService();
                 networkService.showForegroundNotification(NewMainActivity.this);
                 viewPagerAdapter.getTransmitFragment().setNetworkService(networkService);
@@ -346,6 +347,7 @@ public class NewMainActivity extends AppCompatActivity {
                 networkService.setActivityMethods(new IConnectedActivityMethods() {
                     @Override
                     public void addItem(TransmitRecyclerAddItemType type, TransmitMessageAbstract data, boolean requestSave) {
+                        logger.debug("Adding item to transmit fragment");
                         runOnUiThread(() -> {
                             HomeViewPagerAdapter homeViewPagerAdapter = (HomeViewPagerAdapter) binding.homeViewPager2.getAdapter();
                             TransmitFragment transmitFragment = homeViewPagerAdapter.getTransmitFragment();
@@ -357,6 +359,7 @@ public class NewMainActivity extends AppCompatActivity {
                     public void showAlert(String title, String content, String buttonText) {
                         runOnUiThread(() -> {
                             if(isFinishing()) return;
+                            logger.debug("Showing alert from network service(String)");
                             new MaterialAlertDialogBuilder(NewMainActivity.this)
                                     .setTitle(title)
                                     .setMessage(content)
@@ -369,6 +372,7 @@ public class NewMainActivity extends AppCompatActivity {
                     public void showAlert(int title, int content, int buttonText) {
                         runOnUiThread(() -> {
                             if(isFinishing()) return;
+                            logger.debug("Showing alert from network service(ResId)");
                             new MaterialAlertDialogBuilder(NewMainActivity.this)
                                     .setTitle(getText(title))
                                     .setMessage(getText(content))
@@ -403,6 +407,7 @@ public class NewMainActivity extends AppCompatActivity {
 
                     @Override
                     public void onConnected(String sessionId) {
+                        logger.info("Service connected.Init views");
                         GlobalVariables.computerConfigManager = new ComputerConfigManager(GlobalVariables.computerName, GlobalVariables.computerId, NewMainActivity.this, networkService, sessionId);
                         GlobalVariables.computerConfigManager.init(null);
                         //设置
@@ -422,6 +427,7 @@ public class NewMainActivity extends AppCompatActivity {
                     @Override
                     public void onDisconnect() {
                         networkService = null;
+                        logger.info("Service disconnected.Init views");
                         runOnUiThread(() -> {
                             if(isFinishing() || isDestroyed()) return;
                             //恢复显示
@@ -437,7 +443,7 @@ public class NewMainActivity extends AppCompatActivity {
                                 ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_close_24);
                                 ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(R.string.text_unauthorized);
                             } catch (NullPointerException e) {
-                                Log.e("onDisconnect",e.toString(),e);
+                                logger.error("Error when init views",e);
                                 finish();
                             }
                         });
@@ -448,6 +454,7 @@ public class NewMainActivity extends AppCompatActivity {
                         //不知道为啥因为nullptr崩了
                         TextView notificationStateText = findViewById(R.id.card_text_notification_forward);
                         if(notificationStateText == null) return;
+                        logger.info("Notification service connected to network service.Init views");
                         //判断有无权限
                         if(networkService.checkNotificationListenerPermission()) {
                             notificationStateText.setText(R.string.text_running);
@@ -458,12 +465,15 @@ public class NewMainActivity extends AppCompatActivity {
                     }
                 });
                 //连接
-                if(networkService != null && !networkService.isConnected)
+                if(networkService != null && !networkService.isConnected) {
+                    logger.info("Call network service connect");
                     networkService.connect(networkServiceIntent.getStringExtra("url"));
+                }
             }
 
             @Override
             public void onServiceDisconnected(ComponentName name) {
+                logger.info("Network service disconnected");
                 GlobalVariables.networkServiceBound = false;
             }
         };
@@ -477,6 +487,7 @@ public class NewMainActivity extends AppCompatActivity {
         //检查是否有连接
         if(!isServerConnected()) {
             //无连接 关闭程序
+            logger.debug("No connection.Show close application dialog");
             new MaterialAlertDialogBuilder(this)
 //                    .setTitle(R.string.dialog_close_application_confirm_title)
                     .setMessage(R.string.dialog_close_application_confirm_message)
@@ -488,9 +499,9 @@ public class NewMainActivity extends AppCompatActivity {
                         Process.killProcess(Process.myPid());
                     })
                     .show();
-//            Snackbar.make(binding.getRoot(), R.string.text_need_connect_first, 2000).show();
             return;
         }
+        logger.debug("Has connection.Show disconnect dialog");
         new MaterialAlertDialogBuilder(this)
                 .setPositiveButton(R.string.text_ok, (dialog, which) -> {
                     if(networkService != null) {
@@ -509,49 +520,43 @@ public class NewMainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.i("main", "Activity destroy");
+        logger.debug("Main activity destroy");
         //解绑服务
         if(networkServiceConnection != null) unbindService(networkServiceConnection);
         if(autoConnector != null) {
+            logger.debug("Stop auto connector listener");
             autoConnector.stopListener();
         }
     }
-
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-//        if(networkService != null) {
-//            outState.putBinder("network", networkServiceBinder);
-//        }
-        if(networkServiceIntent != null) {
-            outState.putParcelable("networkIntent", networkServiceIntent);
-        }
-    }
-
     /**
      * 检查保活相关并提醒
      */
     public void checkSomePermissionAndShowTips() {
-        //也许可以支持通过占用媒体播放保活(学的流氓百度云)
         //电池优化
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         if(powerManager == null || !powerManager.isIgnoringBatteryOptimizations(getPackageName())) {
+            logger.info("Battery optimization not ignored.Add state");
             stateBarManager.addState(States.getStateList().get("info_battery_opt"));
         } else {
             //在更改完权限时更新
+            logger.debug("Battery optimization ignored.Remove state");
             stateBarManager.removeState(States.getStateList().get("info_battery_opt"));
         }
         //通知权限
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if(!notificationManager.areNotificationsEnabled()) {
+            logger.info("Not notification permission.Add state");
             stateBarManager.addState(States.getStateList().get("warn_send_notification"));
         } else {
+            logger.debug("Has notification permission.Remove state");
             stateBarManager.removeState(States.getStateList().get("warn_send_notification"));
         }
         //通知转发权限提示更新
         if(checkNotificationListenerPermission()) {
+            logger.debug("Has notification listener permission.Remove state");
             stateBarManager.removeState("info_notification_listener_permission");
         } else {
+            logger.info("No notification listener permission.Add state");
             stateBarManager.addState(States.getStateList().get("info_notification_listener_permission"));
         }
     }
@@ -562,9 +567,12 @@ public class NewMainActivity extends AppCompatActivity {
     private void checkState() {
         //通知监听
         //如果未开启转发功能 则忽略
-        if(!GlobalVariables.preferences.getBoolean("function_notification_forward", false))
+        if(!GlobalVariables.preferences.getBoolean("function_notification_forward", false)){
+            logger.debug("Notification forward disabled.Ignore notification listener permission recheck");
             return;
+        }
         if(!checkNotificationListenerPermission()) {
+            logger.info("No notification listener permission in recheck.Add state");
             stateBarManager.addState(States.getStateList().get("info_notification_listener_permission"));
         }
         //
@@ -573,6 +581,7 @@ public class NewMainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        logger.debug("Main activity resume");
         checkSomePermissionAndShowTips();
     }
 
@@ -580,12 +589,14 @@ public class NewMainActivity extends AppCompatActivity {
      * 连接成功时显示状态
      */
     public void showConnectedState() {
+        logger.debug("Update main activity connection state display");
         runOnUiThread(() -> {
             if(isFinishing() || isDestroyed()) return;
             //检查view是否完成初始化
             if(findViewById(R.id.card_text_computer_id) == null) {
                 //等待完成自动执行
                 binding.getRoot().post(this::showConnectedState);
+                logger.debug("Waiting for view initialization");
                 return;
             }
             boolean isTrusted = GlobalVariables.computerConfigManager.isTrustedComputer();
@@ -594,7 +605,7 @@ public class NewMainActivity extends AppCompatActivity {
             ((TextView) findViewById(R.id.card_text_connection_state)).setText(R.string.text_connected);
             ((TextView) findViewById(R.id.card_text_connection_state_subtitle)).setText(GlobalVariables.computerName);
             ((TextView) findViewById(R.id.card_title_trust_mode)).setText(R.string.home_card_trust_mode_connected);
-            ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(networkService.getMediaProjectionServiceIntent()==null ? R.string.text_unauthorized : R.string.text_authorized);
+            ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(networkService.getMediaProjectionServiceIntent() == null ? R.string.text_unauthorized : R.string.text_authorized);
             //图标
             ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_link_off_24);
             ((ImageView) findViewById(R.id.card_connection_state_icon)).setImageResource(R.drawable.baseline_signal_cellular_4_bar_24);
@@ -642,6 +653,7 @@ public class NewMainActivity extends AppCompatActivity {
 
     private void showTrustModeDialog() {
         if(isFinishing() || isDestroyed()) return;
+        logger.debug("Show trust mode change dialog");
         runOnUiThread(() -> {
             new MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.dialog_trust_computer_title)
@@ -662,10 +674,10 @@ public class NewMainActivity extends AppCompatActivity {
     public void connectByQRCode(String address, int port, String computerId, int certDownloadPort, String pairToken) {
         String url = address + ":" + port;
         String ipAddressAndPortRegexp = "^(((25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d)))\\.){3}(25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d)))):([1-9]|[1-9]\\d{1,3}|[1-5]\\d{4}|6[0-4]\\d{3}|65[0-4]\\d{2}|655[0-2]\\d|6553[0-5])$";
-        Log.i("main", url);
+        logger.info("Scan QRCode got url: {}", url);
         if(!Pattern.matches(ipAddressAndPortRegexp, url)) {
             //ip校验不通过 显示对话框
-            Log.i("main", "Invalid QRCode");
+            logger.info("Invalid QRCode url");
             new MaterialAlertDialogBuilder(this)
                     .setTitle("连接失败")
                     .setMessage("无效二维码")
@@ -686,6 +698,7 @@ public class NewMainActivity extends AppCompatActivity {
         networkServiceIntent.putExtra("address", address);
         //emm虽然没什么意义
         Util.checkComponentEnable(this, ConnectMainService.class, true);
+        logger.info("Start network service by QRCode scan");
         startService(networkServiceIntent);
         bindNetworkService();
     }
@@ -709,6 +722,7 @@ public class NewMainActivity extends AppCompatActivity {
                 manualConnectSSLContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
             } catch (CertificateException | IOException | NoSuchAlgorithmException |
                      KeyStoreException | KeyManagementException e) {
+                logger.error("Failed to load default cert",e);
                 runOnUiThread(() -> new MaterialAlertDialogBuilder(this)
                         .setTitle("连接失败")
                         .setMessage("SSL证书读取异常:" + e)
@@ -723,8 +737,10 @@ public class NewMainActivity extends AppCompatActivity {
                     .removeHeader("Accept-Encoding")
                     .addHeader("Accept-Encoding", "identity");
             if(pairCode != null) {
+                logger.debug("Using pair code to connect");
                 requestBuilder.addHeader("suisho-pair-code", pairCode);
             } else if(key != null) {
+                logger.debug("Using key to connect");
                 requestBuilder.addHeader("suisho-auto-connector-key", key);
             }
             Request request = requestBuilder.build();
@@ -733,9 +749,11 @@ public class NewMainActivity extends AppCompatActivity {
                     .sslSocketFactory(manualConnectSSLContext.getSocketFactory(), (X509TrustManager) manualConnectTrustManager)
                     .hostnameVerifier((hostname, session) -> true)
                     .build();
+            logger.info("Sending manual connect request");
             try (Response response = client.newCall(request).execute()) {
                 ManualConnectPacket packet = GlobalVariables.jsonBuilder.fromJson(response.body().string(), ManualConnectPacket.class);
                 if(!packet.success) {
+                    logger.info("Manual connect failed with message: {}", packet.message);
                     runOnUiThread(() -> new MaterialAlertDialogBuilder(this)
                             .setTitle("连接失败")
                             .setMessage(packet.message)
@@ -747,9 +765,11 @@ public class NewMainActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     Snackbar.make(binding.getRoot(), "已发起连接", 1500).show();
                 });
+                logger.debug("Call QRCode connect by manual connect response data");
                 //懒
                 connectByQRCode(url, packet.mainPort, packet.id, packet.certPort, packet.token);
             } catch (IOException | NullPointerException e) {
+                logger.error("Manual connect failed",e);
                 runOnUiThread(() -> new MaterialAlertDialogBuilder(this)
                         .setTitle("连接失败")
                         .setMessage(e.toString())
@@ -772,6 +792,7 @@ public class NewMainActivity extends AppCompatActivity {
     }
 
     public void sendPacket(JsonObject object) {
+        logger.debug("Activity sent a packet");
         if(networkService != null) networkService.sendObject(object);
     }
 
@@ -782,6 +803,7 @@ public class NewMainActivity extends AppCompatActivity {
     //注销网络回调
     public void unregisterNetworkCallback() {
         if(networkStateCallback != null) {
+            logger.debug("Unregistering network callback");
             try {
                 ConnectivityManager connectivityManager = getSystemService(ConnectivityManager.class);
                 connectivityManager.unregisterNetworkCallback(networkStateCallback);

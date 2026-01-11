@@ -425,7 +425,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
         }
         return true;
     }
-
+//    TODO 改成导出全部日志
     private void exportCrashReport() {
         File crashLogDirectory = new File(getActivity().getDataDir() + "/files/crash/");
         if(!crashLogDirectory.isDirectory()) {

@@ -13,6 +13,7 @@ public class States {
         public int description;
         public final StateLevel level;
         public final boolean clickable;
+
         public State(String id,int nameId, int description, StateLevel level,boolean clickable) {
             this.id=id;
             this.name = nameId;
@@ -24,6 +25,7 @@ public class States {
     public static HashMap<String,State> getStateList(){
         if(StateList.isEmpty()){
             //init
+
             //图标打包
             StateList.put("busy_packing_icon",new State("busy_packing_icon",R.string.state_name_icon_packing, R.string.state_desc_icon_packing, StateLevel.BUSY,false));
             //电池优化
