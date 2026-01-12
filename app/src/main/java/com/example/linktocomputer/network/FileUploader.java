@@ -3,6 +3,7 @@ package com.example.linktocomputer.network;
 import static java.lang.Thread.sleep;
 
 import com.example.linktocomputer.GlobalVariables;
+import com.example.linktocomputer.instances.EncryptionKey;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class FileUploader {
     private Socket socket;
@@ -23,20 +34,32 @@ public class FileUploader {
     private FileUploadEventListener eventListener;
     private FileInputStream fileInputStream;
     private OutputStream socketOutputStream;
-    private byte progressUpdateCount=0;
-    private long uploadedSize=0;
+    private byte progressUpdateCount = 0;
+    private long uploadedSize = 0;
+    private final EncryptionKey key;
+    private Cipher cipher;
     private final Logger logger = LoggerFactory.getLogger(FileUploader.class);
 
 
-    public FileUploader(int port, File file) {
+    public FileUploader(int port, File file, EncryptionKey encryptionKey) {
         this.port = port;
         this.uploadFile = file;
+        this.key = encryptionKey;
     }
 
     public void start() {
+        try {
+            SecretKeySpec secretKey = new SecretKeySpec(key.getKeyEncoded(), "AES");
+            cipher = Cipher.getInstance("AES/CBC/PKCS7Padding");
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(key.getIv());
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
+                 InvalidAlgorithmParameterException e) {
+            logger.error("Failed to init transmit upload crypt", e);
+            if(eventListener!=null) eventListener.onError(e);
+            return;
+        }
         new Thread(() -> {
-            //互传上传文件改改就是了...
-            //好像哪里不太对劲
             try {
                 this.fileInputStream = new FileInputStream(uploadFile);
                 this.socket = new Socket(GlobalVariables.serverAddress, port);
@@ -65,20 +88,22 @@ public class FileUploader {
                     //这里真不能偷 不然文件末尾会多一堆莫名其妙的0x00
                     int availLength = Math.min(fileInputStream.available(), 512);
                     byte[] buffer = new byte[availLength];
-                    if (fileInputStream.read(buffer) <= 0) {
-                        socketOutputStream.write(buffer);
+                    if(fileInputStream.read(buffer) <= 0) {
+                        byte[] encryptedBuffer = cipher.doFinal(buffer);
+                        socketOutputStream.write(encryptedBuffer);
                         //看能不能解决漏数据
                         sleep(300);
                         socketOutputStream.close();
                         break;
                     }
-                    socketOutputStream.write(buffer);
-                    uploadedSize+=buffer.length;
+                    byte[] encryptedBuffer = cipher.update(buffer);
+                    socketOutputStream.write(encryptedBuffer);
+                    uploadedSize += buffer.length;
                     //性能优化 只有更新达到次数才执行回调
-                    if (progressUpdateCount == 16){
+                    if(progressUpdateCount == 16) {
                         eventListener.onProgress(uploadedSize);
-                        progressUpdateCount=0;
-                    }else{
+                        progressUpdateCount = 0;
+                    } else {
                         progressUpdateCount++;
                     }
                 }
@@ -88,9 +113,10 @@ public class FileUploader {
                 socketInputStream.close();
                 socket.close();
                 eventListener.onSuccess(uploadFile);
-                logger.debug("File '{}' upload success",uploadFile.getName());
-            } catch (IOException | InterruptedException e) {
-                logger.error("File '{}' upload failed with exception",uploadFile.getName(),e);
+                logger.debug("File '{}' upload success", uploadFile.getName());
+            } catch (IOException | InterruptedException | IllegalBlockSizeException |
+                     BadPaddingException e) {
+                logger.error("File '{}' upload failed with exception", uploadFile.getName(), e);
                 //是否设置了回调
                 if(eventListener != null) {
                     eventListener.onError(e);

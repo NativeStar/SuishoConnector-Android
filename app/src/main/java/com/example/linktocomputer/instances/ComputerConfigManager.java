@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -99,6 +100,7 @@ public class ComputerConfigManager {
     }
 
     public void sendIconPack() {
+        EncryptionKey encryptionKey;
         logger.info("Request send icon pack");
         if(synced) return;
         SharedPreferences iconPackVals = context.getSharedPreferences("iconPackVars", Context.MODE_PRIVATE);
@@ -108,11 +110,19 @@ public class ComputerConfigManager {
             //未完成打包 等打完会调用请求发送的 不急
             return;
         }
+        try {
+            encryptionKey = EncryptionKey.getInstance("AES", 128);
+        } catch (NoSuchAlgorithmException e) {
+            logger.error("Failed to create encryption key",e);
+            return;
+        }
         File iconPackFile = new File(context.getCacheDir() + "/tmpAppIcons");
         JsonObject packet = new JsonObject();
         packet.addProperty("packetType", "syncIconPack");
         packet.addProperty("lastUpdateTime", iconPackVals.getLong("lastUpdateTime", 1L));
         packet.addProperty("hash", Util.calculateSHA256(iconPackFile));
+        packet.addProperty("key",encryptionKey.getKeyBase64());
+        packet.addProperty("iv", encryptionKey.getIvBase64());
         logger.debug("Send icon pack sync request");
         networkService.sendRequestPacket(packet, new RequestHandle() {
             @Override
@@ -123,7 +133,7 @@ public class ComputerConfigManager {
                     return;
                 }
                 synced = true;
-                FileUploader fileUploader = new FileUploader(jsonObj.port, iconPackFile);
+                FileUploader fileUploader = new FileUploader(jsonObj.port, iconPackFile, encryptionKey);
                 fileUploader.setEventListener(new FileUploader.FileUploadEventListener() {
                     @Override
                     public void onSuccess(File file) {
