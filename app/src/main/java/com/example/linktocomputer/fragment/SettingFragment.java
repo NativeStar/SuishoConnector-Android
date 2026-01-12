@@ -6,10 +6,8 @@ import static androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTI
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.UriPermission;
 import android.content.pm.PackageManager;
 import android.hardware.biometrics.BiometricPrompt;
 import android.net.Uri;
@@ -18,15 +16,10 @@ import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Environment;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.biometric.BiometricManager;
 import androidx.preference.PreferenceFragmentCompat;
@@ -49,6 +42,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.JsonObject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -59,8 +55,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class SettingFragment extends PreferenceFragmentCompat {
-    private ActivityResultLauncher<Intent> pickDirectoryCallback;
-
+    private final Logger logger = LoggerFactory.getLogger(SettingFragment.class);
     public SettingFragment() {
     }
 
@@ -74,34 +69,20 @@ public class SettingFragment extends PreferenceFragmentCompat {
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setData(Uri.parse("https://github.com/NativeStar/SuishoConnector-Android"));
             startActivity(intent);
+            logger.debug("Open project github url");
         });
         //版本名称
-        String finalDisplayName = String.format("%s(%s)", BuildConfig.VERSION_NAME, String.valueOf(BuildConfig.VERSION_CODE));
+        String finalDisplayName = String.format("%s(%s)", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE);
         ((TextView) aboutDialogLayout.findViewById(R.id.versionNameText)).setText(finalDisplayName);
         //设备列表view
         RecyclerView trustedDeviceRecyclerView = trustDeviceManagerDialogLayout.findViewById(R.id.trusted_device_list_recycler_view);
-        pickDirectoryCallback = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback() {
-            @Override
-            public void onActivityResult(Object result) {
-                if(result == null) return;
-                ActivityResult activityResult = (ActivityResult) result;
-                Intent resultIntent = activityResult.getData();
-                if(resultIntent == null) return;
-                Log.i("main", resultIntent.toString());
-                //去除旧的权限
-                ContentResolver resolver = getContext().getContentResolver();
-                UriPermission uriPermission = resolver.getPersistedUriPermissions().get(0);
-                if(uriPermission != null) {
-                    resolver.releasePersistableUriPermission(uriPermission.getUri(), (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION));
-                }
-                resolver.takePersistableUriPermission(resultIntent.getData(), (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION));
-            }
-        });
         //打开信任设备管理
         findPreference("key_open_trust_device_manager").setOnPreferenceClickListener((preference) -> {
+            logger.debug("Open trust device manager sheet");
             ArrayList<TrustedDeviceListAdapter.DeviceTrustInstance> deviceTrustInstances = ComputerConfigManager.getAllComputers(getActivity());
             //无设备时提示
             if(deviceTrustInstances.isEmpty()) {
+                logger.debug("No trusted device");
                 Snackbar.make(getActivity().findViewById(R.id.coordinatorLayout3), R.string.trusted_device_manager_not_device, 2000).show();
                 return true;
             }
@@ -112,6 +93,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
             BottomSheetDialog trustDeviceManagerDialog = new BottomSheetDialog(getActivity());
             //无信任设备在列表时关闭弹窗
             trustedDeviceListAdapter.setOnDeviceListEmptyCallback(() -> {
+                logger.debug("Cleaned all trusted device.Close sheet");
                 if(trustDeviceManagerDialog.isShowing()) trustDeviceManagerDialog.dismiss();
             });
             trustDeviceManagerDialog.setContentView(trustDeviceManagerDialogLayout);
@@ -129,14 +111,17 @@ public class SettingFragment extends PreferenceFragmentCompat {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
             startActivity(intent);
+            logger.debug("Open storage manage activity");
             return true;
         });
         //通知转发开关 状态改变监听
         findPreference("function_notification_forward").setOnPreferenceChangeListener((preference, newValue) -> {
+            logger.info("Notification forward switch changed");
             boolean value = (boolean) newValue;
             ComputerConfigManager configManager = GlobalVariables.computerConfigManager;
             NewMainActivity activity = (NewMainActivity) getActivity();
             if(configManager != null) {
+                logger.info("Updated notification forward state and notify to computer");
                 ConnectMainService networkService = configManager.getNetworkService();
                 //调整处理状态
                 networkService.getNotificationListenerService().setEnable(value);
@@ -152,16 +137,19 @@ public class SettingFragment extends PreferenceFragmentCompat {
             StateBarManager stateBarManager = activity.stateBarManager;
             if(value) {
                 if(stateBarManager != null && !activity.checkNotificationListenerPermission()) {
+                    logger.debug("Not notification listener permission.Add state");
                     stateBarManager.addState(States.getStateList().get("info_notification_listener_permission"));
                 }
             } else {
                 if(stateBarManager != null) {
+                    logger.debug("Has notification listener permission.Remove state");
                     stateBarManager.removeState("info_notification_listener_permission");
                 }
             }
             return true;
         });
         findPreference("file_save_location").setOnPreferenceClickListener(preference -> {
+            logger.debug("Open file save location dialog");
             new MaterialAlertDialogBuilder(getActivity())
                     .setTitle(R.string.dialog_transmit_file_save_location)
                     .setSingleChoiceItems(R.array.array_setting_dropdown_transmit_save_file_path, GlobalVariables.preferences.getInt("file_save_location", 0), (dialog, which) -> {
@@ -169,6 +157,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                         //Download目录
                         if(which == 1) {
                             if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+                                logger.info("Request storage permission because android version lower 10");
                                 //读写存储空间权限
                                 Context context = getContext();
                                 if(context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED || context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -179,6 +168,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                                             .setNegativeButton(R.string.text_cancel, (dialog1, which1) -> {
                                             })
                                             .setPositiveButton(R.string.text_ok, (dialog1, which1) -> {
+                                                logger.debug("Request write external storage permission");
                                                 getActivity().requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1000);
                                             })
                                             .show();
@@ -186,73 +176,32 @@ public class SettingFragment extends PreferenceFragmentCompat {
                                 }
                             }
                         }
+                        logger.info("Change file save location to " + which);
                         GlobalVariables.preferences.edit().putInt("file_save_location", which).apply();
                         Snackbar.make(getView(), "修改成功", 2000).show();
-//                        if(which == 2) {
-//                            //检测权限
-//                            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-//                                //所有文件访问权限
-//                                if(!Environment.isExternalStorageManager()) {
-//                                    dialog.dismiss();
-//                                    new MaterialAlertDialogBuilder(getActivity())
-//                                            .setTitle(R.string.permission_request_alert_title)
-//                                            .setMessage(R.string.dialog_manage_all_files_permission_message)
-//                                            .setNegativeButton(R.string.text_cancel, (dialog1, which1) -> {
-//                                                dialog1.cancel();
-//                                            })
-//                                            .setCancelable(false)
-//                                            .setPositiveButton(R.string.text_ok, (dialog1, which1) -> {
-//                                                Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
-//                                                startActivity(intent);
-//                                            })
-//                                            .show();
-//                                    return;
-//                                }
-//                            } else {
-//                                //读写存储空间权限
-//                                Context context = getContext();
-//                                if(context.checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED || context.checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED) {
-//                                    dialog.dismiss();
-//                                    new MaterialAlertDialogBuilder(getActivity())
-//                                            .setTitle(R.string.permission_request_alert_title)
-//                                            .setMessage(R.string.dialog_write_external_storage_permission_message)
-//                                            .setNegativeButton(R.string.text_cancel, (dialog1, which1) -> {
-//                                            })
-//                                            .setPositiveButton(R.string.text_ok, (dialog1, which1) -> {
-//                                                getActivity().requestPermissions(new String[]{"android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"}, 1000);
-//                                            })
-//                                            .show();
-//                                    return;
-//                                }
-//                            }
-//                            //要求设定目录
-//                            Intent openDocumentTreeIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-//                            //持久化授权
-//                            openDocumentTreeIntent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-//                            pickDirectoryCallback.launch(openDocumentTreeIntent);
-////                            getContext().getContentResolver().getPersistedUriPermissions()
-//                        } else {
-////                            Snackbar.make()
-//                        }
                         dialog.dismiss();
                     }).show();
             return true;
         });
         findPreference("key_export_transmit_files").setOnPreferenceClickListener(preference -> {
             //检查私有目录互传文件夹下是否有文件
+            logger.debug("User request export in private directory transmit files");
             File transmitFilesPath = new File(getActivity().getExternalFilesDir(null).getAbsolutePath() + "/transmit/files/");
             if(!transmitFilesPath.exists() || transmitFilesPath.list().length == 0) {
+                logger.debug("No transmit files in private directory.Don't export");
                 Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), "私有目录中不存在互传文件 无需导出", 2500).show();
                 return true;
             }
             String path = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector").getAbsolutePath();
+            logger.debug("Show export transmit file confirm dialog.Target path:{}",path);
             new MaterialAlertDialogBuilder(getActivity())
                     .setTitle("导出互传文件")
                     .setMessage("会将所有私有目录下的互传文件导出至'" + path + "'目录下并删除源文件\n是否确定?")
                     .setNegativeButton("取消", (dialog, which) -> dialog.dismiss())
                     .setPositiveButton("确定", (dialog, which) -> {
                         dialog.dismiss();
-                        Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), "开始导出", 2500).show();
+                        Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), "开始导出 请等待完成提示", 2500).show();
+                        logger.info("Start export transmit files");
                         new Thread(() -> {
                             if(moveTransmitFiles(transmitFilesPath)) {
                                 getActivity().runOnUiThread(() -> {
@@ -265,25 +214,21 @@ public class SettingFragment extends PreferenceFragmentCompat {
                             }
                         }).start();
                     }).show();
-//            File[] transmitFiles=transmitFilesPath.listFiles();
-//            if(transmitFiles == null) {
-//                return true;
-//            }
-//            for(File file:transmitFiles){
-//                Files.copy()
-//            }
             return true;
         });
         findPreference("function_file_manager").setOnPreferenceChangeListener((preference, newValue) -> {
+            logger.debug("User request change remote file manager function");
             if(((boolean) newValue)) {
                 if(Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
                     if(!Environment.isExternalStorageManager()) {
+                        logger.info("Not storage permission on android 10 or newer.Request permission");
                         showStoragePermissionDialog();
                         return false;
                     }
                 } else {
                     Activity activity = getActivity();
                     if(activity.checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED || activity.checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED) {
+                        logger.info("Not storage permission on android 9 or lower.Request permission");
                         showStoragePermissionDialog();
                         return false;
                     }
@@ -291,11 +236,14 @@ public class SettingFragment extends PreferenceFragmentCompat {
             }
             Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_active_after_reboot, 3000).show();
             findPreference("function_file_manager").setEnabled(false);
+            logger.info("Changed remote file manager function state");
             return true;
         });
         findPreference("key_clear_auto_connect_file").setOnPreferenceClickListener((preference -> {
+            logger.debug("User request clear auto connect file");
             File keyFile = new File(getActivity().getFilesDir() + "/bind.key");
             if(!keyFile.exists()) {
+                logger.debug("Bind device file not found");
                 Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_unbind_failed_not_bound, 2000).show();
                 return true;
             }
@@ -306,6 +254,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                         //解绑计算机
                         keyFile.delete();
                         GlobalVariables.settings.edit().putBoolean("boundDevice", false).apply();
+                        logger.info("Unbind computer");
                         Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_unbind_success, 2000).show();
                     })
                     .setNegativeButton(R.string.text_cancel, (dialog, which) -> dialog.dismiss())
@@ -322,6 +271,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
             return true;
         }));
         findPreference("key_about").setOnPreferenceClickListener((v) -> {
+            logger.debug("Show about sheet");
             BottomSheetDialog aboutSheetDialog = new BottomSheetDialog(getActivity());
             aboutSheetDialog.setContentView(aboutDialogLayout);
             aboutSheetDialog.setCanceledOnTouchOutside(true);
@@ -332,6 +282,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
         try {
             initLaunchVerifySwitch();
         } catch (Exception e) {
+            logger.error("Failed to init launch verify switch", e);
             findPreference("function_launch_verify").setSummary(R.string.setting_launch_verify_summary_exception);
         }
     }
@@ -340,22 +291,28 @@ public class SettingFragment extends PreferenceFragmentCompat {
         BiometricManager biometricManager = BiometricManager.from(getActivity());
         int canAuth;
         if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            logger.debug("Init biometric manager on android 9 and lower");
             canAuth = biometricManager.canAuthenticate(DEVICE_CREDENTIAL | BIOMETRIC_WEAK);
         } else {
+            logger.debug("Init biometric manager with android 10 and newer");
             canAuth = biometricManager.canAuthenticate(DEVICE_CREDENTIAL | BIOMETRIC_STRONG);
         }
         switch (canAuth) {
             case BiometricManager.BIOMETRIC_SUCCESS:
                 findPreference("function_launch_verify").setEnabled(true);
+                logger.debug("Device supported biometric");
                 break;
             case BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED:
                 findPreference("function_launch_verify").setSummary(R.string.setting_launch_verify_summary_device_not_password);
+                logger.debug("Device supported biometric but not set password");
                 break;
             default:
                 findPreference("function_launch_verify").setSummary(R.string.setting_launch_verify_summary_unsupported);
+                logger.debug("Device not supported biometric");
                 break;
         }
         findPreference("function_launch_verify").setOnPreferenceChangeListener((preference, newValue) -> {
+            logger.info("User request change launch verify state.Start change verify");
             BiometricPrompt prompt = new BiometricPrompt.Builder(getActivity())
                     .setTitle(getString(R.string.auth_dialog_title))
                     .setSubtitle(getString(R.string.auth_dialog_desc))
@@ -367,6 +324,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                     super.onAuthenticationSucceeded(result);
                     ((SwitchPreferenceCompat) preference).setChecked((Boolean) newValue);
                     Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_verify_success, 2500).show();
+                    logger.info("Verify success.Change launch verify function state");
                 }
             });
             return false;
@@ -374,23 +332,20 @@ public class SettingFragment extends PreferenceFragmentCompat {
     }
 
     private void showStoragePermissionDialog() {
+        logger.debug("Show storage permission dialog");
         new MaterialAlertDialogBuilder(getActivity())
                 .setTitle(R.string.permission_request_alert_title)
                 .setMessage(R.string.setting_storage_permission_dialog_message)
                 .setPositiveButton(R.string.text_ok, (dialog, which) -> {
                     if(Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+                        logger.debug("Start access all file permission activity for android 10 or newer");
                         Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
                         intent.setData(Uri.fromParts("package", getContext().getPackageName(), null));
                         getActivity().startActivity(intent);
                     } else {
+                        logger.debug("Request storage permission for android 9 and lower");
                         getActivity().requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1000);
                     }
-//                        Activity activity=getActivity();
-//                        if(activity.checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED ||activity.checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED) {
-//                            showStoragePermissionDialog();
-//                            return false;
-//                        }
-//                    }
                 })
                 .setNegativeButton(R.string.text_cancel, (dialog, which) -> {
                 })
@@ -399,34 +354,43 @@ public class SettingFragment extends PreferenceFragmentCompat {
     }
 
     private boolean moveTransmitFiles(File transmitFilesPath) {
+        logger.info("Start move transmit files");
         File[] transmitFiles = transmitFilesPath.listFiles();
         //防止文件名冲突
         File targetDirectory = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/Transmit/");
         File[] targetPathFiles = targetDirectory.listFiles();
         if(transmitFiles == null) {
+            logger.warn("Failed to move transmit files.Path is null");
             return false;
         }
         for(File file : transmitFiles) {
             Path targetPath = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/Transmit/" + file.getName()).toPath();
+            logger.debug("Move file {} to {}", file.getAbsolutePath(), targetPath);
             try {
                 //判断重名
                 for(File targetDirectoryFile : targetPathFiles) {
                     if(targetDirectoryFile.getName().equals(file.getName())) {
                         //文件名追加时间戳
                         targetPath = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/Transmit/" + System.currentTimeMillis() + file.getName()).toPath();
+                        logger.debug("File name conflict.Append timestamp to file name.Now path and name:{}",targetPath);
                         break;
                     }
                 }
                 Files.copy(file.toPath(), targetPath);
                 file.delete();
+                logger.debug("Move file success");
             } catch (IOException e) {
+                logger.error("Move file failed with exception",e);
                 return false;
             }
         }
+        logger.info("Move transmit files success");
         return true;
     }
-//    TODO 改成导出全部日志
+
+    //    TODO 改成导出全部日志 重新打日志
     private void exportCrashReport() {
+        logger.info("Start export crash report");
         File crashLogDirectory = new File(getActivity().getDataDir() + "/files/crash/");
         if(!crashLogDirectory.isDirectory()) {
             Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.crash_not_log, 2500).show();

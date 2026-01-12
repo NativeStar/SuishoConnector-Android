@@ -23,6 +23,7 @@
     <string name="service_notification_content">Suisho Connector正在运行</string>
     <string name="transmit_send_text_input_hint">在此输入文本</string>
     <string name="permission_scanCode_camera_message">该功能需要授予相机权限</string>
+    <string name="permission_audio_forward_message">该功能需要授予录音权限</string>
     <string name="permission_request_alert_title">需要权限</string>
     <string name="text_cancel">取消</string>
     <string name="permission_denied_necessary_scancode">您拒绝了相机权限,扫码功能无法正常运行</string>
@@ -35,6 +36,7 @@
     <string name="transmit_upload_failed_has_uploading_file">上传失败:请等待上一个文件上传完成</string>
     <string name="transmit_open_file_failed_not_resolve_application">无法打开文件:没有应用程序支持打开它</string>
     <string name="transmit_open_file_failed_not_exists">打开失败:文件已被删除</string>
+    <string name="transmit_open_file_failed_null_path">无法打开文件:路径数据异常</string>
     <string name="transmit_send_failed_network">请先连接计算机或检查网络状况</string>
     <string name="service_connect_success">连接成功</string>
     <string name="text_not_connect">未连接</string>
@@ -179,6 +181,7 @@
     <string name="dialog_clear_auto_connect_file_desc">确认解绑设备?将不再进行自动连接</string>
     <string name="text_unbind_success">解绑完成 重启生效</string>
     <string name="text_unbind_failed_not_bound">当前未绑定任何设备</string>
+    <string name="text_android_version_not_support">当前Android版本过低 不支持此功能</string>
     <string name="error_media_projection_manager_null">授权失败:无法获取MediaProjectionManager</string>
 
 </resources>

@@ -1,5 +1,6 @@
 package com.example.linktocomputer.fragment;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.Context;
@@ -9,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Rect;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.LayoutInflater;
@@ -76,7 +78,7 @@ public class HomeFragment extends Fragment {
         mediaProjectionRequestCallback = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             logger.debug("Media project permission callback result");
             //防止没连上
-            if(NewMainActivity.networkService!=null&&NewMainActivity.networkService.isConnected) {
+            if(NewMainActivity.networkService != null && NewMainActivity.networkService.isConnected) {
                 Intent data = result.getData();
                 if(data == null) return;
                 logger.info("Set media projection callback intent");
@@ -367,6 +369,14 @@ public class HomeFragment extends Fragment {
         });
         //音频转发授权
         binding.cardMediaProjectionClickable.setOnClickListener(v -> {
+            if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+                Snackbar.make(binding.getRoot(), R.string.text_android_version_not_support, Snackbar.LENGTH_LONG).show();
+                return;
+            }
+            NewMainActivity activity = (NewMainActivity) getActivity();
+            if(activity == null) {
+                return;
+            }
             ConnectMainService networkService = NewMainActivity.networkService;
             if(networkService == null) {
                 Snackbar.make(binding.getRoot(), R.string.text_need_connect_first, Snackbar.LENGTH_LONG).show();
@@ -375,6 +385,16 @@ public class HomeFragment extends Fragment {
             if(networkService.getMediaProjectionServiceIntent() != null) {
                 logger.debug("Already has media projection permission");
                 Snackbar.make(binding.getRoot(), R.string.text_authorized, Snackbar.LENGTH_LONG).show();
+                return;
+            }
+            if(activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                new MaterialAlertDialogBuilder(activity)
+                        .setTitle(R.string.permission_request_alert_title)
+                        .setMessage(R.string.permission_audio_forward_message)
+                        .setNeutralButton(R.string.text_cancel, (dialog, which) -> {
+                        })
+                        .setPositiveButton(R.string.text_ok, (dialog, which) -> activity.requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 1))
+                        .show();
                 return;
             }
             MediaProjectionManager manager = getActivity().getSystemService(MediaProjectionManager.class);
@@ -435,11 +455,11 @@ public class HomeFragment extends Fragment {
                             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(content));
                             startActivity(intent);
                         }).setNegativeButton(R.string.text_cancel, (dialog, which) -> dialog.dismiss())
-                        .setNeutralButton(R.string.text_direct_download,(dialog, which)->{
+                        .setNeutralButton(R.string.text_direct_download, (dialog, which) -> {
                             logger.info("Download package with system download manager");
                             DownloadManager downloadManager = (DownloadManager) getActivity().getSystemService(Context.DOWNLOAD_SERVICE);
                             //下载地址和访问地址不一样 替换
-                            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(content.replace("suishoPkgDownload","dlPackage")));
+                            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(content.replace("suishoPkgDownload", "dlPackage")));
                             request.setTitle(getString(R.string.app_name));
                             request.setDescription(getString(R.string.direct_download_desc));
                             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
@@ -455,7 +475,7 @@ public class HomeFragment extends Fragment {
             if(jsonObject.id.length() != 32) throw new Exception("Invalid QRCode");
             ((NewMainActivity) getActivity()).connectByQRCode(jsonObject.address, jsonObject.port, jsonObject.id, jsonObject.certDownloadPort, jsonObject.token);
         } catch (Exception e) {
-            logger.warn("Invalid QRCode",e);
+            logger.warn("Invalid QRCode", e);
             new MaterialAlertDialogBuilder(getActivity())
                     .setTitle(getActivity().getResources().getString(R.string.text_connect_failed))
                     .setMessage(getActivity().getResources().getString(R.string.text_invalid_qrcode))

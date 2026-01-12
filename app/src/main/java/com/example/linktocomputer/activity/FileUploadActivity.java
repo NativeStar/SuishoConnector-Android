@@ -74,7 +74,7 @@ public class FileUploadActivity extends Activity {
             checkFile(intent.getData());
         } else {
             Toast.makeText(this, "不支持的操作", Toast.LENGTH_LONG).show();
-            logger.info("Unsupported action:{}", intent.getAction());
+            logger.warn("Unsupported action:{}", intent.getAction());
             finish();
         }
     }

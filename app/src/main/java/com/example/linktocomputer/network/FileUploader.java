@@ -2,10 +2,10 @@ package com.example.linktocomputer.network;
 
 import static java.lang.Thread.sleep;
 
-import android.content.Context;
-import android.util.Log;
-
 import com.example.linktocomputer.GlobalVariables;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,18 +19,17 @@ import java.net.Socket;
 public class FileUploader {
     private Socket socket;
     private final int port;
-    private final Context context;
     private final File uploadFile;
     private FileUploadEventListener eventListener;
     private FileInputStream fileInputStream;
-    //    private InputStream socketInputStream;
     private OutputStream socketOutputStream;
     private byte progressUpdateCount=0;
     private long uploadedSize=0;
+    private final Logger logger = LoggerFactory.getLogger(FileUploader.class);
 
-    public FileUploader(int port, Context context, File file) {
+
+    public FileUploader(int port, File file) {
         this.port = port;
-        this.context = context;
         this.uploadFile = file;
     }
 
@@ -48,10 +47,12 @@ public class FileUploader {
                 String msg = bufferedReader.readLine();
                 if(msg != null) {
                     if(!msg.equals("START")) {
+                        logger.warn("Computer rejected request");
                         eventListener.onError(new IOException("PC端拒绝接收请求"));
                         return;
                     }
                 } else {
+                    logger.warn("Computer response invalid");
                     eventListener.onError(new IOException("PC端响应无效"));
                     if(socket.isConnected()) {
                         socket.close();
@@ -69,7 +70,6 @@ public class FileUploader {
                         //看能不能解决漏数据
                         sleep(300);
                         socketOutputStream.close();
-//                        Log.d("main","close");
                         break;
                     }
                     socketOutputStream.write(buffer);
@@ -88,14 +88,13 @@ public class FileUploader {
                 socketInputStream.close();
                 socket.close();
                 eventListener.onSuccess(uploadFile);
-                Log.i("FileUploader","Success upload file:"+uploadFile.getName());
+                logger.debug("File '{}' upload success",uploadFile.getName());
             } catch (IOException | InterruptedException e) {
+                logger.error("File '{}' upload failed with exception",uploadFile.getName(),e);
                 //是否设置了回调
                 if(eventListener != null) {
                     eventListener.onError(e);
-                    return;
                 }
-                throw new RuntimeException(e);
             }
 
         }).start();

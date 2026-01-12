@@ -20,7 +20,6 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -56,6 +55,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -90,7 +92,6 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
-import okio.ByteString;
 
 public class ConnectMainService extends Service implements INetworkService {
     //ws客户端
@@ -114,12 +115,12 @@ public class ConnectMainService extends Service implements INetworkService {
     private ServiceConnection bindServiceConnection = null;
     //文件管理器 远程播放流媒体等的文件服务器
     private final FileServer webFileServer = new FileServer(30767);
-    //wifi状态广播接收器
-//    WifiStateReceiver wifiStateReceiver=null;
     //投屏同意返回intent
     private Intent mediaProjectionIntent;
     //投屏服务ipc通道
     public IMediaProjectionServiceIPC projectionServiceIPC;
+    private final Logger logger = LoggerFactory.getLogger(ConnectMainService.class);
+
 
     public void setMediaProjectionIntent(Intent mediaProjectionIntent) {
         this.mediaProjectionIntent = mediaProjectionIntent;
@@ -146,6 +147,7 @@ public class ConnectMainService extends Service implements INetworkService {
         certDownloadPort = intent.getIntExtra("certDownloadPort", 0);
         computerAddress = intent.getStringExtra("address");
         pairToken = intent.getStringExtra("pairToken");
+        logger.debug("Received start command");
         return Service.START_NOT_STICKY;
     }
 
@@ -155,6 +157,7 @@ public class ConnectMainService extends Service implements INetworkService {
             unregisterReceiver(closeConnectionBroadcastReceiver);
         if(bindServiceConnection != null)
             unbindService(bindServiceConnection);
+        logger.debug("Network service destroy");
         super.onDestroy();
     }
 
@@ -191,9 +194,11 @@ public class ConnectMainService extends Service implements INetworkService {
                     File crtCertFile = new File(getDataDir().getAbsolutePath() + "/files/cert/" + computerId + ".crt");
                     File p12CertFile = new File(getDataDir().getAbsolutePath() + "/files/cert/" + computerId + ".p12");
                     if(!crtCertFile.exists() || !p12CertFile.exists()) {
+                        logger.info("Missing cert.Redownload");
                         crtCertFile.delete();
                         p12CertFile.delete();
                         if(certDownloadPort == 0) {
+                            logger.warn("Invalid cert download port");
                             activityMethods.showAlert("连接失败", "PC端证书服务异常", "确定");
                             activityMethods.closeConnectingDialog();
                             stopSelf();
@@ -217,11 +222,13 @@ public class ConnectMainService extends Service implements INetworkService {
                         } catch (CertificateException | IOException | NoSuchAlgorithmException |
                                  KeyStoreException |
                                  KeyManagementException e) {
+                            logger.error("Failed to load default cert to download computer cert", e);
                             activityMethods.showAlert("连接失败", "SSL证书读取异常:" + e, "确定");
                             activityMethods.closeConnectingDialog();
                             stopSelf();
                             return;
                         }
+                        logger.debug("Create cert download request");
                         Request certRequest = new Request.Builder()
                                 .url("https://" + computerAddress + ":" + certDownloadPort)
                                 .removeHeader("User-Agent")
@@ -240,6 +247,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                 .build();
                         try (Response response = downloadClient.newCall(certRequest).execute()) {
                             if(response.code() != 200) {
+                                logger.warn("Failed to download cert with code:{}", response.code());
                                 activityMethods.showAlert("连接失败", response.code() == 403 ? "下载证书异常:鉴权失败" : "下载证书异常:服务端返回异常", "确定");
                                 activityMethods.closeConnectingDialog();
                                 stopSelf();
@@ -247,13 +255,14 @@ public class ConnectMainService extends Service implements INetworkService {
                             }
                             byte[] fileData = response.body().bytes();
                             if(fileData.length == 0) {
+                                logger.warn("Downloaded empty cert data");
                                 activityMethods.showAlert("连接失败", "加载证书异常:PC端发送了空数据", "确定");
                                 activityMethods.closeConnectingDialog();
                                 stopSelf();
                                 return;
                             }
                             File certPackFile = new File(getDataDir().getAbsolutePath() + "/files/cert/" + computerId + ".pak");
-                            Log.i("CertDownload", "Cert pack size:" + certPackFile.length());
+                            logger.debug("Cert pack size:{}", certPackFile.length());
                             FileOutputStream certPackOutput = new FileOutputStream(certPackFile);
                             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(certPackOutput);
                             bufferedOutputStream.write(fileData);
@@ -262,12 +271,13 @@ public class ConnectMainService extends Service implements INetworkService {
                             certPackOutput.flush();
                             certPackOutput.close();
                             //释放证书
+                            logger.debug("Extract cert file");
                             FileInputStream certPackInputStream = new FileInputStream(certPackFile);
                             byte[] crtFileLengthByte = new byte[2];
                             certPackInputStream.read(crtFileLengthByte, 0, 2);
                             ByteBuffer wrapedByteBuffer = ByteBuffer.wrap(crtFileLengthByte, 0, 2);
                             short crtFileSize = wrapedByteBuffer.getShort();
-                            Log.i("CertDownload", ".crt file size:" + crtFileSize);
+                            logger.debug(".crt file size:{}", crtFileSize);
                             byte[] crtFileBuffer = new byte[crtFileSize];
                             byte[] p12FileBuffer = new byte[(int) (certPackFile.length() - 2 - crtFileSize)];
                             //释放.crt
@@ -285,8 +295,9 @@ public class ConnectMainService extends Service implements INetworkService {
                             //扫尾
                             certPackInputStream.close();
                             certPackFile.delete();
+                            logger.debug("Success download and extract cert file");
                         } catch (IOException | NullPointerException e) {
-                            Log.e("CertDownload", "Error on download or extract certs", e);
+                            logger.error("Error on download or extract certs", e);
                             activityMethods.showAlert("连接失败", "下载证书异常", "确定");
                             activityMethods.closeConnectingDialog();
                             stopSelf();
@@ -296,12 +307,14 @@ public class ConnectMainService extends Service implements INetworkService {
                     try {
                         certInput = Files.newInputStream(crtCertFile.toPath());
                     } catch (IOException e) {
+                        logger.error("Error on load cert file", e);
                         activityMethods.showAlert("连接失败", "加载证书文件异常", "确定");
                         activityMethods.closeConnectingDialog();
                         stopSelf();
                         return;
                     }
                 } else {
+                    logger.info("Using default cert file to connect");
                     certInput = getResources().openRawResource(R.raw.default_cert);
                 }
                 //websocket连接 证书读取
@@ -319,11 +332,13 @@ public class ConnectMainService extends Service implements INetworkService {
                 } catch (CertificateException | IOException | NoSuchAlgorithmException |
                          KeyStoreException |
                          KeyManagementException e) {
+                    logger.error("Error on load cert file for main connection", e);
                     activityMethods.showAlert("连接失败", "SSL证书读取异常:" + e, "确定");
                     activityMethods.closeConnectingDialog();
                     stopSelf();
                     return;
                 }
+                logger.debug("Ready main connection");
                 Request wsReq = new Request.Builder()
                         .url(url)
                         .addHeader("suisho-pair-token", pairToken)
@@ -340,6 +355,7 @@ public class ConnectMainService extends Service implements INetworkService {
                             public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
                                 super.onOpen(webSocket, response);
                                 //握手
+                                logger.debug("Send handshake packet");
                                 webSocketClient.send(buildHandshakeJson());
                             }
 
@@ -347,8 +363,10 @@ public class ConnectMainService extends Service implements INetworkService {
                             public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
                                 super.onClosed(webSocket, code, reason);
                                 //关闭音频
+                                logger.info("Connection close with code:{}", code);
                                 if(projectionServiceIPC != null) {
                                     try {
+                                        logger.debug("Closing media projection service");
                                         projectionServiceIPC.exit();
                                     } catch (RemoteException ignored) {
                                     } finally {
@@ -363,11 +381,13 @@ public class ConnectMainService extends Service implements INetworkService {
                                     activity.unregisterNetworkCallback();
                                 }
                                 if(GlobalVariables.preferences.getBoolean("function_auto_exit_on_disconnect", false)) {
+                                    logger.debug("User enabled auto exit,check activity on top");
                                     ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
                                     am.getRunningAppProcesses().forEach(runningAppProcessInfo -> {
                                         if(runningAppProcessInfo.processName.equals("com.suisho.linktocomputer")) {
                                             if(runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND && runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING) {
                                                 //直接killProcess退出会导致下次启动带上莫名其妙的savedInstanceState
+                                                logger.info("Activity not on stack top.Suicide");
                                                 activityMethods.getActivity().finishAffinity();
                                                 System.exit(0);
                                             } else {
@@ -375,7 +395,8 @@ public class ConnectMainService extends Service implements INetworkService {
                                                     //检测是否在栈顶
                                                     am.getAppTasks().forEach(appTask -> {
                                                         if(appTask.getTaskInfo().baseIntent.getComponent().getShortClassName().equals(NewMainActivity.class.getName())) {
-                                                            activityMethods.showAlert("通讯关闭", reason.isEmpty()?"计算机关闭连接":reason, "确定");
+                                                            logger.info("Activity on stack top,show disconnect alert");
+                                                            activityMethods.showAlert("通讯关闭", reason.isEmpty() ? "计算机关闭连接" : reason, "确定");
                                                             activityMethods.closeConnectingDialog();
                                                         }
                                                     });
@@ -391,7 +412,7 @@ public class ConnectMainService extends Service implements INetworkService {
                             @Override
                             public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable t, @Nullable Response response) {
                                 super.onFailure(webSocket, t, response);
-                                Log.w("main", t.toString());
+                                logger.warn("Main connection failure called", t);
                                 isConnected = false;
                                 activityMethods.closeConnectingDialog();
                                 activityMethods.onDisconnect();
@@ -406,16 +427,18 @@ public class ConnectMainService extends Service implements INetworkService {
                                 try {
                                     if(Objects.requireNonNull(t.getMessage()).contains("java.security.cert.CertPathValidatorException")) {
                                         //证书异常
+                                        logger.warn("Disconnect because SSL verify failed");
                                         activityMethods.showAlert(R.string.text_error, R.string.text_ssl_verify_error, R.string.text_ok);
                                     } else if(Objects.requireNonNull(t.getMessage()).contains("Connection reset")) {
+                                        logger.warn("Disconnect because connection reset");
                                         activityMethods.showAlert("通讯关闭", "连接异常中断", "确定");
                                         this.onClosed(webSocket, 1000, "");
                                     } else {
-                                        Log.e("main", t.toString(), t);
+                                        logger.warn("Disconnect because unknown error");
                                         activityMethods.showAlert(R.string.text_error, R.string.dialog_connectFailedAlertText, R.string.text_ok);
                                     }
                                 } catch (NullPointerException nullPointerException) {
-                                    Log.e("main", t.toString(), t);
+                                    logger.warn("Disconnect because unknown reason null pointer", nullPointerException);
                                     activityMethods.showAlert(R.string.text_error, R.string.dialog_connectFailedAlertText, R.string.text_ok);
                                     stopSelf();
                                 }
@@ -434,11 +457,13 @@ public class ConnectMainService extends Service implements INetworkService {
                                 try {
                                     MainServiceJson jsonObj = GlobalVariables.jsonBuilder.fromJson(text, MainServiceJson.class);
                                     if(!isHandShaken && !jsonObj.packetType.equals("connect_ping")) {
+                                        logger.warn("Connection first packet not handshake,disconnect");
                                         webSocketClient.close(ConnectionCloseCode.CloseFromClientError, "服务端异常:未完成握手");
                                         return;
                                     }
                                     if(jsonObj._responseId != null) {
                                         /*交给一个方法处理*/
+                                        logger.debug("Response packet received,id:{}", jsonObj._responseId);
                                         onResponsePacket(jsonObj._responseId, text);
                                         return;
                                     }
@@ -450,6 +475,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             //此时msg发送的是设备id
                                             GlobalVariables.computerId = jsonObj.msg;
                                             HandshakeResponse handshakeResponse = new HandshakeResponse(ConnectMainService.this);
+                                            logger.debug("Send handshake response packet");
                                             webSocketClient.send(handshakeResponse.build().toString());
                                             break;
                                         case "connect_success":
@@ -460,12 +486,13 @@ public class ConnectMainService extends Service implements INetworkService {
                                             Snackbar.make(activityMethods.getActivity().findViewById(R.id.homeViewPager2), R.string.service_connect_success, 2000).show();
                                             activityMethods.onConnected(jsonObj.sessionId);
                                             certInput.close();
+                                            logger.info("Connection handshake success!");
                                             //是否需要开启文件功能
                                             if(GlobalVariables.preferences.getBoolean("function_file_manager", false)) {
                                                 File p12CertFile = new File(getDataDir().getAbsolutePath() + "/files/cert/" + computerId + ".p12");
                                                 webFileServer.init(Files.newInputStream(p12CertFile.toPath()), jsonObj.sessionId, activityMethods.getActivity());
+                                                logger.info("Start file manager init");
                                             }
-//                                            Log.i("main", GlobalVariables.serverAddress);
                                             break;
                                         case "main_server_initialled":
                                             //pc端窗口初始化完成
@@ -473,15 +500,9 @@ public class ConnectMainService extends Service implements INetworkService {
                                             IntentFilter batteryBroadcastFilter = new IntentFilter();
                                             batteryBroadcastFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
                                             if(batteryStateReceiver == null) {
+                                                logger.debug("Register battery state receiver");
                                                 batteryStateReceiver = new BatteryStateReceiver(ConnectMainService.this);
                                             }
-                                            //注册wifi状态广播 暂时不需要了
-//                                            IntentFilter wifiStateChangeFilter = new IntentFilter();
-//                                            wifiStateChangeFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
-//                                            if(wifiStateReceiver == null) {
-//                                                wifiStateReceiver=new WifiStateReceiver(ConnectMainService.this);
-//                                            }
-//                                            registerReceiver(wifiStateReceiver,wifiStateChangeFilter);
                                             registerReceiver(batteryStateReceiver, batteryBroadcastFilter);
                                             setupNotificationListenerService();
                                             break;
@@ -494,23 +515,29 @@ public class ConnectMainService extends Service implements INetworkService {
                                             break;
                                         case "transmit_text":
                                             //互传文本
+                                            logger.debug("Receive transmit text");
                                             activityMethods.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_TEXT, new TransmitMessageTypeText(jsonObj.msg, false), true);
                                             break;
                                         case "transmit_uploadFile":
                                             //互传文件
                                             File file;
+                                            logger.debug("Transmit request download file");
                                             //Download目录下
                                             if(GlobalVariables.preferences.getInt("file_save_location", 0) == 1) {
+                                                logger.debug("Save to public download path");
                                                 file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/Transmit");
                                             } else {
                                                 //私有目录
+                                                logger.debug("Save to private path");
                                                 file = new File(ConnectMainService.this.getExternalFilesDir(null).getAbsolutePath() + "/transmit/files");
                                             }
                                             file.mkdirs();
                                             File outputFile = new File(file.getAbsolutePath() + "/" + jsonObj.fileName);
+                                            logger.debug("Create output file: {}", outputFile.getAbsolutePath());
                                             if(outputFile.exists()) {
                                                 //重名 末尾加时间戳保存
                                                 //不能影响显示
+                                                logger.debug("File exists, append timestamp to new file name");
                                                 new TransmitDownloadFile(jsonObj.port, file.getAbsolutePath() + "/" + System.currentTimeMillis() + jsonObj.fileName, jsonObj.fileName, jsonObj.fileSize, activityMethods);
                                             } else {
                                                 //没重名 一切正常
@@ -520,6 +547,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             break;
                                         case "main_queryAllPackages":
                                             //查询所有已安装应用
+                                            logger.debug("Received query all packages packet");
                                             new Thread(() -> {
                                                 JsonObject responseObj = new AllPackageResponse(jsonObj._request_id, ConnectMainService.this).create();
                                                 webSocketClient.send(responseObj.toString());
@@ -527,21 +555,25 @@ public class ConnectMainService extends Service implements INetworkService {
                                             break;
                                         case "main_bindDevice":
                                             //绑定计算机
+                                            logger.debug("Received bind device packet");
                                             new Thread(() -> {
                                                 File keyFile = new File(getFilesDir() + "/bind.key");
                                                 if(keyFile.exists()) {
+                                                    logger.debug("Has exists bind key file.Delete it");
                                                     keyFile.delete();
                                                 }
                                                 try (FileOutputStream keyFileOut = new FileOutputStream(keyFile)) {
                                                     keyFileOut.write(jsonObj.msg.getBytes());
                                                     keyFileOut.flush();
                                                     GlobalVariables.settings.edit().putBoolean("boundDevice", true).apply();
+                                                    logger.info("Bind computer success");
                                                     JsonObject response = new JsonObject();
                                                     response.addProperty("_isResponsePacket", true);
                                                     response.addProperty("_responseId", jsonObj._request_id);
                                                     webSocketClient.send(response.toString());
                                                 } catch (IOException e) {
-                                                    throw new RuntimeException(e);
+                                                    logger.error("Error when write bind key file", e);
+                                                    //TODO 异常返回
                                                 }
                                             }).start();
                                             break;
@@ -553,6 +585,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             JsonObject response = new JsonObject();
                                             response.addProperty("_isResponsePacket", true);
                                             response.addProperty("_responseId", jsonObj._request_id);
+                                            logger.info("Unbind computer success");
                                             webSocketClient.send(response.toString());
                                             break;
                                         case "main_getTrustMode":
@@ -577,12 +610,14 @@ public class ConnectMainService extends Service implements INetworkService {
                                             //是否已经授权
                                             //TODO 支持使用shell或root授权
                                             if(mediaProjectionIntent == null) {
+                                                logger.debug("Request media projection but not permission");
                                                 mediaProjectionPacket.addProperty("result", false);
                                                 webSocketClient.send(mediaProjectionPacket.toString());
                                                 return;
                                             }
                                             mediaProjectionPacket.addProperty("result", true);
                                             Intent intent = new Intent(ConnectMainService.this, MediaProjectionService.class);
+                                            logger.info("Start audio forward service");
                                             bindServiceConnection = new ServiceConnection() {
                                                 @Override
                                                 public void onServiceConnected(ComponentName name, IBinder service) {
@@ -590,14 +625,16 @@ public class ConnectMainService extends Service implements INetworkService {
                                                     try {
                                                         projectionServiceIPC.setTargetAddress(computerAddress);
                                                         projectionServiceIPC.setScreenIntent(mediaProjectionIntent);
-                                                        projectionServiceIPC.setEncryptData(jsonObj.key,jsonObj.iv);
+                                                        projectionServiceIPC.setEncryptData(jsonObj.key, jsonObj.iv);
                                                         projectionServiceIPC.run();
                                                     } catch (RemoteException e) {
+                                                        logger.error("Error when start audio forward service", e);
                                                         mediaProjectionPacket.addProperty("result", false);
                                                         mediaProjectionPacket.addProperty("exception", true);
                                                         webSocketClient.send(mediaProjectionPacket.toString());
                                                     }
                                                 }
+
                                                 @Override
                                                 public void onServiceDisconnected(ComponentName name) {
                                                 }
@@ -609,6 +646,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             JsonObject stopProjectionPacket = new JsonObject();
                                             stopProjectionPacket.addProperty("_isResponsePacket", true);
                                             stopProjectionPacket.addProperty("_responseId", jsonObj._request_id);
+                                            logger.info("Stop audio forward service");
                                             if(projectionServiceIPC != null) {
                                                 try {
                                                     projectionServiceIPC.exit();
@@ -653,6 +691,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             File dir = new File(jsonObj.msg);
                                             if(!dir.isDirectory()) {
                                                 //不是目录
+                                                logger.debug("Access path '{}' not directory", dir.getPath());
                                                 fileListPacket.addProperty("code", FileManagerResultCode.CODE_NOT_DIR);
                                                 webSocketClient.send(fileListPacket.toString());
                                                 return;
@@ -660,6 +699,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             File[] files = dir.listFiles();
                                             if(files == null) {
                                                 //无法列出文件
+                                                logger.debug("Access path '{}' not permission", dir.getPath());
                                                 fileListPacket.addProperty("code", FileManagerResultCode.CODE_NOT_PERMISSION);
                                                 webSocketClient.send(fileListPacket.toString());
                                                 return;
@@ -676,6 +716,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             fileListPacket.add("files", fileListJsonArray);
                                             webSocketClient.send(fileListPacket.toString());
                                             //已经访问了目录 提前开启服务器
+                                            logger.debug("Prestart file server for access file");
                                             if(!webFileServer.wasStarted()) webFileServer.start();
                                             break;
                                         case "main_getCurrentNotificationsList":
@@ -685,9 +726,11 @@ public class ConnectMainService extends Service implements INetworkService {
                                             break;
                                         case "removeCurrentNotification":
                                             if(jsonObj.key.equals("all")) {
+                                                logger.debug("Request remove all active notification");
                                                 notificationListenerService.cancelAllNotifications();
                                                 break;
                                             }
+                                            logger.debug("Request remove notification with key:{}", jsonObj.key);
                                             notificationListenerService.cancelNotification(jsonObj.key);
                                             break;
                                         case "appendMediaSessionControl":
@@ -696,14 +739,15 @@ public class ConnectMainService extends Service implements INetworkService {
                                             }
                                             break;
                                         default:
-                                            Log.e("main", "未知操作:" + jsonObj.packetType);
+                                            logger.warn("Unknown packet type:{}", jsonObj.packetType);
                                             break;
                                     }
                                 } catch (JsonSyntaxException e) {
                                     webSocketClient.close(ConnectionCloseCode.CloseFromClientError, "解析数据包失败");
-                                    Log.e("main", e.toString());
+                                    logger.error("Failed to parse json", e);
                                 } catch (IOException e) {
                                     //文件浏览模块开启异常 读证书报错
+                                    logger.error("Failed to start file server", e);
                                     JsonObject jsonObject = new JsonObject();
                                     jsonObject.addProperty("packetType", "edit_state");
                                     jsonObject.addProperty("type", "add");
@@ -711,13 +755,6 @@ public class ConnectMainService extends Service implements INetworkService {
                                     sendObject(jsonObject);
                                     activityMethods.getActivity().stateBarManager.addState(States.getStateList().get("error_phone_file_server"));
                                 }
-                            }
-
-                            @Override
-                            public void onMessage(@NonNull WebSocket webSocket, @NonNull ByteString bytes) {
-                                super.onMessage(webSocket, bytes);
-                                //ping专用
-                                //好吧现在又不用了
                             }
 
                             @Override
@@ -766,29 +803,26 @@ public class ConnectMainService extends Service implements INetworkService {
         //打入请求id
         String reqId = UUID.randomUUID().toString().replace("-", "");
         object.addProperty("_requestId", reqId);
+        logger.debug("Send request packet with request id:{}", reqId);
         requestMapping.put(reqId, handle);
         //发送
         webSocketClient.send(object.toString());
     }
 
     public void showForegroundNotification(Activity activity) {
+        logger.debug("Show foreground service notification");
         startForeground(127, buildForegroundNotification(activity));
     }
 
     @Override
     public void uploadFile(InputStream stream, int port, boolean isSmallFile, @Nullable FileUploadStateHandle onErrorListener, long fileSize, EncryptionKey encryptionKey) {
         new TransmitUploadFile(stream, port, isSmallFile, onErrorListener, this, fileSize, encryptionKey);
-
     }
-//    @Override
-//    public void uploadFile(FileDescriptor fd, int port, boolean isSmallFile, @Nullable FileUploadStateHandle onErrorListener) {
-//        FileInputStream stream=new FileInputStream(fd);
-//        new TransmitUploadFile(stream, port, isSmallFile, onErrorListener, this);
-//    }
 
     @Override
     public void onResponsePacket(String id, String data) {
         //检查存在
+        logger.debug("Receive response packet with id:{}", id);
         if(requestMapping.containsKey(id)) {
             RequestHandle handle = requestMapping.get(id);
             //AS报黄了 还是加判断吧 反正没影响
@@ -797,7 +831,7 @@ public class ConnectMainService extends Service implements INetworkService {
             }
             requestMapping.remove(id);
         } else {
-            Log.w("NetworkService", "Invalid Response Packet ID");
+            logger.warn("Invalid Response Packet ID:{}", id);
         }
     }
 
@@ -805,16 +839,7 @@ public class ConnectMainService extends Service implements INetworkService {
      * 断开连接
      */
     public void disconnect() {
-        if(webSocketClient != null) {
-            //如果网太卡可能关不掉
-            new Timer("CloseConnectionWatchdog").schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    if(webSocketClient != null) webSocketClient.cancel();
-                }
-            }, 1000L);
-            webSocketClient.close(ConnectionCloseCode.CloseFromClient, null);
-        }
+        disconnect(ConnectionCloseCode.CloseFromClient, null);
     }
 
     public void disconnect(int code, @Nullable String reason) {
@@ -822,7 +847,10 @@ public class ConnectMainService extends Service implements INetworkService {
             new Timer("CloseConnectionWatchdog").schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    if(webSocketClient != null) webSocketClient.cancel();
+                    if(webSocketClient != null) {
+                        logger.debug("Disconnect timeout,Force close connection");
+                        webSocketClient.cancel();
+                    };
                 }
             }, 1000L);
             webSocketClient.close(code, reason);
@@ -847,6 +875,7 @@ public class ConnectMainService extends Service implements INetworkService {
         //通知监听服务
         Intent listenerServiceIntent = new Intent(this, NotificationListenerService.class);
         listenerServiceIntent.setAction("networkServiceLaunch");
+        logger.debug("Bind notification listener service");
         bindService(listenerServiceIntent, new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
@@ -855,7 +884,7 @@ public class ConnectMainService extends Service implements INetworkService {
                 notificationListenerService = notificationServiceBinder.getService();
                 //防止系统没绑定导致接收不到
                 if(!NotificationListenerService.systemBound) {
-                    Log.i("NotificationListener", "Request rebind");
+                    logger.info("System not bind notification listener service.Request rebind");
                     PackageManager pm = getPackageManager();
                     pm.setComponentEnabledSetting(name, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
                     pm.setComponentEnabledSetting(name, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
@@ -866,7 +895,7 @@ public class ConnectMainService extends Service implements INetworkService {
                 notificationListenerService.setEnable(GlobalVariables.preferences.getBoolean("function_notification_forward", false));
                 notificationListenerServiceWorking = true;
                 activityMethods.onNotificationListenerServiceConnect();
-                Log.i("main", "Notification listener service bound");
+                logger.debug("Notification listener service bound");
             }
 
             @Override
@@ -893,6 +922,7 @@ public class ConnectMainService extends Service implements INetworkService {
                 .addAction(R.drawable.baseline_close_24, getText(R.string.service_notification_button_close), notificationButtonPendingIntent)
                 .setContentIntent(notificationBodyPendingIntent)
                 .setChannelId("foregroundService");
+        logger.debug("Created foreground service notification");
         return nBuilder.build();
     }
 
@@ -901,6 +931,7 @@ public class ConnectMainService extends Service implements INetworkService {
         NotificationChannel channel = new NotificationChannel("foregroundService", "前台服务通知", NotificationManager.IMPORTANCE_LOW);
         channel.setDescription("请勿关闭该通知");
         getSystemService(NotificationManager.class).createNotificationChannel(channel);
+        logger.debug("Created foreground notification channel");
     }
 
     public NotificationListenerService getNotificationListenerService() {

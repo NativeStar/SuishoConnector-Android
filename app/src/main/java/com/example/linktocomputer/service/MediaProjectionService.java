@@ -20,12 +20,14 @@ import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
 import android.util.Base64;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
 import com.example.linktocomputer.IMediaProjectionServiceIPC;
 import com.example.linktocomputer.R;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -44,6 +46,8 @@ public class MediaProjectionService extends Service {
     private byte[] encryptKey;
     private byte[] encryptIv;
     private String audioTargetAddress;
+    private final Logger logger = LoggerFactory.getLogger(MediaProjectionService.class);
+
     private final IMediaProjectionServiceIPC.Stub mediaProjectionServiceIPC = new IMediaProjectionServiceIPC.Stub() {
         @Override
         public void run() {
@@ -70,17 +74,17 @@ public class MediaProjectionService extends Service {
         //关闭进程
         @Override
         public void exit() throws RemoteException {
-            Log.i("Media Projection Service", "Exit requested, shutting down gracefully");
+            logger.info("Exit media projection service");
             readyExit = true;
             try {
                 if(audioRecord != null && audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
                     audioRecord.stop();
                     audioRecord.release();
                     audioRecord = null;
-                    Log.i("Media Projection Service", "AudioRecord stopped during exit");
+                    logger.debug("Stop audio recorder");
                 }
             } catch (Exception e) {
-                Log.e("Media Projection Service", "Error during service exit", e);
+                logger.error("Error when stop audio recorder",e);
             }
             Handler handler = new Handler(Looper.getMainLooper());
             handler.postDelayed(() -> {
@@ -111,7 +115,7 @@ public class MediaProjectionService extends Service {
             MediaProjectionManager mediaProjectionManager = getSystemService(MediaProjectionManager.class);
             MediaProjection mediaProjection = mediaProjectionManager.getMediaProjection(Activity.RESULT_OK, screenIntent);
             if(mediaProjection == null) {
-                Log.e("Media Projection Service", "Media Projection is null!!!");
+                logger.warn("Failed to get media projection manager!");
                 Process.killProcess(Process.myPid());
             }
             startAudioRecord(mediaProjection);
@@ -126,12 +130,12 @@ public class MediaProjectionService extends Service {
             MediaCodec mediaCodec = null;
             try {
                 if(encryptKey == null || encryptIv == null || encryptKey.length != 16 || encryptIv.length != 12) {
-                    Log.e("Media Projection Service", "Invalid encrypt key/iv, refuse to start audio forward");
+                    logger.error("Invalid encrypt key/iv, refuse to start audio forward");
                     Process.killProcess(Process.myPid());
                     return;
                 }
                 if(checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                    Log.w("Media Projection Service", "No RECORD_AUDIO permission");
+                    logger.warn("No RECORD_AUDIO permission");
                     Process.killProcess(Process.myPid());
                     return;
                 }
@@ -161,7 +165,7 @@ public class MediaProjectionService extends Service {
                         .setBufferSizeInBytes(recordBufferSize)
                         .build();
                 if(audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
-                    Log.e("Media Projection Service", "AudioRecord initialization failed");
+                    logger.error("AudioRecord initialization failed");
                     return;
                 }
                 socket = new DatagramSocket();
@@ -194,7 +198,7 @@ public class MediaProjectionService extends Service {
                         audioBuffer.clear();
                         int readLength = audioRecord.read(audioBuffer, readChunkSize, AudioRecord.READ_BLOCKING);
                         if(readLength <= 0) {
-                            Log.w("Media Projection Service", "AudioRecord read returned: " + readLength);
+                            logger.debug("AudioRecord read returned: {}", readLength);
                             continue;
                         }
                         int inputBufferIndex = mediaCodec.dequeueInputBuffer(10000);
@@ -210,7 +214,7 @@ public class MediaProjectionService extends Service {
                                 mediaCodec.queueInputBuffer(inputBufferIndex, 0, readLength, presentationTime, 0);
                             }
                         } else {
-                            Log.w("Media Projection Service", "No input buffer available: " + inputBufferIndex);
+                            logger.debug("No input buffer available: {}", inputBufferIndex);
                             continue;
                         }
                         int outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 10000);
@@ -257,24 +261,18 @@ public class MediaProjectionService extends Service {
                                     socket.send(packet);
                                 }
                             } else {
-                                Log.w("Media Projection Service", "Empty encoded output: " + bufferInfo.size + " bytes");
+                                logger.debug("Empty encoded output: {} bytes", bufferInfo.size);
                             }
                             mediaCodec.releaseOutputBuffer(outputBufferIndex, false);
                             outputBufferIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 0);
                         }
-//                        if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-//                            Log.i("Media Projection Service", "Output format changed: " + mediaCodec.getOutputFormat());
-//                        } else if (outputBufferIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
-//                        } else if (outputBufferIndex < 0) {
-//                            Log.w("Media Projection Service", "Unexpected output buffer index: " + outputBufferIndex);
-//                        }
                     } catch (Exception e) {
-                        Log.e("Media Projection Service", "Error in encoding loop", e);
+                        logger.error("Error in encoding loop", e);
                         break;
                     }
                 }
             } catch (Exception e) {
-                Log.e("Media Projection Service", "Fatal error in audio recording", e);
+                logger.error("Fatal error in audio recording", e);
             } finally {
                 try {
                     if(audioRecord != null && audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
@@ -288,7 +286,7 @@ public class MediaProjectionService extends Service {
                         socket.close();
                     }
                 } catch (Exception e) {
-                    Log.e("Media Projection Service", "Error during cleanup", e);
+                    logger.error("Error during cleanup", e);
                 }
             }
         }, "AudioEncodingThread").start();

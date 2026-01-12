@@ -2,7 +2,6 @@ package com.example.linktocomputer.instances;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -15,6 +14,9 @@ import com.example.linktocomputer.jsonClass.MainServiceJson;
 import com.example.linktocomputer.network.FileUploader;
 import com.example.linktocomputer.service.ConnectMainService;
 import com.google.gson.JsonObject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -41,6 +43,7 @@ public class ComputerConfigManager {
     private final ConnectMainService networkService;
     //本次运行是否与该设备同步过(发起上传就算)
     private boolean synced = false;
+    private final Logger logger = LoggerFactory.getLogger(ComputerConfigManager.class);
 
     public ComputerConfigManager(String name, String id, NewMainActivity context, ConnectMainService networkService,String sessionId) {
         this.name = name;
@@ -96,35 +99,35 @@ public class ComputerConfigManager {
     }
 
     public void sendIconPack() {
+        logger.info("Request send icon pack");
         if(synced) return;
         SharedPreferences iconPackVals = context.getSharedPreferences("iconPackVars", Context.MODE_PRIVATE);
         if(!Util.isIconPacked) {
-            Log.i("UploadIconPack", "Waiting pack");
+            logger.info("Waiting packing icon pack");
             needSendIconPack = true;
             //未完成打包 等打完会调用请求发送的 不急
             return;
         }
         File iconPackFile = new File(context.getCacheDir() + "/tmpAppIcons");
-//        EncryptionKey encryptionKey=new EncryptionKey();
         JsonObject packet = new JsonObject();
         packet.addProperty("packetType", "syncIconPack");
         packet.addProperty("lastUpdateTime", iconPackVals.getLong("lastUpdateTime", 1L));
         packet.addProperty("hash", Util.calculateSHA256(iconPackFile));
-
+        logger.debug("Send icon pack sync request");
         networkService.sendRequestPacket(packet, new RequestHandle() {
             @Override
             public void run(String data) {
                 MainServiceJson jsonObj = GlobalVariables.jsonBuilder.fromJson(data, MainServiceJson.class);
                 if(jsonObj._result.equals("ERROR")) {
-                    Log.i("UploadIconPack", "Target computer rejected upload request:" + jsonObj.msg);
+                    logger.info("Target computer rejected upload request:{}",jsonObj.msg);
                     return;
                 }
                 synced = true;
-                FileUploader fileUploader = new FileUploader(jsonObj.port, context, iconPackFile);
+                FileUploader fileUploader = new FileUploader(jsonObj.port, iconPackFile);
                 fileUploader.setEventListener(new FileUploader.FileUploadEventListener() {
                     @Override
                     public void onSuccess(File file) {
-                        Log.i("UploadIconPack", "Success upload icon pack");
+                        logger.info("Upload icon pack success");
                         needSendIconPack = false;
                     }
 
@@ -161,6 +164,7 @@ public class ComputerConfigManager {
     }
 
     public void setTrusted(boolean trust) {
+        logger.info("Set trusted:{}",trust);
         this.trusted = trust;
         config.edit().putBoolean("trustedDevice", trust).apply();
         //通知服务端

@@ -7,11 +7,16 @@ import android.os.BatteryManager;
 
 import com.google.gson.JsonObject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class DeviceStateUpdatePacket {
     private final Context appContext;
     private int batteryLevel=-1;
     private int batteryTemp=-1;
     private final Intent broadcastIntent;
+    private final Logger logger = LoggerFactory.getLogger(DeviceStateUpdatePacket.class);
+
 
     public DeviceStateUpdatePacket(Context context,Intent intent) {
         this.appContext = context;
@@ -37,6 +42,7 @@ public class DeviceStateUpdatePacket {
         jsonObject.addProperty("batteryTemp",this.batteryTemp==-1?null:this.batteryTemp);
         //是否充电
         jsonObject.addProperty("charging", isCharging());
+        logger.debug("Created device state update packet");
         return jsonObject;
     }
 
@@ -58,7 +64,7 @@ public class DeviceStateUpdatePacket {
         //注意类型long
         jsonObj.addProperty("total", memInfo.totalMem);
         jsonObj.addProperty("avail", memInfo.availMem);
+        logger.debug("Memory info:{}/{}",memInfo.availMem,memInfo.totalMem);
         return jsonObj;
     }
-    //    private final
 }

@@ -7,7 +7,12 @@ import com.example.linktocomputer.service.NotificationListenerService;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class CurrentNotificationsListPacket {
+    private final Logger logger = LoggerFactory.getLogger(CurrentNotificationsListPacket.class);
+
     public JsonObject build(String requestId,StatusBarNotification[] notifications, NotificationListenerService listenerService){
         JsonObject jsonObject=new JsonObject();
         JsonArray notificationList=new JsonArray();
@@ -18,6 +23,7 @@ public class CurrentNotificationsListPacket {
             final int notificationProgress=notification.extras.getInt(Notification.EXTRA_PROGRESS,-1);
             //跳过没有内容的通知 可能用了自定义view 反正传过去没法正常显示的
             if(notificationTitle==null&&notificationContent==null){
+                logger.debug("Skip notification without content");
                 continue;
             }
             JsonObject notificationJsonObject=new JsonObject();
@@ -34,6 +40,7 @@ public class CurrentNotificationsListPacket {
         jsonObject.addProperty("_isResponsePacket",true);
         jsonObject.addProperty("_responseId",requestId);
         jsonObject.add("list",notificationList);
+        logger.debug("Created active notification list packet.length:{}",notificationList.size());
         return jsonObject;
     }
 }

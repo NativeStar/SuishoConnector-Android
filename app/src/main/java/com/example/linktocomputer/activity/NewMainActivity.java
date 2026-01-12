@@ -136,16 +136,18 @@ public class NewMainActivity extends AppCompatActivity {
                     new MaterialAlertDialogBuilder(this)
                             .setMessage("当前未连接任何设备\n你是希望退出程序还是希望其继续后台运行?")
                             .setPositiveButton("后台运行", (dialog, which) -> {
+                                logger.debug("onBackInvokedCallback called.Move task to back");
                                 dialog.dismiss();
                                 moveTaskToBack(true);
                             })
                             .setNegativeButton("退出", (dialog, which) -> {
+                                logger.debug("onBackInvokedCallback called.Exit");
                                 finishAffinity();
                                 System.exit(0);
                             })
                             .show();
                 } else {
-                    logger.debug("onBackInvokedCallback called.Move task to back");
+                    logger.debug("onBackInvokedCallback called.Move task to back by has connection");
                     moveTaskToBack(true);
                 }
             });
@@ -162,16 +164,18 @@ public class NewMainActivity extends AppCompatActivity {
             new MaterialAlertDialogBuilder(this)
                     .setMessage("当前未连接任何设备\n你是希望退出程序还是希望其继续后台运行?")
                     .setPositiveButton("后台运行", (dialog, which) -> {
+                        logger.debug("onBackPressed called.Move task to back");
                         dialog.dismiss();
                         moveTaskToBack(true);
                     })
                     .setNegativeButton("退出", (dialog, which) -> {
+                        logger.debug("onBackPressed called.Exit");
                         finishAffinity();
                         System.exit(0);
                     })
                     .show();
         } else {
-            logger.debug("onBackPressed called.Move task to back");
+            logger.debug("onBackPressed called.Move task to back by has connection");
             moveTaskToBack(true);
         }
     }
@@ -256,11 +260,11 @@ public class NewMainActivity extends AppCompatActivity {
                 //退出
                 verifyDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
                     if(networkService == null || !networkService.isConnected) {
-                        logger.info("User cancelled verify with not connection.Exiting");
+                        logger.debug("User cancelled verify with not connection.Exiting");
                         finishAffinity();
                         System.exit(0);
                     } else {
-                        logger.info("User cancelled verify with connection.Move task to back");
+                        logger.debug("User cancelled verify with connection.Move task to back");
                         moveTaskToBack(true);
                     }
                 });
@@ -322,7 +326,7 @@ public class NewMainActivity extends AppCompatActivity {
                 logger.info("Receiving auto connect broadcast");
             } else if(autoConnector.isWorking()) {
                 //activity被销毁重建 更新它
-                logger.info("Updating auto connect broadcaster activity");
+                logger.debug("Updating auto connect broadcaster activity");
                 autoConnector.setActivity(this);
             }
             //监听网络状态更改

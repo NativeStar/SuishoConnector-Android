@@ -12,7 +12,6 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
-import android.util.Log;
 import android.util.TypedValue;
 
 import androidx.annotation.Nullable;
@@ -20,6 +19,9 @@ import androidx.annotation.Nullable;
 import com.example.linktocomputer.activity.NewMainActivity;
 import com.example.linktocomputer.constant.States;
 import com.example.linktocomputer.instances.ComputerConfigManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -40,6 +42,8 @@ import java.util.zip.ZipOutputStream;
 public class Util {
     //是否打完图标包 上传时检查
     public static volatile boolean isIconPacked=false;
+    private static final Logger logger = LoggerFactory.getLogger(Util.class);
+
 
     /**
      * 将文件大小转换为方便阅读的字符串
@@ -48,6 +52,7 @@ public class Util {
      * @return 转换后的字符串
      */
     public static String coverFileSize(long size) {
+        logger.debug("Origin file size data: {}", size);
         //byte
         if(size < 1024) {
             return size + "B";
@@ -83,6 +88,7 @@ public class Util {
         boolean result = context.getPackageManager().getComponentEnabledSetting(componentName) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
         //自动启用
         if(!result && autoEnable) {
+            logger.info("Auto enable component: {}", clazz.getName());
             context.getPackageManager().setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
         }
         return result;
@@ -90,6 +96,7 @@ public class Util {
 
     public static void buildAppListCache(Activity activity) {
         if(activity.checkSelfPermission("android.permission.QUERY_ALL_PACKAGES") == PackageManager.PERMISSION_DENIED) {
+            logger.info("Not query all packages permission");
             ((NewMainActivity)activity).stateBarManager.addState(States.getStateList().get("warn_query_package_permission"));
             return;
         }
@@ -102,6 +109,7 @@ public class Util {
             //根据应用列表长度判断 上面可能不返回拒绝
             if(allPackage.size()<= 10){
                 //正常不可能少于10个软件
+                logger.info("Application count too low,Maybe not query all package permission");
                 ((NewMainActivity)activity).stateBarManager.addState(States.getStateList().get("warn_query_package_permission"));
                 return;
             }
@@ -117,30 +125,33 @@ public class Util {
                 try (ObjectInputStream appListMapperInput = new ObjectInputStream(Files.newInputStream(appListMapObjectFile.toPath()));) {
                     //读取缓存的映射表
                     HashMap<String, String> mapperFileData = (HashMap<String, String>) appListMapperInput.readObject();
+                    logger.debug("Loading cached object data");
                     File zipFile = new File(activity.getCacheDir() + "/tmpAppIcons");
                     //程序表是否有更改
                     if(mapperFileData.hashCode()==appMap.hashCode()&&zipFile.exists()) {
                         //两个一样 直接用缓存
-                        Log.i("main", "App list cache file comparison pass");
+                        logger.info("App list cache file comparison pass");
                         GlobalVariables.appPackageNameMapper = mapperFileData;
                         isIconPacked=true;
                         allPackage.clear();
                         System.gc();
                     } else {
                         //重构
+                        logger.info("Rebuild app list cache file");
                         try (ObjectOutputStream mapperFileOutStream = new ObjectOutputStream(Files.newOutputStream(appListMapObjectFile.toPath()))) {
                             GlobalVariables.appPackageNameMapper = appMap;
                             mapperFileOutStream.writeObject(appMap);
                             mapperFileOutStream.flush();
                             mapperFileOutStream.close();
+                            logger.debug("App list map cache file update success");
                             createAllPackageIconCache(activity, appMap,vals);
                         } catch (IOException e) {
-                            Log.e("PackingIcon",e.getMessage(),e);
+                            logger.error("Error on update app list map cache file",e);
                             ((NewMainActivity)activity).stateBarManager.addState(States.getStateList().get("error_packing_icon"));
                         }
                     }
                 } catch (IOException | ClassNotFoundException e) {
-                    Log.e("PackingIcon",e.getMessage(),e);
+                    logger.error("Error on packing app icon pack",e);
                     //文件可能损坏
                     appListMapObjectFile.delete();
                     ((NewMainActivity)activity).stateBarManager.addState(States.getStateList().get("error_packing_icon"));
@@ -151,9 +162,10 @@ public class Util {
                     mapperFileOutStream.writeObject(appMap);
                     mapperFileOutStream.flush();
                     GlobalVariables.appPackageNameMapper = appMap;
+                    logger.debug("App list map cache file create success");
                     createAllPackageIconCache(activity, appMap,vals);
                 } catch (IOException e) {
-                    Log.e("PackingIcon",e.getMessage(),e);
+                    logger.error("Error on create app list map cache file",e);
                     ((NewMainActivity)activity).stateBarManager.addState(States.getStateList().get("error_packing_icon"));
                 }
             }
@@ -179,6 +191,7 @@ public class Util {
                 zipFile.delete();
                 oldFile.delete();
                 //打包
+                logger.debug("Start packing app icon");
                 ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(zipFile.toPath()));
                 for(String packageName : appsList.keySet()) {
                     Bitmap iconBitmap;
@@ -195,14 +208,13 @@ public class Util {
                         Canvas canvas = new Canvas(iconBitmap);
                         // 将drawable 内容画到画布中
                         iconDrawable.draw(canvas);
-                        Log.d("CreatePackageIconCache", "Success create icon:" + packageName);
                     } catch (PackageManager.NameNotFoundException e) {
-                        Log.w("CreatePackageIconCache", "Can not find package:" + packageName);
+                        logger.error("Can not find package",e);
                         continue;
                     }
                     //直接打进zip
                     ByteArrayOutputStream bitmapBytes = new ByteArrayOutputStream();
-                    iconBitmap.compress(Bitmap.CompressFormat.PNG, 100, bitmapBytes);
+                    iconBitmap.compress(Bitmap.CompressFormat.PNG, 80, bitmapBytes);
                     zipOutputStream.putNextEntry(new ZipEntry(packageName));
                     zipOutputStream.write(bitmapBytes.toByteArray());
                     bitmapBytes.close();
@@ -213,17 +225,17 @@ public class Util {
                 //重命名
                 zipFile.renameTo(oldFile);
                 prefs.edit().putLong("lastUpdateTime", System.currentTimeMillis()).putBoolean("iconPackingSucceeded", true).apply();
-                Log.i("CreatePackageIconCache","Packed all icons");
+                logger.info("Packed all icons");
                 isIconPacked=true;
                 if(ComputerConfigManager.needSendIconPack){
-                    Log.i("CreatePackageIconCache","");
+                    logger.info("Pack success.Request send icon pack");
                     GlobalVariables.computerConfigManager.sendIconPack();
                 }
                 ((NewMainActivity)context).stateBarManager.removeState("busy_packing_icon");
                 System.gc();
             } catch (IOException e) {
                 ((NewMainActivity)context).stateBarManager.removeState("busy_packing_icon");
-                Log.e("PackingIcon",e.getMessage(),e);
+                logger.error("Error on packing icon",e);
                 ((NewMainActivity)context).stateBarManager.addState(States.getStateList().get("error_packing_icon"));
             }
 
@@ -232,6 +244,7 @@ public class Util {
     @Nullable
     public static String calculateSHA256(File file) {
         if(!file.exists()) return null;
+        logger.debug("Calculate SHA256 for file '{}'",file.getPath());
         MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA-256");

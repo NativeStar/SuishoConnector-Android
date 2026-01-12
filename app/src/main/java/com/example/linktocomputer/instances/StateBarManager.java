@@ -19,6 +19,9 @@ import com.example.linktocomputer.constant.States;
 import com.example.linktocomputer.instances.adapter.StateListAdapter;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @SuppressLint("RestrictedApi")
 public class StateBarManager {
     private Activity activity;
@@ -28,6 +31,8 @@ public class StateBarManager {
     private boolean showedTip=false;
     //在menuView没初始化时记录是否要刷新图标
     private boolean delaySetIcon=false;
+    private final Logger logger = LoggerFactory.getLogger(StateBarManager.class);
+
     public StateBarManager(Activity activity) {
         this.activity = activity;
         adapter=new StateListAdapter(activity);
@@ -61,6 +66,7 @@ public class StateBarManager {
 
     private void showTipPopup() {
         if(menuView == null) return;
+        logger.debug("Show new state popup tip");
         View menuLayout = LayoutInflater.from(activity).inflate(R.layout.state_dialog, null, false);
         PopupWindow popupWindow = new PopupWindow(menuLayout, ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
         popupWindow.setOutsideTouchable(true);
@@ -79,6 +85,7 @@ public class StateBarManager {
     }
 
     public void addState(States.State state) {
+        logger.debug("Add state:{}",state.id);
         if(!showedTip){
             showTipPopup();
             showedTip=true;
@@ -88,10 +95,12 @@ public class StateBarManager {
     }
 
     public void removeState(String id) {
+        logger.debug("Remove state by id:{}",id);
         adapter.removeState(id,true);
         setIcon();
     }
     public void removeState(States.State state){
+        logger.debug("Remove state by instance:{}",state.id);
         adapter.removeState(state,true);
         setIcon();
     }
@@ -100,6 +109,7 @@ public class StateBarManager {
             delaySetIcon=true;
             return;
         }
+        logger.debug("Update state bar icon");
         activity.runOnUiThread(()->{
             switch (adapter.highestLevel){
                 case BUSY:

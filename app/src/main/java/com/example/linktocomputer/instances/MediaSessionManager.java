@@ -9,13 +9,15 @@ import android.os.Handler;
 import android.os.Looper;
 import android.service.notification.StatusBarNotification;
 import android.util.Base64;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
 import com.example.linktocomputer.Util;
 import com.example.linktocomputer.service.ConnectMainService;
 import com.google.gson.JsonObject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,13 +30,13 @@ public class MediaSessionManager extends MediaController.Callback {
     private MediaController mediaController;
     private MediaMetadata currentMetadata;
     private volatile String lastBitmapSha256 = "";
+    private final Logger logger = LoggerFactory.getLogger(MediaSessionManager.class);
 
     private static class CalcBitmapResult {
         public CalcBitmapResult(byte[] bytes, String sha256) {
             this.bytes = bytes;
             this.sha256 = sha256;
         }
-
         public byte[] bytes;
         public String sha256;
     }
@@ -49,10 +51,12 @@ public class MediaSessionManager extends MediaController.Callback {
         if(key.equals(notificationKey)) return;
         notificationKey = key;
         this.token = token;
+        logger.debug("Set new media session");
         update();
     }
 
     public void appendControl(String action, @Nullable Long seekTime) {
+        logger.debug("Append media session control:{}", action);
         switch (action) {
             case "changePlayState":
                 PlaybackState state = mediaController.getPlaybackState();
@@ -74,14 +78,16 @@ public class MediaSessionManager extends MediaController.Callback {
                 mediaController.getTransportControls().seekTo(Optional.ofNullable(seekTime).orElse(0L));
                 break;
             default:
-                Log.w("MediaSessionManager", "Unknown control action:" + action);
+                logger.warn("Unknown control action:{}", action);
         }
     }
 
     private void update() {
         if(mediaController != null) {
+            logger.debug("Session destroy.Clean media controller");
             mediaController.unregisterCallback(this);
         }
+        logger.debug("Create new media controller");
         mediaController = new MediaController(this.networkService, token);
         new Handler(Looper.getMainLooper()).post(()->mediaController.registerCallback(this));
         this.onMetadataChanged(mediaController.getMetadata());
@@ -100,6 +106,7 @@ public class MediaSessionManager extends MediaController.Callback {
     @Override
     public void onSessionDestroyed() {
         super.onSessionDestroyed();
+        logger.debug("Session destroyed");
         notificationKey = "";
         lastBitmapSha256 = "";
         currentMetadata = null;
@@ -115,10 +122,12 @@ public class MediaSessionManager extends MediaController.Callback {
     public void onMetadataChanged(@Nullable MediaMetadata metadata) {
         if(metadata == null) return;
         if(currentMetadata != null && currentMetadata.equals(metadata)) {
+            logger.debug("Metadata equals.Not change");
             return;
         }
         super.onMetadataChanged(metadata);
         currentMetadata = metadata;
+        logger.debug("Update new metadata");
         new Thread(() -> {
             final String title = Optional.ofNullable(metadata.getString(MediaMetadata.METADATA_KEY_TITLE)).orElse("未知标题");
             final String artist = Optional.ofNullable(metadata.getString(MediaMetadata.METADATA_KEY_ARTIST)).orElse("未知艺术家");
@@ -137,12 +146,15 @@ public class MediaSessionManager extends MediaController.Callback {
                 CalcBitmapResult currentBitmapSha256 = calcBitmapSha256(artBitmap);
                 if(currentBitmapSha256.sha256.equals(lastBitmapSha256)) {
                     jsonObject.addProperty("image", "keep");
+                    logger.debug("Image not change.Keep");
                 } else {
                     lastBitmapSha256 = currentBitmapSha256.sha256;
                     jsonObject.addProperty("image", "data:image/jpeg;base64," + Base64.encodeToString(currentBitmapSha256.bytes, Base64.NO_WRAP));
+                    logger.debug("Image change.Update");
                 }
             } else {
                 jsonObject.addProperty("image", "null");
+                logger.debug("Image not change.Null");
             }
             networkService.sendObject(jsonObject);
         }).start();
@@ -155,6 +167,7 @@ public class MediaSessionManager extends MediaController.Callback {
         jsonObject.addProperty("hasSession", playState != PlaybackState.STATE_STOPPED && playState != PlaybackState.STATE_NONE && playState != PlaybackState.STATE_ERROR);
         jsonObject.addProperty("playing", playState == PlaybackState.STATE_PLAYING);
         jsonObject.addProperty("position", state.getPosition() / 1000);
+        logger.debug("Send update playback state packet");
         networkService.sendObject(jsonObject);
     }
 

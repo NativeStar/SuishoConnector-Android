@@ -7,7 +7,6 @@ import android.media.session.MediaSession;
 import android.os.Binder;
 import android.os.IBinder;
 import android.service.notification.StatusBarNotification;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -15,6 +14,9 @@ import com.example.linktocomputer.GlobalVariables;
 import com.example.linktocomputer.instances.MediaSessionManager;
 import com.example.linktocomputer.responseBuilders.NotificationPacket;
 import com.google.gson.JsonObject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 
@@ -28,7 +30,7 @@ public class NotificationListenerService extends android.service.notification.No
     private final HashMap<String, String> appNameCache = new HashMap<>();
     private String appPackageName;
     private MediaSessionManager mediaSessionManager;
-
+    private final Logger logger = LoggerFactory.getLogger(NotificationListenerService.class);
     public NotificationListenerService() {
     }
 
@@ -43,6 +45,7 @@ public class NotificationListenerService extends android.service.notification.No
                 onNewMediaNotification(statusBarNotification, notification, mediaSessionToken);
             }
         }
+        logger.debug("Get active notifications count:{}",notificationsList.length);
         return notificationsList;
     }
 
@@ -50,11 +53,11 @@ public class NotificationListenerService extends android.service.notification.No
     public IBinder onBind(Intent intent) {
         //根据请求者不同返回不同对象
         if("networkServiceLaunch".equals(intent.getAction())) {
-            Log.d("NotificationListener", "Network Service bound");
+            logger.debug("Bound by network service");
             appPackageName = getPackageName();
             return new MyBinder();
         }
-        Log.d("NotificationListener", "System bound");
+        logger.debug("Bound by network system");
         systemBound = true;
         return super.onBind(intent);
     }
@@ -76,6 +79,7 @@ public class NotificationListenerService extends android.service.notification.No
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn, RankingMap rankingMap, int reason) {
         super.onNotificationRemoved(sbn, rankingMap, reason);
+        logger.debug("Notification removed {}", sbn.getKey());
         if(networkService == null) return;
         JsonObject removeNotificationPacket = new JsonObject();
         removeNotificationPacket.addProperty("packetType", "removeActiveNotification");
@@ -101,16 +105,18 @@ public class NotificationListenerService extends android.service.notification.No
             //检查是否为媒体通知
             MediaSession.Token mediaSessionToken = notificationInstance.extras.getParcelable(Notification.EXTRA_MEDIA_SESSION);
             if(mediaSessionToken != null) {
+                logger.debug("Received new media notification");
                 onNewMediaNotification(sbn, notificationInstance, mediaSessionToken);
             }
             //拒绝转发电子垃圾
-//        Log.i("NotificationForward", sbn.getPackageName() + ":" + notificationInstance.extras.getString(Notification.EXTRA_TITLE, "EMPTY!!!") + ":" + notificationInstance.extras.getString(Notification.EXTRA_TEXT, "EMPTY!!!")+":"+notificationInstance.extras.getInt(Notification.EXTRA_PROGRESS,-1));
             if(isRubbishNotification(notificationInstance.extras.getString(Notification.EXTRA_TITLE, ""), notificationInstance.extras.getString(Notification.EXTRA_TEXT, ""), notificationInstance.extras.getInt(Notification.EXTRA_PROGRESS, -1)))
                 return;
             NotificationPacket packet;
+            logger.debug("Ready forward notification {}:{}", sbn.getPackageName(), notificationInstance.extras.getString(Notification.EXTRA_TITLE, ""));
             try {
                 //应用名缓存 应该比一直getPackageInfo性能好点
                 if(!appNameCache.containsKey(sbn.getPackageName())) {
+                    logger.debug("Get and cache app name for {}", sbn.getPackageName());
                     appNameCache.put(sbn.getPackageName(), packageManager.getPackageInfo(sbn.getPackageName(), 0).applicationInfo.loadLabel(packageManager).toString());
                 }
                 packet = new NotificationPacket(
@@ -124,6 +130,7 @@ public class NotificationListenerService extends android.service.notification.No
                         notificationInstance.extras.getInt(Notification.EXTRA_PROGRESS, -1)
                 );
             } catch (PackageManager.NameNotFoundException e) {
+                logger.error("Error on create notification packet", e);
                 packet = new NotificationPacket(
                         sbn.getPackageName(),
                         sbn.getPostTime(),
@@ -163,7 +170,7 @@ public class NotificationListenerService extends android.service.notification.No
             try {
                 appNameCache.put(pkgName, packageManager.getPackageInfo(pkgName, 0).applicationInfo.loadLabel(packageManager).toString());
             } catch (PackageManager.NameNotFoundException e) {
-                Log.e("main", "Failed to get app name by package name", e);
+                logger.error("Failed to get app name by package name:{}",pkgName,e);
                 return "ERROR!!!";
             }
         }
@@ -175,6 +182,7 @@ public class NotificationListenerService extends android.service.notification.No
             return;
         }
         if(mediaSessionManager == null) {
+            logger.debug("Create new media session manager");
             mediaSessionManager = new MediaSessionManager(networkService, sbn, token);
         } else {
             mediaSessionManager.setNewMediaSession(sbn, token);

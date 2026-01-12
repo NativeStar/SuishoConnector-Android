@@ -6,7 +6,6 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,6 +33,9 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.net.FileNameMap;
 import java.net.URLConnection;
@@ -57,6 +59,8 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
 
     private final RecyclerView messagesView;
     private Activity activity;
+    private final Logger logger = LoggerFactory.getLogger(TransmitMessagesListAdapter.class);
+
 
     @NonNull
     @Override
@@ -67,6 +71,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
             case MessageConf.MESSAGE_TYPE_FILE:
                 return new ViewHolder(LayoutInflater.from(parent.getContext()).inflate(R.layout.recycler_transmit_file_item_view, parent, false));
             default:
+                logger.warn("Unknown view type!");
                 return null;
         }
     }
@@ -88,6 +93,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                 if(!messagesView.canScrollVertically(1)) {
                     BottomNavigationView bottomNavigationView = activity.findViewById(R.id.connected_activity_navigation_bar);
                     bottomNavigationView.removeBadge(R.id.connected_activity_navigation_bar_menu_transmit);
+                    logger.debug("User scroll to bottom.Remove new message badge");
                 }
             }
         });
@@ -104,7 +110,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     dataList.add(new TransmitMessageTypeText(transmitMessage));
                     break;
                 default:
-                    Log.w("main", "unknownMessageType");
+                    logger.warn("Unknown message type!");
                     break;
             }
         });
@@ -118,20 +124,25 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         switch (holder.getItemViewType()) {
             case MessageConf.MESSAGE_TYPE_TEXT:
+                logger.debug("Init text message");
                 TextView textView = holder.messageView.findViewById(R.id.transmit_message_text_view);
                 textView.setText(((TransmitMessageTypeText) dataList.get(position)).msg);
                 holder.messageView.setOnLongClickListener(view -> {
+                    logger.debug("Text message long clicked.Show menu");
                     //文本卡片长按事件
                     View menuLayout = LayoutInflater.from(activity).inflate(R.layout.transmit_message_action_menu_text, null, false);
                     PopupWindow popupWindow = new PopupWindow(menuLayout, ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
                     setUniversalLongClickMenuAction(menuLayout, messagesView, popupWindow, holder);
                     menuLayout.findViewById(R.id.long_click_menu_action_copy_full).setOnClickListener(v -> {
+                        logger.info("Copy text message full");
                         popupWindow.dismiss();
                         ClipData clipData = ClipData.newPlainText("CopyText", ((TransmitMessageTypeText) dataList.get(position)).msg);
                         clipboardManager.setPrimaryClip(clipData);
+                        logger.debug("Copy full message:{}", clipData);
                         Snackbar.make(((NewMainActivity) activity).getBinding().getRoot(), "已复制", 2000).show();
                     });
                     menuLayout.findViewById(R.id.long_click_menu_action_copy_free).setOnClickListener(v -> {
+                        logger.debug("Copy text message free");
                         popupWindow.dismiss();
                         textView.setTextIsSelectable(true);
                         textView.setFocusable(true);
@@ -158,19 +169,20 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                 holder.messageView.setOnClickListener(View::clearFocus);
                 break;
             case MessageConf.MESSAGE_TYPE_FILE:
+                logger.debug("Init file message");
                 TransmitMessageTypeFile messageInstance = (TransmitMessageTypeFile) dataList.get(position);
                 //文件名
                 ((TextView) holder.messageView.findViewById(R.id.transmit_file_name)).setText(messageInstance.fileName);
                 //文件大小
                 ((TextView) holder.messageView.findViewById(R.id.transmit_file_size)).setText(Util.coverFileSize(messageInstance.fileSize));
                 //是本地上传的文件 无法打开 不显示图标
+                logger.debug("File message name:{},size:{}", messageInstance.fileName, messageInstance.fileSize);
                 if(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE) {
                     (holder.messageView.findViewById(R.id.transmit_file_openable_icon)).setVisibility(View.GONE);
                     RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) holder.messageView.getLayoutParams();
                     params.setMarginStart(Util.dp2px(143));
                     holder.messageView.setLayoutParams(params);
                     holder.messageView.requestLayout();
-
                 } else {
                     (holder.messageView.findViewById(R.id.transmit_file_openable_icon)).setVisibility(View.GONE);
                     RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) holder.messageView.getLayoutParams();
@@ -183,12 +195,14 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     //检查内容为"null"的字符串及真的null
                     if(messageInstance.filePath == null || messageInstance.filePath.equals("null")) {
                         //文件路径为空
-                        //可能加上提示?
+                        logger.warn("File message path is null!");
+                        Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getResources().getText(R.string.transmit_open_file_failed_null_path), 2000).show();
                         return;
                     }
                     File file = new File(messageInstance.filePath);
                     //检测文件是否存在
                     if(!file.exists()) {
+                        logger.debug("File message path '{}' deleted", file.getPath());
                         //不存在
                         Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getResources().getText(R.string.transmit_open_file_failed_not_exists), 2000).show();
                         return;
@@ -203,8 +217,10 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     FileNameMap fileNameMap = URLConnection.getFileNameMap();
                     intent.setDataAndType(uri, fileNameMap.getContentTypeFor(openTarget.getName()));
                     if(intent.resolveActivity(activity.getPackageManager()) != null) {
+                        logger.debug("Open transmit file");
                         activity.startActivity(intent);
                     } else {
+                        logger.info("File message can not resolve application to open it");
                         Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getResources().getText(R.string.transmit_open_file_failed_not_resolve_application), 2000).show();
                     }
                 });
@@ -217,6 +233,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     menuLayout.findViewById(R.id.long_click_menu_action_share).setOnClickListener(v -> activity.runOnUiThread(() -> {
                         if(messageInstance.filePath == null || messageInstance.filePath.equals("null")) {
                             //应该没错
+                            logger.info("Share file message but path is null");
                             Snackbar.make(((NewMainActivity) activity).getBinding().getRoot(), "无法分享来自自身的文件", 2000).show();
                             return;
                         }
@@ -226,20 +243,23 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                             //不存在
                             Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getResources().getText(R.string.transmit_open_file_failed_not_exists), 2000).show();
                             popupWindow.dismiss();
+                            logger.debug("Share file failed because file deleted");
                             return;
                         }
+                        logger.debug("Request share file:{}", file.getPath());
                         Intent intent = new Intent();
                         intent.setAction(Intent.ACTION_SEND);
                         intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                        //有重复的文件 使用魔改provider防止部分软件获取到错误的文件名
+                        //有重复的文件 使用专门的provider而不是displayName参数防止部分软件依旧获取到错误的文件名
                         //说的就是你 微信
                         Uri uri;
                         if(messageInstance.filePath.endsWith("/" + messageInstance.fileName)) {
                             //正常分享
                             uri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".transmitOpenFileProvider", new File(messageInstance.filePath));
+                            logger.debug("Not repeat file name.Using system provider");
                         } else {
                             //自己的provider
-                            Log.i("main", "Using custom file provider");
+                            logger.debug("Has repeat file name.Using custom provider");
                             ShareFileProvider.setShareFileName(messageInstance.fileName);
                             uri = ShareFileProvider.getUriForFile(activity, activity.getPackageName() + ".ShareFileProvider", new File(messageInstance.filePath));
                         }
@@ -252,7 +272,9 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         intent.setDataAndType(uri, fileNameMap.getContentTypeFor(messageInstance.fileName));
                         if(intent.resolveActivity(activity.getPackageManager()) != null) {
                             activity.startActivity(Intent.createChooser(intent, null));
+                            logger.debug("Start share file activity");
                         } else {
+                            logger.info("File message can not resolve application to share it");
                             Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), "找不到支持分享的应用程序", 2000).show();
                         }
                         popupWindow.dismiss();
@@ -308,6 +330,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
      * @param forceScrollToBottom 是否强制滚动到底部
      */
     public void addItem(TransmitRecyclerAddItemType type, TransmitMessageAbstract pushData, boolean requestSave, boolean forceScrollToBottom, @Nullable RecyclerView recyclerView) {
+        logger.debug("Adding item to transmit message list");
         //type预留做前处理
         //追加
         dataList.add(pushData);
@@ -329,6 +352,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
     }
 
     public void listScrollToBottom(boolean force, @Nullable RecyclerView recyclerView) {
+        logger.debug("Request scroll transmit list to bottom.Force:{}", force);
         RecyclerView scrollView = messagesView == null ? activity.findViewById(R.id.transmit_message_list) : messagesView;
         if(scrollView == null) return;
         scrollView.clearOnScrollListeners();
@@ -338,6 +362,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                 super.onScrolled(recyclerView, dx, dy);
                 //到底部消除提示图标
                 if(!scrollView.canScrollVertically(1)) {
+                    logger.debug("Auto scroll to bottom.Remove new message badge");
                     BottomNavigationView bottomNavigationView = activity.findViewById(R.id.connected_activity_navigation_bar);
                     bottomNavigationView.removeBadge(R.id.connected_activity_navigation_bar_menu_transmit);
                 }
@@ -346,13 +371,16 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
         //强制拉到底部
         if(force) {
             scrollView.scrollToPosition(dataList.size() - 1);
+            logger.debug("Force scroll to bottom");
             return;
         }
         //距离过小 往下拉
         if(scrollView.computeVerticalScrollRange() - (scrollView.computeVerticalScrollExtent() + scrollView.computeVerticalScrollOffset()) <= 300) {
             listScrollToBottom(true, scrollView);
+            logger.debug("received new message and low bottom range.Auto scroll");
         } else {
             //新消息红点
+            logger.debug("Received new transmit message and not auto scroll.Add new message badge");
             BottomNavigationView bottomNavigationView = activity.findViewById(R.id.connected_activity_navigation_bar);
             bottomNavigationView.getOrCreateBadge(R.id.connected_activity_navigation_bar_menu_transmit);
         }

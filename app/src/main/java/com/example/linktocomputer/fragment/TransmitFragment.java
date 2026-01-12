@@ -12,7 +12,6 @@ import android.os.ParcelFileDescriptor;
 import android.provider.OpenableColumns;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,6 +52,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.JsonObject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.security.NoSuchAlgorithmException;
@@ -75,26 +77,18 @@ public class TransmitFragment extends Fragment {
     private NotificationManager notificationManager;
     private ActivityResultLauncher<String[]> filePickerLauncher;
     private ActivityResultLauncher<PickVisualMediaRequest> imagePickerLauncher;
+    private final Logger logger = LoggerFactory.getLogger(TransmitFragment.class);
 
-    public TransmitMessagesListAdapter getTransmitMessagesListAdapter() {
-        return transmitMessagesListAdapter;
-    }
 
     public TransmitFragment() {
-        // Required empty public constructor
     }
-
-    /*所有返回类型*/
-    private final int ACTIVITY_RESULT_IMAGE_PICK = 0;/*图片*/
-    private final int ACTIVITY_RESULT_FILE_PICK = 1;/*文件*/
-
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if(savedInstanceState != null) {
             //重启时直接获取
             //就这样吧这方法有概率返回null
+            logger.debug("Has saved instance state.Get activity");
             activity = getActivity();
         }
         //修复activity被销毁后用户操作列表崩溃
@@ -110,6 +104,7 @@ public class TransmitFragment extends Fragment {
         init();
         if(!isInit) {
             isInit = true;
+            logger.debug("onCreateView init!");
         }
         return binding.getRoot();
     }
@@ -122,11 +117,13 @@ public class TransmitFragment extends Fragment {
     }
 
     public void addItem(TransmitRecyclerAddItemType type, TransmitMessageAbstract pushData, boolean requestSave, boolean forceScrollToBottom) {
+        logger.debug("Adding item to transmit fragment");
         transmitMessagesListAdapter.addItem(type, pushData, requestSave, forceScrollToBottom);
         scrollMessagesViewToBottom(false);
     }
 
     public void scrollMessagesViewToBottom(boolean force) {
+        logger.debug("Transmit message list scroll to bottom with force:{}",force);
         activity.runOnUiThread(() -> {
             if(force) {
                 TransmitMessagesListAdapter transmitMessagesListAdapter = (TransmitMessagesListAdapter) binding.transmitMessageList.getAdapter();
@@ -134,21 +131,25 @@ public class TransmitFragment extends Fragment {
                 return;
             }
             if(binding.transmitMessageList.computeVerticalScrollRange() - (binding.transmitMessageList.computeVerticalScrollExtent() + binding.transmitMessageList.computeVerticalScrollOffset()) <= 300) {
+                logger.debug("Scroll to bottom by auto");
                 scrollMessagesViewToBottom(true);
             } else {
                 //新消息红点
                 BottomNavigationView bottomNavigationView = activity.findViewById(R.id.connected_activity_navigation_bar);
                 bottomNavigationView.getOrCreateBadge(R.id.connected_activity_navigation_bar_menu_transmit);
+                logger.debug("Add new transmit message badge");
             }
         });
     }
 
     private void onPickFile(@Nullable Uri uri) {
         if(uri == null) {
+            logger.debug("Pick file result null!");
             return;
         }
         if(networkService == null || !networkService.isConnected) {
             /*掉线了*/
+            logger.debug("Picked file but network service is null or not connected");
             Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
             return;
         }
@@ -160,15 +161,18 @@ public class TransmitFragment extends Fragment {
             long fileSize = pickFile.getStatSize();
             /*异常的文件大小*/
             if(fileSize == -1) {
+                logger.warn("Invalid file.File size is -1");
                 throw new FileNotFoundException("File size is -1");
             }
             String fileName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
             cursor.close();
             //加密key
+            logger.debug("Got file base info.Name:{}.Size:{}",fileName,fileSize);
             EncryptionKey encryptionKey;
             try {
                 encryptionKey = EncryptionKey.getInstance("AES", 128);
             } catch (NoSuchAlgorithmException e) {
+                logger.error("Failed to create encryption key",e);
                 activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
                         .setMessage(e.getMessage())
                         .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
@@ -189,6 +193,7 @@ public class TransmitFragment extends Fragment {
             //向量
             uploadRequestObject.addProperty("encryptIv", encryptionKey.getIvBase64());
             //发送请求
+            logger.debug("Send upload file request packet");
             networkService.sendRequestPacket(uploadRequestObject, new RequestHandle() {
                 @Override
                 public void run(String responseData) {
@@ -197,6 +202,7 @@ public class TransmitFragment extends Fragment {
                     MainServiceJson jsonObj = GlobalVariables.jsonBuilder.fromJson(responseData, MainServiceJson.class);
                     //检查是否发生异常
                     if(jsonObj._result.equals("ERROR")) {
+                        logger.warn("Upload request failed with message:{}",jsonObj.msg);
                         //异常
                         activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
                                 .setMessage(jsonObj.msg)
@@ -206,11 +212,13 @@ public class TransmitFragment extends Fragment {
                     }
                     try {
                         //上传文件
+                        logger.info("Start upload file data");
                         networkService.uploadFile(getContext().getContentResolver().openInputStream(uri), jsonObj.port, fileSize <= 8192L, new FileUploadStateHandle() {
                             @Override
                             //上传服务异常处理
                             public void onError(Exception error) {
                                 super.onError(error);
+                                logger.error("Upload file failed",error);
                                 activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
                                         .setMessage(error.getMessage())
                                         .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
@@ -220,6 +228,7 @@ public class TransmitFragment extends Fragment {
                             @Override
                             public void onSuccess() {
                                 super.onSuccess();
+                                logger.info("Upload file success");
                                 //activity是否被销毁
                                 if(getActivity() == null || getActivity().isDestroyed())
                                     return;
@@ -236,6 +245,7 @@ public class TransmitFragment extends Fragment {
                                 message.timestamp = System.currentTimeMillis();
                                 transmitMessagesListAdapter.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE, new TransmitMessageTypeFile(message));
                                 scrollMessagesViewToBottom(false);
+                                logger.debug("Upload success.Add new transmit file message to list");
                             }
 
                             @Override
@@ -250,6 +260,7 @@ public class TransmitFragment extends Fragment {
                         }, fileSize, encryptionKey);
                         //打开输入流捕捉
                     } catch (FileNotFoundException | NullPointerException e) {
+                        logger.error("Failed to open file in upload",e);
                         new MaterialAlertDialogBuilder(getContext()).setTitle("打开文件异常")
                                 .setMessage(e.getMessage())
                                 .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
@@ -259,7 +270,7 @@ public class TransmitFragment extends Fragment {
             });
             //整个方法
         } catch (FileNotFoundException | NullPointerException fe) {
-            Log.i("main", "error", fe);
+            logger.error("Failed to open file in ready upload",fe);
             new MaterialAlertDialogBuilder(getContext()).setTitle("打开文件异常")
                     .setMessage(fe.getMessage())
                     .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
@@ -283,10 +294,12 @@ public class TransmitFragment extends Fragment {
                         //有文本
                         binding.sendMoreButton.setVisibility(View.GONE);
                         binding.sendMessageButton.setVisibility(View.VISIBLE);
+                        logger.debug("Transmit text input has text.Change button to send text mode");
                     } else {
                         //没有
                         binding.sendMoreButton.setVisibility(View.VISIBLE);
                         binding.sendMessageButton.setVisibility(View.GONE);
+                        logger.debug("Transmit text input not text.Change button to pick file dialog mode");
                     }
                 }
 
@@ -297,15 +310,20 @@ public class TransmitFragment extends Fragment {
             //发送文字消息按钮
             binding.sendMessageButton.setOnClickListener((view) -> {
                 String inputMessage = Objects.requireNonNull(binding.sendMessageInput.getText()).toString();
+                logger.debug("Clicked text send button");
                 //以防万一
                 if(inputMessage.isEmpty() || inputMessage.trim().isEmpty()) {
+                    logger.debug("Text input is empty.Return");
                     return;
                 }
                 if(networkService == null || !networkService.isConnected) {
                     /*掉线了*/
                     Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
+                    logger.debug("Request send text but not connected computer.Return");
                     return;
                 }
+                logger.info("Send transmit text message");
+                logger.debug("Transmit text message data: {}", inputMessage);
                 JsonObject jsonObject = new JsonObject();
                 jsonObject.addProperty("packetType", "action_transmit");
                 jsonObject.addProperty("messageType", "planeText");
@@ -317,6 +335,7 @@ public class TransmitFragment extends Fragment {
             });
             //更多类型按钮
             binding.sendMoreButton.setOnClickListener((view) -> {
+                logger.debug("Clicked send file button.Open dialog");
                 View menuLayout = LinearLayout.inflate(getContext(), R.layout.send_more_dialog_layout, null);
                 PopupWindow popupWindow = new PopupWindow(menuLayout, ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
                 popupWindow.setOutsideTouchable(true);
@@ -324,18 +343,22 @@ public class TransmitFragment extends Fragment {
                 menuLayout.findViewById(R.id.uploadFileButton).setOnClickListener((uploadFileButtonView) -> {
                     popupWindow.dismiss();
                     if(TransmitUploadFile.hasUploadingFile) {
+                        logger.debug("Request upload file but has uploading file.Return");
                         Toast.makeText(networkService, R.string.transmit_upload_failed_has_uploading_file, Toast.LENGTH_LONG).show();
                         return;
                     }
+                    logger.debug("Launch file picker activity");
                     filePickerLauncher.launch(new String[]{"*/*"});
                 });
                 menuLayout.findViewById(R.id.uploadImageButtton).setOnClickListener(buttonView -> {
                     popupWindow.dismiss();
                     //检查文件上传
                     if(TransmitUploadFile.hasUploadingFile) {
+                        logger.debug("Request upload image but has uploading file.Return");
                         Toast.makeText(networkService, R.string.transmit_upload_failed_has_uploading_file, Toast.LENGTH_LONG).show();
                         return;
                     }
+                    logger.debug("Launch image picker sheet");
                     imagePickerLauncher.launch(new PickVisualMediaRequest());
 
                 });
@@ -355,6 +378,7 @@ public class TransmitFragment extends Fragment {
             });
             binding.transmitMessageList.setAdapter(transmitMessagesListAdapter);
             if(transmitMessagesListAdapter == null) {
+                logger.debug("Init transmit message list adapter");
                 //初始化和activity被杀
                 initTransmitMessages(() -> {
                     binding.transmitMessageList.scrollToPosition(transmitMessagesListAdapter.getItemCount() - 1);
@@ -364,6 +388,7 @@ public class TransmitFragment extends Fragment {
                 });
             } else {
                 //正常加载
+                logger.debug("Loaded transmit message list,Scroll to bottom");
                 binding.transmitMessageList.scrollToPosition(transmitMessagesListAdapter.getItemCount() - 1);
             }
             //滑动监听
@@ -373,6 +398,7 @@ public class TransmitFragment extends Fragment {
                     super.onScrolled(recyclerView, dx, dy);
                     //到底部消除提示图标
                     if(!binding.transmitMessageList.canScrollVertically(1)) {
+                        logger.debug("User scroll to bottom.Remove new message badge");
                         BottomNavigationView bottomNavigationView = activity.findViewById(R.id.connected_activity_navigation_bar);
                         bottomNavigationView.removeBadge(R.id.connected_activity_navigation_bar_menu_transmit);
                     }
@@ -403,14 +429,17 @@ public class TransmitFragment extends Fragment {
                 File transmitDataPath = new File(activity.getExternalFilesDir(null).getAbsolutePath() + "/transmit/");
                 //检查存在
                 if(!transmitDataPath.exists()) {
+                    logger.debug("Transmit data path not exists.Create it");
                     //创建它
                     transmitDataPath.mkdirs();
                 }
                 Box<TransmitDatabaseEntity> transmitBoxStore = ((Crystal) activity.getApplication()).getDatabase().boxFor(TransmitDatabaseEntity.class);
                 if(transmitMessagesListAdapter == null) {
+                    logger.debug("Create new TransmitMessagesListAdapter instance");
                     transmitMessagesListAdapter = new TransmitMessagesListAdapter(transmitBoxStore.getAll(), activity, transmitBoxStore, binding.transmitMessageList);
                 }
                 if(onSuccess != null) {
+                    logger.debug("Run onSuccess");
                     activity.runOnUiThread(onSuccess);
                 }
             }

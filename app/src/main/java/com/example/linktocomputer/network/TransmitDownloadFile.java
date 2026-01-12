@@ -3,7 +3,6 @@ package com.example.linktocomputer.network;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,6 +15,9 @@ import com.example.linktocomputer.enums.TransmitRecyclerAddItemType;
 import com.example.linktocomputer.instances.transmit.TransmitMessageTypeFile;
 import com.example.linktocomputer.interfaces.IConnectedActivityMethods;
 import com.example.linktocomputer.jsonClass.TransmitMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -55,29 +57,34 @@ public class TransmitDownloadFile {
     final String filePath;
     SSLContext sslContext;
     TrustManager trustManager;
-    public TransmitDownloadFile(int port, String path, String name , long size, IConnectedActivityMethods am) {
-        activityMethods=am;
+    private final Logger logger = LoggerFactory.getLogger(TransmitDownloadFile.class);
+
+    public TransmitDownloadFile(int port, String path, String name, long size, IConnectedActivityMethods am) {
+        activityMethods = am;
         socketPort = port;
-        filePath=path;
-        fileName=name;
-        fileSize=size;
-        notificationManager=am.getActivity().getSystemService(NotificationManager.class);
-        hasNotification= Util.checkNotificationPermission(notificationManager);
+        filePath = path;
+        fileName = name;
+        fileSize = size;
+        notificationManager = am.getActivity().getSystemService(NotificationManager.class);
+        hasNotification = Util.checkNotificationPermission(notificationManager);
         start();
     }
-    private void start(){
-        Thread thread=new Thread(){
+
+    private void start() {
+        logger.info("Start download transmit file");
+        Thread thread = new Thread() {
             @Override
             public void run() {
                 super.run();
-                try{
-                    fileOutputStream=new FileOutputStream(filePath);
+                try {
+                    fileOutputStream = new FileOutputStream(filePath);
                 } catch (IOException e) {
+                    logger.error("Create FileOutputStream error", e);
                     onError(e);
                     return;
                 }
                 File certFile = new File(activityMethods.getActivity().getDataDir().getAbsolutePath() + "/files/cert/" + GlobalVariables.computerConfigManager.getId() + ".crt");
-                try (InputStream certFileInputStream=Files.newInputStream(certFile.toPath())){
+                try (InputStream certFileInputStream = Files.newInputStream(certFile.toPath())) {
                     CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
                     KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
                     keyStore.load(null);
@@ -90,103 +97,117 @@ public class TransmitDownloadFile {
                     sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
                 } catch (IOException | CertificateException | KeyStoreException |
                          NoSuchAlgorithmException | KeyManagementException e) {
+                    logger.error("Initialize SSLContext error", e);
                     onError(e);
                 }
-
-                Request wsReq=new Request.Builder()
-                        .url("wss://"+GlobalVariables.serverAddress+":"+socketPort)
+                logger.debug("Create file data download socket");
+                Request wsReq = new Request.Builder()
+                        .url("wss://" + GlobalVariables.serverAddress + ":" + socketPort)
                         .build();
-                ws=new OkHttpClient()
+                ws = new OkHttpClient()
                         .newBuilder()
-                        .sslSocketFactory(sslContext.getSocketFactory(),(X509TrustManager) trustManager)
+                        .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustManager)
                         .hostnameVerifier((hostname, session) -> true)
                         .writeTimeout(Duration.ofSeconds(10))
                         .callTimeout(Duration.ofSeconds(10))
                         .build()
                         .newWebSocket(wsReq, new WebSocketListener() {
-                    @Override
-                    public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
-                        super.onOpen(webSocket, response);
-                        //验证 同时表示已经准备好了
-                        if (hasNotification){
-                            activityMethods.getActivity().runOnUiThread(TransmitDownloadFile.this::createNotification);
-                        }
-                        ws.send(GlobalVariables.computerConfigManager.getSessionId());
-                    }
-
-                    @Override
-                    public void onMessage(@NonNull WebSocket webSocket, @NonNull ByteString bytes) {
-                        super.onMessage(webSocket, bytes);
-                        try {
-                            //写入文件
-                            fileOutputStream.write(bytes.toByteArray());
-                        } catch (IOException e) {
-                            onError(e);
-                            try {
-                                fileOutputStream.close();
-                            } catch (IOException ignored) {}
-                            finally {
-                                ws.close(5001,"File written error");
+                            @Override
+                            public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
+                                super.onOpen(webSocket, response);
+                                logger.debug("File data download socket open");
+                                //验证 同时表示已经准备好了
+                                if(hasNotification) {
+                                    logger.debug("Request create transmit download notification");
+                                    activityMethods.getActivity().runOnUiThread(TransmitDownloadFile.this::createNotification);
+                                }
+                                logger.debug("Send verify session id");
+                                ws.send(GlobalVariables.computerConfigManager.getSessionId());
                             }
-                        }
-                    }
-                    @Override
-                    public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
-                        //1000正常 4000验证失败 4001PC端被关闭
-                        super.onClosing(webSocket, code, reason);
-                        //关闭通知
-                        notificationManager.cancel(NotificationID.NOTIFICATION_TRANSMIT_DOWNLOAD_FILE);
-                        activityMethods.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE,new TransmitMessageTypeFile(fileName,fileSize, TransmitMessage.MESSAGE_FROM_COMPUTER,false, filePath),true);
-                        activityMethods.getTransmitFragment().scrollMessagesViewToBottom(false);
-                        try {
-                            fileOutputStream.flush();
-                            fileOutputStream.close();
-                            //失败 删除文件
-                            if(code!=1000) {
-                                new File(filePath).delete();
-                                activityMethods.showAlert("接收文件失败",code==4000?"连接验证失败":"传输提早中断","确定");
-                            }
-                        } catch (IOException e) {
-                            onError(e);
-                        }
-                        ws.close(1000,null);
-                    }
 
-                    @Override
-                    public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable t, @Nullable Response response) {
-                        super.onFailure(webSocket, t, response);
-                        Log.e("main", "error",t);
-                    }
-                });
+                            @Override
+                            public void onMessage(@NonNull WebSocket webSocket, @NonNull ByteString bytes) {
+                                super.onMessage(webSocket, bytes);
+                                try {
+                                    //写入文件
+                                    fileOutputStream.write(bytes.toByteArray());
+                                } catch (IOException e) {
+                                    logger.error("Write transmit file error", e);
+                                    onError(e);
+                                    try {
+                                        fileOutputStream.close();
+                                    } catch (IOException ignored) {
+                                    } finally {
+                                        ws.close(5001, "File written error");
+                                    }
+                                }
+                            }
+
+                            @Override
+                            public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
+                                //1000正常 4000验证失败 4001PC端被关闭
+                                super.onClosing(webSocket, code, reason);
+                                //关闭通知
+                                notificationManager.cancel(NotificationID.NOTIFICATION_TRANSMIT_DOWNLOAD_FILE);
+                                activityMethods.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE, new TransmitMessageTypeFile(fileName, fileSize, TransmitMessage.MESSAGE_FROM_COMPUTER, false, filePath), true);
+                                activityMethods.getTransmitFragment().scrollMessagesViewToBottom(false);
+                                try {
+                                    fileOutputStream.flush();
+                                    fileOutputStream.close();
+                                    //失败 删除文件
+                                    if(code != 1000) {
+                                        logger.warn("Download transmit file failed with code:{}",code);
+                                        new File(filePath).delete();
+                                        activityMethods.showAlert("接收文件失败", code == 4000 ? "连接验证失败" : "传输提早中断", "确定");
+                                    }
+                                } catch (IOException e) {
+                                    logger.error("Close transmit file error", e);
+                                    onError(e);
+                                }
+                                ws.close(1000, null);
+                            }
+
+                            @Override
+                            public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable t, @Nullable Response response) {
+                                super.onFailure(webSocket, t, response);
+                                logger.error("Transmit file download socket error", t);
+                            }
+                        });
             }
         };
         thread.start();
     }
-    private void onError(Exception e){
-        activityMethods.showAlert("接收失败",e.toString(),"确定");
+
+    private void onError(Exception e) {
+        activityMethods.showAlert("接收失败", e.toString(), "确定");
         //通知pc端
-        File file=new File(filePath);
+        File file = new File(filePath);
         file.delete();
 
     }
-    private void ensureNotificationChannel(NotificationManager notificationManager){
+
+    private void ensureNotificationChannel(NotificationManager notificationManager) {
         //判断通道是否存在
-        if (notificationManager.getNotificationChannel("fileDownloadProgress")!= null) {
+        if(notificationManager.getNotificationChannel("fileDownloadProgress") != null) {
+            logger.debug("File download notification channel exists");
             return;
         }
-        NotificationChannel channel=new NotificationChannel("fileDownloadProgress","文件上传进度显示", NotificationManager.IMPORTANCE_LOW);
+        logger.debug("Create file download notification channel");
+        NotificationChannel channel = new NotificationChannel("fileDownloadProgress", "文件上传进度显示", NotificationManager.IMPORTANCE_LOW);
         channel.setDescription("请勿关闭该通知");
         notificationManager.createNotificationChannel(channel);
     }
-    private void createNotification(){
+
+    private void createNotification() {
+        logger.debug("Show transmit file download notification");
         ensureNotificationChannel(notificationManager);
-        Notification.Builder builder=new Notification.Builder(activityMethods.getActivity(),"fileDownloadProgress");
+        Notification.Builder builder = new Notification.Builder(activityMethods.getActivity(), "fileDownloadProgress");
         builder.setOngoing(true)
                 .setAutoCancel(false)
                 .setContentTitle("文件接收中...")
                 .setContentText("请在PC端查看接收进度")
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setProgress(100,0,true);
-        notificationManager.notify(NotificationID.NOTIFICATION_TRANSMIT_DOWNLOAD_FILE,builder.build());
+                .setProgress(100, 0, true);
+        notificationManager.notify(NotificationID.NOTIFICATION_TRANSMIT_DOWNLOAD_FILE, builder.build());
     }
 }

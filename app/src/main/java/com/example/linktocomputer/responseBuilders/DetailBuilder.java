@@ -8,9 +8,14 @@ import android.view.WindowManager;
 
 import com.google.gson.JsonObject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class DetailBuilder {
     private final String responseId;
     private final Context appContext;
+    private final Logger logger = LoggerFactory.getLogger(DetailBuilder.class);
+
     public DetailBuilder(String requestId, Context context){
         this.responseId=requestId;
         this.appContext=context;
@@ -28,6 +33,7 @@ public class DetailBuilder {
         short[] screenResolution=getScreenResolution();
         obj.addProperty("screenWidth",screenResolution[0]);
         obj.addProperty("screenHeight",screenResolution[1]);
+        logger.debug("Created device detail packet");
         return obj;
     }
     //电量
@@ -44,6 +50,7 @@ public class DetailBuilder {
         //注意类型long
         jsonObj.addProperty("total",memInfo.totalMem);
         jsonObj.addProperty("avail",memInfo.availMem);
+        logger.debug("Memory info:{}/{}",memInfo.availMem,memInfo.totalMem);
         return jsonObj;
     }
     //屏幕分辨率
