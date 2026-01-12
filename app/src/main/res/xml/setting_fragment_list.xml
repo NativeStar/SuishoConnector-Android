@@ -70,12 +70,11 @@
             android:key="enable_debug_log"
             android:summary="可能影响性能 建议仅在需要反馈异常时使用(重启后生效)"
             android:title="开启调试日志" />
-        <!--   TODO 改成导出所有日志     -->
         <Preference
-            android:icon="@drawable/baseline_bug_report_24"
+            android:icon="@drawable/baseline_archive_24"
             android:key="key_export_crash_logs"
-            android:summary="将崩溃日志打包导出"
-            android:title="导出崩溃日志"/>
+            android:summary="将所有日志打包导出"
+            android:title="导出日志"/>
         <Preference
             android:icon="@drawable/outline_info_24"
             android:key="key_about"

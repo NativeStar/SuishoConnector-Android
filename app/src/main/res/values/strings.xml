@@ -163,9 +163,9 @@
     <string name="text_crash_dialog_title">应用程序崩溃</string>
     <string name="text_crash_dialog_message">Suisho Connector崩溃了,在设置中将日志导出并发送给开发者可能有助于修复此问题.带来不便深感抱歉.</string>
     <string name="text_export_success">导出完成</string>
-    <string name="crash_not_log">无崩溃日志</string>
+    <string name="text_not_log">无可导出日志</string>
     <string name="text_export_failed">导出失败</string>
-    <string name="dialog_log_export_message">崩溃日志将被打包至\"/内部存储/Download/SuishoConnector/\"目录下</string>
+    <string name="dialog_log_export_message">所有日志将被打包至\"/内部存储/Download/SuishoConnector/\"目录下</string>
     <string name="text_export_to">已导出为:</string>
     <string name="setting_launch_verify_summary_device_not_password">无法使用:设备未设置锁屏密码</string>
     <string name="auth_dialog_title">身份验证</string>

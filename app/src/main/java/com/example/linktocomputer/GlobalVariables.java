@@ -9,7 +9,6 @@ import com.google.gson.GsonBuilder;
 import java.util.HashMap;
 
 public class GlobalVariables {
-//    public static Messenger transmitSendMessenger=null;
     public static boolean networkServiceBound =false;
     public static String androidId;
     public static String serverAddress;
@@ -20,4 +19,5 @@ public class GlobalVariables {
     public static SharedPreferences preferences=null;
     public static HashMap<String,String> appPackageNameMapper= new HashMap<>();
     public static ComputerConfigManager computerConfigManager;
+    public static String currentBootLogFilePath ="null";
 }

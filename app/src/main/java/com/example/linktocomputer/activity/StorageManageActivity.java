@@ -147,7 +147,7 @@ public class StorageManageActivity extends AppCompatActivity {
                 logger.debug("Open chaos data clear confirm");
                 new MaterialAlertDialogBuilder(this)
                         .setTitle("清理确认")
-                        .setMessage("确认清除杂项数据?")
+                        .setMessage("确认清除杂项数据?\n(不会清理本次运行产生的日志文件)")
                         .setNegativeButton("取消", (dialog, which) -> {
                         })
                         .setPositiveButton("确认", (dialog, which) -> {
@@ -158,9 +158,11 @@ public class StorageManageActivity extends AppCompatActivity {
                             //崩溃日志
                             File crashLogsFolder = new File(getDataDir().getAbsolutePath() + "/files/crash/");
                             clearFolder(crashLogsFolder);
+                            //运行日志
+                            File commonLogsFolder = new File(getDataDir().getAbsolutePath() + "/files/logs/");
+                            clearFolder(commonLogsFolder,true);
                             Snackbar.make(findViewById(R.id.storage_manage_activity_root), getString(R.string.text_cleared), 2000).show();
                             initTextShow();
-                            //TODO 运行时日志 记得跳过本次运行产生的日志
                         }).show();
             });
             findViewById(R.id.button_storage_manage_wipe_data).setOnClickListener(v -> {
@@ -262,6 +264,9 @@ public class StorageManageActivity extends AppCompatActivity {
         //崩溃日志
         File crashLogsFolder = new File(getDataDir().getAbsolutePath() + "/files/crash/");
         chaosFilesTotalSize += getFolderSize(crashLogsFolder);
+        //运行日志
+        File commonLogsFolder = new File(getDataDir().getAbsolutePath() + "/files/logs/");
+        chaosFilesTotalSize += getFolderSize(commonLogsFolder);
         ((TextView) findViewById(R.id.text_storage_usage_chaos_data)).setText(Util.coverFileSize(chaosFilesTotalSize));
         //设置按钮可用
         runOnUiThread(() -> {
@@ -300,19 +305,22 @@ public class StorageManageActivity extends AppCompatActivity {
         logger.debug("Calc folder '{}' size {}",path.getName(), tempFilesSize);
         return tempFilesSize;
     }
-
+    private boolean clearFolder(File path) {
+        return clearFolder(path,false);
+    }
     /**
      * 清空文件夹 仅限其中文件
      *
      * @param path 目标文件内File
      * @return 是否完成清理
      */
-    private boolean clearFolder(File path) {
+    private boolean clearFolder(File path,boolean isLog) {
         if(path.exists()) {
             File[] files = path.listFiles();
             //文件夹不存在
             if(files == null) return true;
             for(File file : files) {
+                if(isLog&&file.getPath().equals(GlobalVariables.currentBootLogFilePath))continue;
                 if(!file.delete()) return false;
             }
             return true;

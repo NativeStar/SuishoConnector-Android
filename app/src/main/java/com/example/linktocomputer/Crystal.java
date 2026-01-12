@@ -22,6 +22,9 @@ import java.io.PrintWriter;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Appender;
+import ch.qos.logback.core.FileAppender;
 import io.objectbox.BoxStore;
 
 public class Crystal extends Application {
@@ -101,6 +104,11 @@ public class Crystal extends Application {
         ch.qos.logback.classic.Logger settingLevelLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
         boolean enableDebugLog = GlobalVariables.preferences.getBoolean("enable_debug_log", false);
         settingLevelLogger.setLevel(enableDebugLog ? Level.DEBUG : Level.INFO);
+        Appender<ILoggingEvent> appender = settingLevelLogger.getAppender("file");
+        if(appender instanceof FileAppender) {
+            GlobalVariables.currentBootLogFilePath =((FileAppender<?>) appender).getFile();
+            //拿不到就算 反正文件删了也不会崩
+        }
         logger = LoggerFactory.getLogger(Crystal.class);
         logger.info("Application init");
         String infoStr = "\nOEM:" + Build.BRAND + "\n" +

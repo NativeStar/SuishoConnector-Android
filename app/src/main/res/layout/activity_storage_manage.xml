@@ -192,7 +192,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="崩溃日志 加密证书等" />
+                    android:text="运行时产生的日志 加密证书等" />
             </LinearLayout>
             <com.google.android.material.button.MaterialButton
                 android:layout_width="wrap_content"

@@ -56,6 +56,7 @@ import java.util.zip.ZipOutputStream;
 
 public class SettingFragment extends PreferenceFragmentCompat {
     private final Logger logger = LoggerFactory.getLogger(SettingFragment.class);
+
     public SettingFragment() {
     }
 
@@ -193,7 +194,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                 return true;
             }
             String path = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector").getAbsolutePath();
-            logger.debug("Show export transmit file confirm dialog.Target path:{}",path);
+            logger.debug("Show export transmit file confirm dialog.Target path:{}", path);
             new MaterialAlertDialogBuilder(getActivity())
                     .setTitle("导出互传文件")
                     .setMessage("会将所有私有目录下的互传文件导出至'" + path + "'目录下并删除源文件\n是否确定?")
@@ -264,7 +265,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
         findPreference("key_export_crash_logs").setOnPreferenceClickListener((preference -> {
             new MaterialAlertDialogBuilder(getActivity())
                     .setMessage(R.string.dialog_log_export_message)
-                    .setPositiveButton(R.string.text_ok, ((dialog, which) -> exportCrashReport()))
+                    .setPositiveButton(R.string.text_ok, ((dialog, which) -> exportAllLogs()))
                     .setNegativeButton(R.string.text_cancel, (dialog, which) -> dialog.dismiss())
                     .setCancelable(false)
                     .show();
@@ -372,7 +373,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                     if(targetDirectoryFile.getName().equals(file.getName())) {
                         //文件名追加时间戳
                         targetPath = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/Transmit/" + System.currentTimeMillis() + file.getName()).toPath();
-                        logger.debug("File name conflict.Append timestamp to file name.Now path and name:{}",targetPath);
+                        logger.debug("File name conflict.Append timestamp to file name.Now path and name:{}", targetPath);
                         break;
                     }
                 }
@@ -380,35 +381,53 @@ public class SettingFragment extends PreferenceFragmentCompat {
                 file.delete();
                 logger.debug("Move file success");
             } catch (IOException e) {
-                logger.error("Move file failed with exception",e);
+                logger.error("Move file failed with exception", e);
                 return false;
             }
         }
         logger.info("Move transmit files success");
         return true;
     }
-
-    //    TODO 改成导出全部日志 重新打日志
-    private void exportCrashReport() {
-        logger.info("Start export crash report");
+    private void exportAllLogs() {
+        logger.info("Start export all logs");
         File crashLogDirectory = new File(getActivity().getDataDir() + "/files/crash/");
-        if(!crashLogDirectory.isDirectory()) {
-            Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.crash_not_log, 2500).show();
+        File commonLogDirectory = new File(getActivity().getDataDir() + "/files/logs/");
+        if(!crashLogDirectory.isDirectory() && !commonLogDirectory.isDirectory()) {
+            logger.debug("No log file folder found");
+            Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_not_log, 2500).show();
             return;
         }
-        File[] logFiles = crashLogDirectory.listFiles();
-        if(logFiles.length == 0) {
-            Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.crash_not_log, 2500).show();
+        File[] crashLogFiles = crashLogDirectory.listFiles();
+        File[] commonLogFiles = commonLogDirectory.listFiles();
+        if(commonLogFiles == null || crashLogFiles == null) {
+            logger.warn("Open logs folder failed!");
+            Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_not_log, 2500).show();
+            return;
+        }
+        if(crashLogFiles.length == 0 && commonLogFiles.length == 0) {
+            logger.debug("No log file found");
+            Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_not_log, 2500).show();
             return;
         }
         new Thread(() -> {
-            File logZipFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/crashReport-" + System.currentTimeMillis() + ".zip");
+            File logZipFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/logs-" + System.currentTimeMillis() + ".zip");
             try {
                 ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(logZipFile.toPath()));
-                for(File logFile : logFiles) {
-                    FileInputStream inputStream = new FileInputStream(logFile);
-                    zipOutputStream.putNextEntry(new ZipEntry(logFile.getName()));
-                    byte[] buffer = new byte[(int) logFile.length()];
+                //崩溃日志
+                for(File crashLogFile : crashLogFiles) {
+                    FileInputStream inputStream = new FileInputStream(crashLogFile);
+                    zipOutputStream.putNextEntry(new ZipEntry("crash/" + crashLogFile.getName()));
+                    byte[] buffer = new byte[(int) crashLogFile.length()];
+                    inputStream.read(buffer);
+                    zipOutputStream.write(buffer);
+                    inputStream.close();
+                    zipOutputStream.closeEntry();
+                }
+                //运行日志
+                for(File commonLogFile : commonLogFiles) {
+                    FileInputStream inputStream = new FileInputStream(commonLogFile);
+                    zipOutputStream.putNextEntry(new ZipEntry("common/" + commonLogFile.getName()));
+                    byte[] buffer = new byte[(int) commonLogFile.length()];
                     inputStream.read(buffer);
                     zipOutputStream.write(buffer);
                     inputStream.close();
@@ -417,6 +436,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                 zipOutputStream.flush();
                 zipOutputStream.close();
                 getActivity().runOnUiThread(() -> Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), getString(R.string.text_export_to) + logZipFile.getName(), 5000).show());
+                logger.info("Export all logs success");
             } catch (IOException e) {
                 getActivity().runOnUiThread(() -> {
                     new MaterialAlertDialogBuilder(getActivity())
