@@ -562,18 +562,20 @@ public class ConnectMainService extends Service implements INetworkService {
                                                     logger.debug("Has exists bind key file.Delete it");
                                                     keyFile.delete();
                                                 }
+                                                JsonObject response = new JsonObject();
+                                                response.addProperty("_isResponsePacket", true);
+                                                response.addProperty("_responseId", jsonObj._request_id);
                                                 try (FileOutputStream keyFileOut = new FileOutputStream(keyFile)) {
                                                     keyFileOut.write(jsonObj.msg.getBytes());
                                                     keyFileOut.flush();
                                                     GlobalVariables.settings.edit().putBoolean("boundDevice", true).apply();
+                                                    response.addProperty("success", true);
                                                     logger.info("Bind computer success");
-                                                    JsonObject response = new JsonObject();
-                                                    response.addProperty("_isResponsePacket", true);
-                                                    response.addProperty("_responseId", jsonObj._request_id);
-                                                    webSocketClient.send(response.toString());
                                                 } catch (IOException e) {
                                                     logger.error("Error when write bind key file", e);
-                                                    //TODO 异常返回
+                                                    response.addProperty("success", false);
+                                                }finally {
+                                                    webSocketClient.send(response.toString());
                                                 }
                                             }).start();
                                             break;
@@ -850,7 +852,8 @@ public class ConnectMainService extends Service implements INetworkService {
                     if(webSocketClient != null) {
                         logger.debug("Disconnect timeout,Force close connection");
                         webSocketClient.cancel();
-                    };
+                    }
+                    ;
                 }
             }, 1000L);
             webSocketClient.close(code, reason);
