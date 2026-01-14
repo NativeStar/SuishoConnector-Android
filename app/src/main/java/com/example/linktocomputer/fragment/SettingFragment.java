@@ -40,7 +40,6 @@ import com.example.linktocomputer.service.ConnectMainService;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.gson.JsonObject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,22 +118,9 @@ public class SettingFragment extends PreferenceFragmentCompat {
         findPreference("function_notification_forward").setOnPreferenceChangeListener((preference, newValue) -> {
             logger.info("Notification forward switch changed");
             boolean value = (boolean) newValue;
-            ComputerConfigManager configManager = GlobalVariables.computerConfigManager;
             NewMainActivity activity = (NewMainActivity) getActivity();
-            if(configManager != null) {
-                logger.info("Updated notification forward state and notify to computer");
-                ConnectMainService networkService = configManager.getNetworkService();
-                //调整处理状态
-                networkService.getNotificationListenerService().setEnable(value);
-                //告知pc端
-                JsonObject jsonObject = new JsonObject();
-                jsonObject.addProperty("packetType", "render_client_function_state_change");
-                jsonObject.addProperty("type", "notificationForwardEnable");
-                jsonObject.addProperty("value", value);
-                networkService.sendObject(jsonObject);
-            }
             //更改状态显示
-            if(activity == null) return true;
+            if(activity == null||activity.isDestroyed()) return true;
             StateBarManager stateBarManager = activity.stateBarManager;
             if(value) {
                 if(stateBarManager != null && !activity.checkNotificationListenerPermission()) {
@@ -177,7 +163,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                                 }
                             }
                         }
-                        logger.info("Change file save location to " + which);
+                        logger.info("Change file save location to {}", which);
                         GlobalVariables.preferences.edit().putInt("file_save_location", which).apply();
                         Snackbar.make(getView(), "修改成功", 2000).show();
                         dialog.dismiss();
@@ -235,8 +221,19 @@ public class SettingFragment extends PreferenceFragmentCompat {
                     }
                 }
             }
-            Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_active_after_reboot, 3000).show();
-            findPreference("function_file_manager").setEnabled(false);
+            ConnectMainService service=NewMainActivity.networkService;
+            if(service == null||!service.isConnected) return true;
+            try {
+                if((boolean) newValue) {
+                    service.webFileServer.start();
+                }else{
+                    service.webFileServer.stop();
+                }
+            }catch (IOException ioe){
+                logger.error("Error when start/stop file server",ioe);
+                Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.error_change_file_manager, 3000).show();
+                findPreference("function_file_manager").setEnabled(false);
+            }
             logger.info("Changed remote file manager function state");
             return true;
         });

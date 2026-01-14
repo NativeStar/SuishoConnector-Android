@@ -114,7 +114,7 @@ public class ConnectMainService extends Service implements INetworkService {
     private BroadcastReceiver closeConnectionBroadcastReceiver = null;
     private ServiceConnection bindServiceConnection = null;
     //文件管理器 远程播放流媒体等的文件服务器
-    private final FileServer webFileServer = new FileServer(30767);
+    public final FileServer webFileServer = new FileServer(30767);
     //投屏同意返回intent
     private Intent mediaProjectionIntent;
     //投屏服务ipc通道
@@ -487,12 +487,9 @@ public class ConnectMainService extends Service implements INetworkService {
                                             activityMethods.onConnected(jsonObj.sessionId);
                                             certInput.close();
                                             logger.info("Connection handshake success!");
-                                            //是否需要开启文件功能
-                                            if(GlobalVariables.preferences.getBoolean("function_file_manager", false)) {
-                                                File p12CertFile = new File(getDataDir().getAbsolutePath() + "/files/cert/" + computerId + ".p12");
-                                                webFileServer.init(Files.newInputStream(p12CertFile.toPath()), jsonObj.sessionId, activityMethods.getActivity());
-                                                logger.info("Start file manager init");
-                                            }
+                                            File p12CertFile = new File(getDataDir().getAbsolutePath() + "/files/cert/" + computerId + ".p12");
+                                            webFileServer.init(Files.newInputStream(p12CertFile.toPath()), jsonObj.sessionId, activityMethods.getActivity());
+                                            logger.info("Start file manager init");
                                             break;
                                         case "main_server_initialled":
                                             //pc端窗口初始化完成
@@ -574,7 +571,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 } catch (IOException e) {
                                                     logger.error("Error when write bind key file", e);
                                                     response.addProperty("success", false);
-                                                }finally {
+                                                } finally {
                                                     webSocketClient.send(response.toString());
                                                 }
                                             }).start();

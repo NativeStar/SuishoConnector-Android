@@ -16,7 +16,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.os.Process;
 import android.provider.Settings;
@@ -237,6 +239,10 @@ public class NewMainActivity extends AppCompatActivity {
                 public void onPageSelected(int position) {
                     super.onPageSelected(position);
                     binding.connectedActivityNavigationBar.setSelectedItemId(navigationIds[position]);
+                    if(position == 0) {
+                        Handler handler = new Handler(Looper.getMainLooper());
+                        handler.post(() -> updateChangeableFunctionStateDisplay());
+                    }
                 }
             });
             System.gc();
@@ -447,7 +453,7 @@ public class NewMainActivity extends AppCompatActivity {
                                 ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_close_24);
                                 ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(R.string.text_unauthorized);
                             } catch (NullPointerException e) {
-                                logger.error("Error when init views",e);
+                                logger.error("Error when init views", e);
                                 finish();
                             }
                         });
@@ -460,12 +466,10 @@ public class NewMainActivity extends AppCompatActivity {
                         if(notificationStateText == null) return;
                         logger.info("Notification service connected to network service.Init views");
                         //判断有无权限
-                        if(networkService.checkNotificationListenerPermission()) {
-                            notificationStateText.setText(R.string.text_running);
-                        } else {
+                        if(!networkService.checkNotificationListenerPermission()) {
                             stateBarManager.addState(States.getStateList().get("info_notification_listener_permission"));
-                            notificationStateText.setText(R.string.text_not_permission);
                         }
+                        updateConnectionStateDisplay();
                     }
                 });
                 //连接
@@ -531,6 +535,7 @@ public class NewMainActivity extends AppCompatActivity {
             autoConnector.stopListener();
         }
     }
+
     /**
      * 检查保活相关并提醒
      */
@@ -570,7 +575,7 @@ public class NewMainActivity extends AppCompatActivity {
     private void checkState() {
         //通知监听
         //如果未开启转发功能 则忽略
-        if(!GlobalVariables.preferences.getBoolean("function_notification_forward", false)){
+        if(!GlobalVariables.preferences.getBoolean("function_notification_forward", false)) {
             logger.debug("Notification forward disabled.Ignore notification listener permission recheck");
             return;
         }
@@ -614,17 +619,7 @@ public class NewMainActivity extends AppCompatActivity {
             //通知转发 和信任
             if(GlobalVariables.computerConfigManager.isTrustedComputer()) {
                 ((TextView) findViewById(R.id.card_text_trust_mode)).setText(R.string.text_trust);
-                //通知转发
-                if(networkService.getNotificationListenerWorking()) {
-                    ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_running);
-                } else {
-                    if(networkService.checkNotificationListenerPermission()) {
-                        ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_not_running);
-                    } else {
-                        ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_not_permission);
-                    }
-                }
-                //文件管理
+                updateChangeableFunctionStateDisplay();
                 if(!GlobalVariables.preferences.getBoolean("function_file_manager", false)) {
                     ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_not_running);
                 } else {
@@ -641,7 +636,6 @@ public class NewMainActivity extends AppCompatActivity {
                         }
                     }
                     ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_running);
-
                 }
             } else {
                 //不信任的设备
@@ -649,8 +643,46 @@ public class NewMainActivity extends AppCompatActivity {
                 ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_untrusted);
                 ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_untrusted);
             }
-
         });
+    }
+
+    private void updateChangeableFunctionStateDisplay() {
+        //通知转发
+        if(GlobalVariables.computerConfigManager == null || networkService == null || !networkService.isConnected) {
+            ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_not_connect);
+            ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_not_connect);
+            return;
+        }
+        if(!GlobalVariables.computerConfigManager.isTrustedComputer()) {
+            ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_untrusted);
+            ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_untrusted);
+            return;
+        }
+        if(!GlobalVariables.preferences.getBoolean("function_notification_forward", false)) {
+            ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_not_running);
+        } else if(networkService.getNotificationListenerWorking()) {
+            ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_running);
+        } else {
+            ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_not_permission);
+        }
+        //文件管理
+        if(!GlobalVariables.preferences.getBoolean("function_file_manager", false)) {
+            ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_not_running);
+        } else {
+            //权限
+            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+                if(!Environment.isExternalStorageManager()) {
+                    ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_not_permission);
+                    return;
+                }
+            } else {
+                if(checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED || checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED) {
+                    ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_not_permission);
+                    return;
+                }
+            }
+            ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_running);
+        }
     }
 
     private void showTrustModeDialog() {
@@ -663,7 +695,6 @@ public class NewMainActivity extends AppCompatActivity {
                     .setPositiveButton(R.string.text_trust, (dialog, which) -> {
                         GlobalVariables.computerConfigManager.setTrusted(true);
                         updateConnectionStateDisplay();
-//                        ((TextView) findViewById(R.id.card_text_trust_mode)).setText(R.string.text_trust);
                     })
                     .setNegativeButton(R.string.text_cancel, (dialog, which) -> {
                         //用来保存
@@ -725,7 +756,7 @@ public class NewMainActivity extends AppCompatActivity {
                 manualConnectSSLContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
             } catch (CertificateException | IOException | NoSuchAlgorithmException |
                      KeyStoreException | KeyManagementException e) {
-                logger.error("Failed to load default cert",e);
+                logger.error("Failed to load default cert", e);
                 runOnUiThread(() -> new MaterialAlertDialogBuilder(this)
                         .setTitle("连接失败")
                         .setMessage("SSL证书读取异常:" + e)
@@ -772,7 +803,7 @@ public class NewMainActivity extends AppCompatActivity {
                 //懒
                 connectByQRCode(url, packet.mainPort, packet.id, packet.certPort, packet.token);
             } catch (IOException | NullPointerException e) {
-                logger.error("Manual connect failed",e);
+                logger.error("Manual connect failed", e);
                 runOnUiThread(() -> new MaterialAlertDialogBuilder(this)
                         .setTitle("连接失败")
                         .setMessage(e.toString())

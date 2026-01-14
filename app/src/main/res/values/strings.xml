@@ -159,6 +159,7 @@
     <string name="setting_function_file_manager">文件浏览</string>
     <string name="setting_function_file_manager_desc">允许信任的计算机浏览和下载设备文件</string>
     <string name="text_active_after_reboot">你需要重启软件使该变更完全生效</string>
+    <string name="error_change_file_manager">应用变更时发生异常 请尝试重启软件</string>
     <string name="setting_storage_permission_dialog_message">使用该功能需要给予本软件存储权限 点击\"确定\"发起授权</string>
     <string name="text_crash_dialog_title">应用程序崩溃</string>
     <string name="text_crash_dialog_message">Suisho Connector崩溃了,在设置中将日志导出并发送给开发者可能有助于修复此问题.带来不便深感抱歉.</string>
