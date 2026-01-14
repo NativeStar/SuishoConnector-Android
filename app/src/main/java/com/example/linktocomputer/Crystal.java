@@ -58,6 +58,8 @@ public class Crystal extends Application {
                 fileWriter.write("OEM:" + Build.BRAND + "\n");
                 fileWriter.write("Model:" + Build.MODEL + "\n");
                 fileWriter.write("SDK version:" + Build.VERSION.SDK_INT + "\n");
+                fileWriter.write("Process Name:" + Application.getProcessName() + "\n");
+                fileWriter.write("PID:" + Process.myPid() + "\n");
                 fileWriter.write("App version:" + BuildConfig.VERSION_NAME + "-" + BuildConfig.VERSION_CODE + "\n");
                 fileWriter.write("----------CRASH LOG HEADER END----------\n");
                 PrintWriter printWriter = new PrintWriter(fileWriter);
@@ -106,7 +108,7 @@ public class Crystal extends Application {
         settingLevelLogger.setLevel(enableDebugLog ? Level.DEBUG : Level.INFO);
         Appender<ILoggingEvent> appender = settingLevelLogger.getAppender("file");
         if(appender instanceof FileAppender) {
-            GlobalVariables.currentBootLogFilePath =((FileAppender<?>) appender).getFile();
+            GlobalVariables.currentBootLogFilePath = ((FileAppender<?>) appender).getFile();
             //拿不到就算 反正文件删了也不会崩
         }
         logger = LoggerFactory.getLogger(Crystal.class);
@@ -114,6 +116,8 @@ public class Crystal extends Application {
         String infoStr = "\nOEM:" + Build.BRAND + "\n" +
                 "Model:" + Build.MODEL + "\n" +
                 "SDK version:" + Build.VERSION.SDK_INT + "\n" +
+                "Process Name:" + Application.getProcessName() + "\n" +
+                "PID:" + Process.myPid() + "\n" +
                 "App version:" + BuildConfig.VERSION_NAME + "-" + BuildConfig.VERSION_CODE + "\n";
         logger.info(infoStr);
     }

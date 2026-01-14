@@ -364,7 +364,7 @@ public class HomeFragment extends Fragment {
                     .setPositiveButton(R.string.text_ok, (dialog, which) -> {
                         GlobalVariables.computerConfigManager.changeTrustMode();
                         logger.debug("Change trust mode to {}", !trusted);
-                        activity.showConnectedState();
+                        activity.updateConnectionStateDisplay();
                     }).show();
         });
         //音频转发授权

@@ -125,7 +125,7 @@ public class NewMainActivity extends AppCompatActivity {
         if(networkService != null && networkService.isConnected) {
             logger.debug("Has network service.Resuming state");
             bindNetworkService();
-            showConnectedState();
+            updateConnectionStateDisplay();
         }
         //返回键事件 高版本安卓用
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -415,7 +415,7 @@ public class NewMainActivity extends AppCompatActivity {
                         GlobalVariables.computerConfigManager = new ComputerConfigManager(GlobalVariables.computerName, GlobalVariables.computerId, NewMainActivity.this, networkService, sessionId);
                         GlobalVariables.computerConfigManager.init(null);
                         //设置
-                        showConnectedState();
+                        updateConnectionStateDisplay();
                         //首次连接的设备 询问是否信任
                         if(GlobalVariables.computerConfigManager.isFirstConnect() && !GlobalVariables.computerConfigManager.isTrustedComputer()) {
                             showTrustModeDialog();
@@ -493,7 +493,6 @@ public class NewMainActivity extends AppCompatActivity {
             //无连接 关闭程序
             logger.debug("No connection.Show close application dialog");
             new MaterialAlertDialogBuilder(this)
-//                    .setTitle(R.string.dialog_close_application_confirm_title)
                     .setMessage(R.string.dialog_close_application_confirm_message)
                     .setNegativeButton(R.string.text_cancel, (dialog, which) -> {
                     })
@@ -590,20 +589,19 @@ public class NewMainActivity extends AppCompatActivity {
     }
 
     /**
-     * 连接成功时显示状态
+     * 更新显示状态
      */
-    public void showConnectedState() {
+    public void updateConnectionStateDisplay() {
         logger.debug("Update main activity connection state display");
         runOnUiThread(() -> {
             if(isFinishing() || isDestroyed()) return;
             //检查view是否完成初始化
             if(findViewById(R.id.card_text_computer_id) == null) {
                 //等待完成自动执行
-                binding.getRoot().post(this::showConnectedState);
+                binding.getRoot().post(this::updateConnectionStateDisplay);
                 logger.debug("Waiting for view initialization");
                 return;
             }
-            boolean isTrusted = GlobalVariables.computerConfigManager.isTrustedComputer();
             //文本
             ((TextView) findViewById(R.id.card_text_computer_id)).setText(GlobalVariables.computerId);
             ((TextView) findViewById(R.id.card_text_connection_state)).setText(R.string.text_connected);
@@ -614,7 +612,7 @@ public class NewMainActivity extends AppCompatActivity {
             ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_link_off_24);
             ((ImageView) findViewById(R.id.card_connection_state_icon)).setImageResource(R.drawable.baseline_signal_cellular_4_bar_24);
             //通知转发 和信任
-            if(isTrusted) {
+            if(GlobalVariables.computerConfigManager.isTrustedComputer()) {
                 ((TextView) findViewById(R.id.card_text_trust_mode)).setText(R.string.text_trust);
                 //通知转发
                 if(networkService.getNotificationListenerWorking()) {
@@ -664,7 +662,8 @@ public class NewMainActivity extends AppCompatActivity {
                     .setMessage(R.string.dialog_trust_computer_message)
                     .setPositiveButton(R.string.text_trust, (dialog, which) -> {
                         GlobalVariables.computerConfigManager.setTrusted(true);
-                        ((TextView) findViewById(R.id.card_text_trust_mode)).setText(R.string.text_trust);
+                        updateConnectionStateDisplay();
+//                        ((TextView) findViewById(R.id.card_text_trust_mode)).setText(R.string.text_trust);
                     })
                     .setNegativeButton(R.string.text_cancel, (dialog, which) -> {
                         //用来保存
@@ -751,7 +750,7 @@ public class NewMainActivity extends AppCompatActivity {
             OkHttpClient client = new OkHttpClient()
                     .newBuilder()
                     .sslSocketFactory(manualConnectSSLContext.getSocketFactory(), (X509TrustManager) manualConnectTrustManager)
-                    .hostnameVerifier((hostname, session) -> true)
+                    .hostnameVerifier((hostname, session) -> hostname.equals(url))
                     .build();
             logger.info("Sending manual connect request");
             try (Response response = client.newCall(request).execute()) {

@@ -241,7 +241,7 @@ public class ConnectMainService extends Service implements INetworkService {
                         //构建client下载
                         OkHttpClient downloadClient = new OkHttpClient.Builder()
                                 .sslSocketFactory(certDownloadSSLContext.getSocketFactory(), (X509TrustManager) downloadCertTrustManager)
-                                .hostnameVerifier((hostname, session) -> true)
+                                .hostnameVerifier((hostname, session) -> hostname.equals(computerAddress))
                                 .writeTimeout(Duration.ofSeconds(10))
                                 .callTimeout(Duration.ofSeconds(10))
                                 .build();
@@ -346,7 +346,7 @@ public class ConnectMainService extends Service implements INetworkService {
                 webSocketClient = new OkHttpClient()
                         .newBuilder()
                         .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustManager)
-                        .hostnameVerifier((hostname, session) -> true)
+                        .hostnameVerifier((hostname, session) -> hostname.equals(computerAddress))
                         .writeTimeout(Duration.ofSeconds(10))
                         .callTimeout(Duration.ofSeconds(10))
                         .build()
@@ -660,7 +660,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 }
                                             }
                                             webSocketClient.send(stopProjectionPacket.toString());
-                                            activityMethods.getActivity().showConnectedState();
+                                            activityMethods.getActivity().updateConnectionStateDisplay();
                                             break;
                                         case "main_checkPermission":
                                             JsonObject permissionCheckPacket = new JsonObject();

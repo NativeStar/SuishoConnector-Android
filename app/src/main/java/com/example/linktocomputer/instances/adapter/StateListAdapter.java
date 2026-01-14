@@ -141,6 +141,8 @@ public class StateListAdapter extends RecyclerView.Adapter {
     }
     private void refreshRenderList(){
         logger.debug("Refresh render list");
+        //计算前重置状态
+        highestLevel=StateLevel.CHECKED;
         renderList.clear();
         newStates.forEach((s, state) -> {
             if(state.level.compareTo(highestLevel) > 0){
@@ -149,10 +151,10 @@ public class StateListAdapter extends RecyclerView.Adapter {
             renderList.add(state);
         });
         //无消息时
-        if(newStates.isEmpty()){
-            logger.debug("Refresh not state");
-            highestLevel=StateLevel.CHECKED;
-        }
+//        if(newStates.isEmpty()){
+//            logger.debug("Refresh not state");
+//            highestLevel=StateLevel.CHECKED;
+//        }
         activity.runOnUiThread(()->notifyDataSetChanged());
     }
     private static class Holder extends RecyclerView.ViewHolder{

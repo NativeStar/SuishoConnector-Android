@@ -28,24 +28,24 @@ public class StateBarManager {
     private ActionMenuItemView menuView;
     private final StateListAdapter adapter;
     private final AlertDialog stateDialog;
-    private boolean showedTip=false;
+    private boolean showedTip = false;
     //在menuView没初始化时记录是否要刷新图标
-    private boolean delaySetIcon=false;
+    private boolean delaySetIcon = false;
     private final Logger logger = LoggerFactory.getLogger(StateBarManager.class);
 
     public StateBarManager(Activity activity) {
         this.activity = activity;
-        adapter=new StateListAdapter(activity);
-        View listView= LayoutInflater.from(activity).inflate(R.layout.state_list_dialog,null);
-        MaterialAlertDialogBuilder dialogBuilder=new MaterialAlertDialogBuilder(activity);
+        adapter = new StateListAdapter(activity);
+        View listView = LayoutInflater.from(activity).inflate(R.layout.state_list_dialog, null);
+        MaterialAlertDialogBuilder dialogBuilder = new MaterialAlertDialogBuilder(activity);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(activity);
-        RecyclerView recyclerView= listView.findViewById(R.id.state_dialog_recycler_view);
+        RecyclerView recyclerView = listView.findViewById(R.id.state_dialog_recycler_view);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(adapter);
         dialogBuilder.setView(listView);
-        dialogBuilder.setPositiveButton(R.string.text_ok,null);
+        dialogBuilder.setPositiveButton(R.string.text_ok, null);
         dialogBuilder.setTitle("消息列表");
-        stateDialog= dialogBuilder.create();
+        stateDialog = dialogBuilder.create();
     }
 
     public void init() {
@@ -57,10 +57,10 @@ public class StateBarManager {
 
     public void onMenuClick() {
         //这时候才能保证控件存在
-        if(menuView == null) {
-            menuView=activity.findViewById(R.id.activity_state);
-            if(delaySetIcon) setIcon();
-        }
+//        if(menuView == null||menuView.) {
+        menuView = activity.findViewById(R.id.activity_state);
+        if(delaySetIcon) setIcon();
+//        }
         stateDialog.show();
     }
 
@@ -73,8 +73,8 @@ public class StateBarManager {
         popupWindow.setFocusable(false);
         popupWindow.setTouchable(false);
         //activity可能被销毁
-        if(!activity.isDestroyed()&&!activity.isFinishing())
-            activity.runOnUiThread(()->popupWindow.showAsDropDown(menuView));
+        if(!activity.isDestroyed() && !activity.isFinishing())
+            activity.runOnUiThread(() -> popupWindow.showAsDropDown(menuView));
 
     }
 
@@ -85,47 +85,49 @@ public class StateBarManager {
     }
 
     public void addState(States.State state) {
-        logger.debug("Add state:{}",state.id);
-        if(!showedTip){
+        logger.debug("Add state:{}", state.id);
+        if(!showedTip) {
             showTipPopup();
-            showedTip=true;
+            showedTip = true;
         }
-        adapter.addState(state,true);
+        adapter.addState(state, true);
         setIcon();
     }
 
     public void removeState(String id) {
-        logger.debug("Remove state by id:{}",id);
-        adapter.removeState(id,true);
+        logger.debug("Remove state by id:{}", id);
+        adapter.removeState(id, true);
         setIcon();
     }
-    public void removeState(States.State state){
-        logger.debug("Remove state by instance:{}",state.id);
-        adapter.removeState(state,true);
+
+    public void removeState(States.State state) {
+        logger.debug("Remove state by instance:{}", state.id);
+        adapter.removeState(state, true);
         setIcon();
     }
-    private void setIcon(){
-        if(menuView==null){
-            delaySetIcon=true;
+
+    private void setIcon() {
+        if(menuView == null) {
+            delaySetIcon = true;
             return;
         }
         logger.debug("Update state bar icon");
-        activity.runOnUiThread(()->{
-            switch (adapter.highestLevel){
+        activity.runOnUiThread(() -> {
+            switch (adapter.highestLevel) {
                 case BUSY:
-                    menuView.setIcon(AppCompatResources.getDrawable(activity,R.drawable.baseline_hourglass_top_24));
+                    menuView.setIcon(AppCompatResources.getDrawable(activity, R.drawable.baseline_hourglass_top_24));
                     break;
                 case CHECKED:
-                    menuView.setIcon(AppCompatResources.getDrawable(activity,R.drawable.baseline_check_24));
+                    menuView.setIcon(AppCompatResources.getDrawable(activity, R.drawable.baseline_check_24));
                     break;
                 case INFO:
-                    menuView.setIcon(AppCompatResources.getDrawable(activity,R.drawable.outline_info_24));
+                    menuView.setIcon(AppCompatResources.getDrawable(activity, R.drawable.outline_info_24));
                     break;
                 case WARN:
-                    menuView.setIcon(AppCompatResources.getDrawable(activity,R.drawable.baseline_warning_amber_24));
+                    menuView.setIcon(AppCompatResources.getDrawable(activity, R.drawable.baseline_warning_amber_24));
                     break;
                 case ERROR:
-                    menuView.setIcon(AppCompatResources.getDrawable(activity,R.drawable.baseline_error_outline_24));
+                    menuView.setIcon(AppCompatResources.getDrawable(activity, R.drawable.baseline_error_outline_24));
                     break;
             }
         });

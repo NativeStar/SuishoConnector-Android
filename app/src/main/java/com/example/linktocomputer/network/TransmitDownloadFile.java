@@ -107,7 +107,7 @@ public class TransmitDownloadFile {
                 ws = new OkHttpClient()
                         .newBuilder()
                         .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustManager)
-                        .hostnameVerifier((hostname, session) -> true)
+                        .hostnameVerifier((hostname, session) -> hostname.equals(GlobalVariables.serverAddress))
                         .writeTimeout(Duration.ofSeconds(10))
                         .callTimeout(Duration.ofSeconds(10))
                         .build()

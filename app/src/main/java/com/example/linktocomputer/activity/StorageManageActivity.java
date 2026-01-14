@@ -120,7 +120,7 @@ public class StorageManageActivity extends AppCompatActivity {
                 logger.debug("Open transmit data clear confirm");
                 new MaterialAlertDialogBuilder(this)
                         .setTitle("清理确认")
-                        .setMessage("将清空互传接收的文件和传输记录\n确认继续?")
+                        .setMessage("将清空私有目录内的互传接收的文件和传输记录\n确认继续?")
                         .setNegativeButton("取消", (dialog, which) -> {
                         })
                         .setPositiveButton("确认", (dialog, which) -> {
@@ -184,7 +184,7 @@ public class StorageManageActivity extends AppCompatActivity {
                                 ActivityManager activityManager = StorageManageActivity.this.getSystemService(ActivityManager.class);
                                 try {
                                     //大概让人看清字
-                                    Thread.sleep(750);
+                                    Thread.sleep(1250);
                                 } catch (InterruptedException err) {
                                     logger.error("Error when thread sleep,But nothing happened.Call wiping data", err);
                                 } finally {
