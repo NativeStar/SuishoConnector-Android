@@ -36,6 +36,7 @@
         android:manageSpaceActivity="com.example.linktocomputer.activity.StorageManageActivity"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.LinkToComputer"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <provider
             android:name=".provider.ShareFileProvider"
