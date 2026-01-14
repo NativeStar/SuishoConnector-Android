@@ -31,6 +31,7 @@ public class NotificationListenerService extends android.service.notification.No
     private String appPackageName;
     private MediaSessionManager mediaSessionManager;
     private final Logger logger = LoggerFactory.getLogger(NotificationListenerService.class);
+
     public NotificationListenerService() {
     }
 
@@ -45,7 +46,7 @@ public class NotificationListenerService extends android.service.notification.No
                 onNewMediaNotification(statusBarNotification, notification, mediaSessionToken);
             }
         }
-        logger.debug("Get active notifications count:{}",notificationsList.length);
+        logger.debug("Get active notifications count:{}", notificationsList.length);
         return notificationsList;
     }
 
@@ -80,6 +81,9 @@ public class NotificationListenerService extends android.service.notification.No
     public void onNotificationRemoved(StatusBarNotification sbn, RankingMap rankingMap, int reason) {
         super.onNotificationRemoved(sbn, rankingMap, reason);
         logger.debug("Notification removed {}", sbn.getKey());
+        if(!enable) return;
+        if(GlobalVariables.computerConfigManager != null && !GlobalVariables.computerConfigManager.isTrustedComputer())
+            return;
         if(networkService == null) return;
         JsonObject removeNotificationPacket = new JsonObject();
         removeNotificationPacket.addProperty("packetType", "removeActiveNotification");
@@ -148,12 +152,12 @@ public class NotificationListenerService extends android.service.notification.No
     }
 
     /**
-     * 检测常见无意义通知 如安卓的后台运行提醒
+     * 检测常见无意义通知 如系统的后台运行提醒
      *
      * @return 是否应被强制过滤
      */
     private boolean isRubbishNotification(String title, @Nullable String content, int progress) {
-        return (content == null || content.contains("点按即可了解详情或停止应用。") || content.isEmpty()) && progress == -1;
+        return (content == null || content.contains("点按即可了解详情或停止应用。") || (title.isEmpty() && content.isEmpty())) && progress == -1;
     }
 
     @Override
@@ -170,7 +174,7 @@ public class NotificationListenerService extends android.service.notification.No
             try {
                 appNameCache.put(pkgName, packageManager.getPackageInfo(pkgName, 0).applicationInfo.loadLabel(packageManager).toString());
             } catch (PackageManager.NameNotFoundException e) {
-                logger.error("Failed to get app name by package name:{}",pkgName,e);
+                logger.error("Failed to get app name by package name:{}", pkgName, e);
                 return "ERROR!!!";
             }
         }

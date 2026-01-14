@@ -63,7 +63,6 @@ public class TrustedDeviceListAdapter extends RecyclerView.Adapter<TrustedDevice
             if(!deviceList.isEmpty()) {
                 notifyItemRemoved(position);
             }
-//            Toast.makeText(context, R.string.text_deleted, Toast.LENGTH_LONG).show();
         });
     }
 

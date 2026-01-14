@@ -1,7 +1,5 @@
 <resources>
     <string name="app_name" translatable="false">Suisho Connector</string>
-    <string name="appTitle" translatable="false">Suisho Connector</string>
-    <string name="startScan_button">扫码连接</string>
     <string name="port">端口</string>
     <string name="pair_code">配对码</string>
     <string name="ipAddressInput_invalid">目标地址无效</string>
@@ -9,7 +7,6 @@
     <string name="pairCodeInput_invalid">无效配对码</string>
     <string name="text_ok">确定</string>
     <string name="text_exit">退出</string>
-    <string name="dialog_text_connected_handshake">正在交换数据</string>
     <string name="changeConnectMethod_inputAddress">手动输入地址</string>
     <string name="changeConnectMethod_scanCode">扫码连接</string>
     <string name="inputAddressTips">在PC端点击"切换连接方式"后输入显示的IP及端口</string>
@@ -22,18 +19,13 @@
     <string name="service_notification_title">工作中</string>
     <string name="service_notification_content">Suisho Connector正在运行</string>
     <string name="transmit_send_text_input_hint">在此输入文本</string>
-    <string name="permission_scanCode_camera_message">该功能需要授予相机权限</string>
-    <string name="permission_audio_forward_message">该功能需要授予录音权限</string>
+    <string name="permission_scanCode_camera_message">该功能需要授予相机权限用于调用摄像头进行二维码扫描</string>
+    <string name="permission_audio_forward_message">该功能需要授予录音权限
+    软件并不会调用设备的麦克风 但Android要求进行内录时也需要该权限(即使媒体投射功能正常情况下需要用户每次都手动确认)
+    </string>
     <string name="permission_request_alert_title">需要权限</string>
     <string name="text_cancel">取消</string>
-    <string name="permission_denied_necessary_scancode">您拒绝了相机权限,扫码功能无法正常运行</string>
-    <string name="permission_request_alert_title_denied">权限被拒绝</string>
-    <string name="permission_denied_do_task_alert_message">权限被拒绝
-        请前往系统设置手动开启</string>
-    <string name="permission_denied_alert_open_system_permission_setting">权限设置</string>
-    <string name="transmit_load_json_failed_dialog_message">加载历史消息失败,已重置数据</string>
-    <string name="transmit_load_json_failed_dialog_title">加载失败</string>
-    <string name="transmit_upload_failed_has_uploading_file">上传失败:请等待上一个文件上传完成</string>
+    <string name="transmit_upload_failed_has_uploading_file">请等待上一个文件上传完成</string>
     <string name="transmit_open_file_failed_not_resolve_application">无法打开文件:没有应用程序支持打开它</string>
     <string name="transmit_open_file_failed_not_exists">打开失败:文件已被删除</string>
     <string name="transmit_open_file_failed_null_path">无法打开文件:路径数据异常</string>
@@ -44,8 +36,8 @@
     <string name="text_authorized">已授权</string>
     <string name="text_computer_id">计算机ID</string>
     <string name="text_phone_id">当前设备ID</string>
-    <string name="text_number_unknown" translatable="false">N/A</string>
     <string name="text_notification_forward">通知转发</string>
+    <string name="text_notification_forward_desc">该选项也影响实时通知、媒体控制功能</string>
     <string name="text_address_connect_help">请点击PC端的\"切换连接方式\"按钮查看IP及端口号并在下方对应位置输入</string>
     <string name="text_need_disconnect_first">请先断开现有连接</string>
     <string name="text_disconnect">断开</string>
@@ -73,16 +65,18 @@
     <string name="state_name_battery_opt">电池优化未关闭</string>
     <string name="state_desc_battery_opt">应用后台进程可能被杀</string>
     <string name="state_tip">有新的提醒 点击查看</string>
+    <string name="state_name_checked_success">暂无消息 程序一切正常</string>
+    <string name="state_desc_checked_desc">万事无恙 岁月静好</string>
     <string name="state_name_query_package_permission">无获取应用列表权限</string>
-    <string name="state_desc_query_package_permission">应用图标显示等功能将工作异常</string>
+    <string name="state_desc_query_package_permission">PC端应用图标显示等将工作异常</string>
     <string name="state_name_error">发生异常</string>
-    <string name="state_desc_error_packing_icon">打包应用图标时发生异常</string>
+    <string name="state_desc_error_packing_icon">打包应用图标时发生异常 请尝试重启程序</string>
     <string name="state_name_notification_listener_permission">无通知读取权限</string>
-    <string name="state_desc_notification_listener_permission">通知转发无法正常工作</string>
+    <string name="state_desc_notification_listener_permission">通知转发、远程媒体管理无法正常工作</string>
     <string name="state_name_send_notification">无法发送通知</string>
     <string name="state_desc_send_notification">前台服务不能通过常驻通知保活</string>
     <string name="state_name_auto_connect_error">自动连接异常</string>
-    <string name="state_desc_auto_connect_error">运行过程中发生异常</string>
+    <string name="state_desc_auto_connect_error">功能运行过程中发生异常</string>
     <string name="title_activity_file_upload">发送到计算机</string>
     <string name="text_send_file">发送文件</string>
     <string name="text_send_text">发送文本</string>
@@ -90,18 +84,13 @@
     <string name="text_send_text_dialog_message">确认将分享文本发送至计算机?</string>
     <string name="text_untrusted">不信任</string>
     <string name="text_trusted">已信任</string>
-    <string name="text_no_longer_trust">不再信任</string>
+    <string name="text_cancel_trust">取消信任</string>
     <string name="text_deleted">已删除</string>
     <string name="dialog_trust_computer_title">信任此设备?</string>
-    <string name="dialog_trust_computer_message">此计算机将可以访问设备的通知、文件、等
-        这可能包含隐私信息 仅建议在私人设备上使用</string>
-    <string name="dialog_manage_all_files_permission_message">
-        从Android11开始 软件操作非共享目录或私有目录下的文件需要"管理所有文件"权限\n
-        您需要授予此权限才能自定义传输文件的下载目录\n
-        点击"确定"前往系统授权界面
-    </string>
+    <string name="dialog_trust_computer_message">此计算机将可以访问设备的通知、文件等数据
+        这可能包含隐私信息 建议仅对私人设备授予信任</string>
     <string name="dialog_write_external_storage_permission_message">
-        在此Android版本上 使用该功能需要"写入外部存储"权限 您尚未授予本软件该权限\n
+        在此Android版本上 使用该功能需要"写入外部存储"权限 您尚未授予软件该权限\n
         点击"确定"将发起授权请求
     </string>
     <string name="text_trust">信任</string>
@@ -113,20 +102,14 @@
     <string name="service_mediaProjection_notification_title">音频转发服务</string>
     <string name="service_mediaProjection_notification_content">音频转发正在运行</string>
     <string name="text_send_file_not_data">无法发送文件:数据异常</string>
-
-    <string name="text_accessibility_label">远程控制服务</string>
-    <string name="text_accessibility_desc">可在连接投屏后进行模拟点击 无需Shell或Root权限</string>
     <string name="text_send_file_from_self">无法发送来自自身的文件</string>
     <string name="text_manage">管理</string>
-    <string name="setting_trust_device_manager">受信任设备管理</string>
+    <string name="setting_trust_device_manager">信任设备管理</string>
     <string name="setting_clear_auto_connect_file">解除自动连接绑定</string>
     <string name="setting_group_functions">功能开关</string>
     <string name="setting_function_notification_forward">通知转发</string>
-    <string name="setting_function_screen_projection">屏幕投射</string>
     <string name="trusted_device_manager_not_device">无已信任的设备</string>
     <string name="text_connected_device_remove_trust_button">当前连接</string>
-    <!-- Strings used for fragments for navigation -->
-
     <string name="text_loading">加载中</string>
     <string name="storage_manage_cache_desc">打包的应用图标、系统优化的代码等 会在需要时重新生成</string>
     <string name="text_clear">清理</string>
@@ -158,7 +141,6 @@
     <string name="state_desc_error_file_server">相关功能可能无法工作 请尝试重新连接</string>
     <string name="setting_function_file_manager">文件浏览</string>
     <string name="setting_function_file_manager_desc">允许信任的计算机浏览和下载设备文件</string>
-    <string name="text_active_after_reboot">你需要重启软件使该变更完全生效</string>
     <string name="error_change_file_manager">应用变更时发生异常 请尝试重启软件</string>
     <string name="setting_storage_permission_dialog_message">使用该功能需要给予本软件存储权限 点击\"确定\"发起授权</string>
     <string name="text_crash_dialog_title">应用程序崩溃</string>

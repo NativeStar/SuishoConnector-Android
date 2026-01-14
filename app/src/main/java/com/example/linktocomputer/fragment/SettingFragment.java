@@ -37,6 +37,7 @@ import com.example.linktocomputer.instances.ComputerConfigManager;
 import com.example.linktocomputer.instances.StateBarManager;
 import com.example.linktocomputer.instances.adapter.TrustedDeviceListAdapter;
 import com.example.linktocomputer.service.ConnectMainService;
+import com.example.linktocomputer.service.NotificationListenerService;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
@@ -118,6 +119,10 @@ public class SettingFragment extends PreferenceFragmentCompat {
         findPreference("function_notification_forward").setOnPreferenceChangeListener((preference, newValue) -> {
             logger.info("Notification forward switch changed");
             boolean value = (boolean) newValue;
+            if(NewMainActivity.networkService != null&&NewMainActivity.networkService.getNotificationListenerService()!=null) {
+                NotificationListenerService notificationListenerService = NewMainActivity.networkService.getNotificationListenerService();
+                notificationListenerService.setEnable(value);
+            }
             NewMainActivity activity = (NewMainActivity) getActivity();
             //更改状态显示
             if(activity == null||activity.isDestroyed()) return true;

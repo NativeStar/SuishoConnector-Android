@@ -3,6 +3,7 @@ package com.example.linktocomputer.responseBuilders;
 import android.app.Notification;
 import android.service.notification.StatusBarNotification;
 
+import com.example.linktocomputer.GlobalVariables;
 import com.example.linktocomputer.service.NotificationListenerService;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -13,9 +14,29 @@ import org.slf4j.LoggerFactory;
 public class CurrentNotificationsListPacket {
     private final Logger logger = LoggerFactory.getLogger(CurrentNotificationsListPacket.class);
 
-    public JsonObject build(String requestId,StatusBarNotification[] notifications, NotificationListenerService listenerService){
+    public JsonObject build(String requestId,StatusBarNotification[] notifications, NotificationListenerService listenerService,boolean hasPermission){
+        boolean isBreak=false;
         JsonObject jsonObject=new JsonObject();
         JsonArray notificationList=new JsonArray();
+        jsonObject.addProperty("_isResponsePacket",true);
+        jsonObject.addProperty("_responseId",requestId);
+        if(!GlobalVariables.computerConfigManager.isTrustedComputer()) {
+            jsonObject.addProperty("code",1);
+            logger.debug("Created active notification list packet with untrusted computer");
+            isBreak=true;
+        }else if(!hasPermission){
+            jsonObject.addProperty("code",2);
+            logger.debug("Created active notification list packet with not permission");
+            isBreak=true;
+        }else if(!GlobalVariables.preferences.getBoolean("function_notification_forward",false)){
+            jsonObject.addProperty("code",3);
+            logger.debug("Created active notification list packet with function disabled");
+            isBreak=true;
+        }
+        if(isBreak){
+            jsonObject.add("list",notificationList);
+            return jsonObject;
+        }
         for(StatusBarNotification statusBarNotification : notifications) {
             Notification notification=statusBarNotification.getNotification();
             final String notificationTitle=notification.extras.getString(Notification.EXTRA_TITLE);
@@ -37,8 +58,7 @@ public class CurrentNotificationsListPacket {
             notificationJsonObject.addProperty("progress",notificationProgress);
             notificationList.add(notificationJsonObject);
         }
-        jsonObject.addProperty("_isResponsePacket",true);
-        jsonObject.addProperty("_responseId",requestId);
+        jsonObject.addProperty("code",0);
         jsonObject.add("list",notificationList);
         logger.debug("Created active notification list packet.length:{}",notificationList.size());
         return jsonObject;

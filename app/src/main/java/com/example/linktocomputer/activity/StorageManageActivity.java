@@ -183,6 +183,12 @@ public class StorageManageActivity extends AppCompatActivity {
                             new Thread(() -> {
                                 ActivityManager activityManager = StorageManageActivity.this.getSystemService(ActivityManager.class);
                                 try {
+                                    if(GlobalVariables.computerConfigManager != null) {
+                                        ConnectMainService service = GlobalVariables.computerConfigManager.getNetworkService();
+                                        if(service != null&&service.isConnected){
+                                            service.disconnect(1010,"SURE");
+                                        }
+                                    }
                                     //大概让人看清字
                                     Thread.sleep(1250);
                                 } catch (InterruptedException err) {
@@ -336,7 +342,7 @@ public class StorageManageActivity extends AppCompatActivity {
         logger.debug("Show close connection dialog");
         new MaterialAlertDialogBuilder(this)
                 .setTitle("关闭连接")
-                .setMessage("执行该清理项前需要关闭连接且清理后软件将关闭\n确认继续?")
+                .setMessage("执行清理前需要关闭连接 且清理后软件将关闭\n确认继续?")
                 .setNegativeButton("取消", (dialog, which) -> {
                 })
                 .setPositiveButton("确定", (dialog, which) -> {

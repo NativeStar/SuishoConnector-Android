@@ -56,11 +56,9 @@ public class StateBarManager {
     }
 
     public void onMenuClick() {
-        //这时候才能保证控件存在
-//        if(menuView == null||menuView.) {
+        //避免null
         menuView = activity.findViewById(R.id.activity_state);
         if(delaySetIcon) setIcon();
-//        }
         stateDialog.show();
     }
 

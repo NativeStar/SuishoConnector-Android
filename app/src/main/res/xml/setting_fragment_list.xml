@@ -16,15 +16,11 @@
             />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/setting_group_functions">
-        <!--        <SwitchPreferenceCompat-->
-        <!--            android:title="@string/setting_function_screen_projection"-->
-        <!--            android:key="setting_function_screen_projection"-->
-        <!--            android:icon="@drawable/baseline_cast_24"-->
-        <!--            android:defaultValue="false"/>-->
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:icon="@drawable/baseline_notifications_active_24"
             android:key="function_notification_forward"
+            android:summary="@string/text_notification_forward_desc"
             android:title="@string/setting_function_notification_forward" />
         <SwitchPreferenceCompat
             android:defaultValue="false"

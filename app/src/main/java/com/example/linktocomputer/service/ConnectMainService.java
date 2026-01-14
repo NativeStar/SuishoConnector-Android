@@ -49,7 +49,7 @@ import com.example.linktocomputer.responseBuilders.AllPackageResponse;
 import com.example.linktocomputer.responseBuilders.CurrentNotificationsListPacket;
 import com.example.linktocomputer.responseBuilders.DetailBuilder;
 import com.example.linktocomputer.responseBuilders.HandshakeResponse;
-import com.example.linktocomputer.responseBuilders.emptyResponsePacketBuilder;
+import com.example.linktocomputer.responseBuilders.EmptyResponsePacketBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -540,7 +540,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 //没重名 一切正常
                                                 new TransmitDownloadFile(jsonObj.port, outputFile.getAbsolutePath(), jsonObj.fileName, jsonObj.fileSize, activityMethods);
                                             }
-                                            webSocketClient.send(emptyResponsePacketBuilder.buildEmptyResponsePacket(jsonObj).toString());
+                                            webSocketClient.send(EmptyResponsePacketBuilder.buildEmptyResponsePacket(jsonObj).toString());
                                             break;
                                         case "main_queryAllPackages":
                                             //查询所有已安装应用
@@ -720,7 +720,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             break;
                                         case "main_getCurrentNotificationsList":
                                             CurrentNotificationsListPacket packet = new CurrentNotificationsListPacket();
-                                            JsonObject notificationListJson = packet.build(jsonObj._request_id, notificationListenerService.getActiveNotifications(), notificationListenerService);
+                                            JsonObject notificationListJson = packet.build(jsonObj._request_id, notificationListenerService.getActiveNotifications(), notificationListenerService,checkNotificationListenerPermission());
                                             sendObject(notificationListJson);
                                             break;
                                         case "removeCurrentNotification":

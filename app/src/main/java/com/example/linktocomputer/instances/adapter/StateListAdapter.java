@@ -150,11 +150,6 @@ public class StateListAdapter extends RecyclerView.Adapter {
             }
             renderList.add(state);
         });
-        //无消息时
-//        if(newStates.isEmpty()){
-//            logger.debug("Refresh not state");
-//            highestLevel=StateLevel.CHECKED;
-//        }
         activity.runOnUiThread(()->notifyDataSetChanged());
     }
     private static class Holder extends RecyclerView.ViewHolder{
