@@ -5,7 +5,7 @@ plugins {
 }
 android {
     namespace 'com.example.linktocomputer'
-    compileSdk 33
+    compileSdk 34
     signingConfigs {
         release {
             v1SigningEnabled false
@@ -65,18 +65,18 @@ android {
 }
 dependencies {
 //    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'com.google.android.material:material:1.10.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation "androidx.activity:activity:1.6.0-alpha05"
+    implementation 'androidx.activity:activity:1.8.0'
 //    implementation 'androidx.navigation:navigation-fragment:2.5.3'
 //    implementation 'androidx.navigation:navigation-ui:2.5.3'
     implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
-    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.google.code.gson:gson:2.13.2'
 //    implementation files('C:/Users/z2858/AndroidStudioProjects/LinkToComputer/app/lib/google-webrtc-1.0.32006.aar')
 //    implementation files("./lib/google-webrtc-1.0.32006.aar")
 //    implementation 'com.github.shenbengit:WebRTCExtension:1.1.0'
     implementation 'androidx.preference:preference-ktx:1.2.1'
-    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
+    implementation 'com.squareup.okhttp3:okhttp:5.3.2'
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
     implementation 'androidx.biometric:biometric:1.1.0'
     implementation 'org.slf4j:slf4j-api:2.0.17'
