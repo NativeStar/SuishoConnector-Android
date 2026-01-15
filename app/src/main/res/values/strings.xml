@@ -20,9 +20,8 @@
     <string name="service_notification_title">工作中</string>
     <string name="service_notification_content">Suisho Connector正在运行</string>
     <string name="transmit_send_text_input_hint">在此输入文本</string>
-    <string name="permission_scanCode_camera_message">该功能需要授予相机权限用于调用摄像头进行二维码扫描</string>
-    <string name="permission_audio_forward_message">该功能需要授予录音权限
-    软件并不会调用设备的麦克风 但Android要求进行内录时也需要该权限(即使媒体投射功能正常情况下需要用户每次都手动确认)
+    <string name="permission_scanCode_camera_message">该功能需要相机权限用于调用摄像头进行二维码扫描</string>
+    <string name="permission_audio_forward_message">该功能需要录音权限\n软件不需要调用设备的麦克风 但Android要求进行内录时也需要该权限
     </string>
     <string name="permission_request_alert_title">需要权限</string>
     <string name="text_cancel">取消</string>
@@ -143,11 +142,11 @@
     <string name="setting_function_file_manager">文件浏览</string>
     <string name="setting_function_file_manager_desc">允许信任的计算机浏览和下载设备文件</string>
     <string name="setting_function_text_send_shortcut">文本快捷发送</string>
-    <string name="setting_function_text_send_shortcut_desc">在系统文本选择菜单中添加发送功能</string>
+    <string name="setting_function_text_send_shortcut_desc">在系统文本选择菜单中添加发送选项</string>
     <string name="error_change_file_manager">应用变更时发生异常 请尝试重启软件</string>
-    <string name="setting_storage_permission_dialog_message">使用该功能需要给予本软件存储权限 点击\"确定\"发起授权</string>
+    <string name="setting_storage_permission_dialog_message">使用该功能需要存储权限 点击\"确定\"发起授权</string>
     <string name="text_crash_dialog_title">应用程序崩溃</string>
-    <string name="text_crash_dialog_message">Suisho Connector崩溃了,在设置中将日志导出并发送给开发者可能有助于修复此问题.带来不便深感抱歉.</string>
+    <string name="text_crash_dialog_message">Suisho Connector崩溃了,在设置中将日志导出并发送给开发者有助于修复此问题.带来不便深感抱歉.</string>
     <string name="text_export_success">导出完成</string>
     <string name="text_not_log">无可导出日志</string>
     <string name="text_export_failed">导出失败</string>

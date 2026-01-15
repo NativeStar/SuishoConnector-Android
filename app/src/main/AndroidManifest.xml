@@ -112,7 +112,7 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaProjection"
-            android:process=":ScreenProjectionProcess" />
+            android:process=":MediaProjectionProcess" />
 
         <activity
             android:name=".activity.NewMainActivity"
