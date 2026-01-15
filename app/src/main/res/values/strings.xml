@@ -7,6 +7,7 @@
     <string name="pairCodeInput_invalid">无效配对码</string>
     <string name="text_ok">确定</string>
     <string name="text_exit">退出</string>
+    <string name="label_send_text">发送到计算机</string>
     <string name="changeConnectMethod_inputAddress">手动输入地址</string>
     <string name="changeConnectMethod_scanCode">扫码连接</string>
     <string name="inputAddressTips">在PC端点击"切换连接方式"后输入显示的IP及端口</string>
@@ -141,6 +142,8 @@
     <string name="state_desc_error_file_server">相关功能可能无法工作 请尝试重新连接</string>
     <string name="setting_function_file_manager">文件浏览</string>
     <string name="setting_function_file_manager_desc">允许信任的计算机浏览和下载设备文件</string>
+    <string name="setting_function_text_send_shortcut">文本快捷发送</string>
+    <string name="setting_function_text_send_shortcut_desc">在系统文本选择菜单中添加发送功能</string>
     <string name="error_change_file_manager">应用变更时发生异常 请尝试重启软件</string>
     <string name="setting_storage_permission_dialog_message">使用该功能需要给予本软件存储权限 点击\"确定\"发起授权</string>
     <string name="text_crash_dialog_title">应用程序崩溃</string>

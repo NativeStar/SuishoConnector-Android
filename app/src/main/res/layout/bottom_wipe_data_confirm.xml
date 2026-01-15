@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:text="程序的所有数据将被清除,包括缓存、设置项、传输记录等.同时所有授予的权限将被撤销,需重新设置.\n确认继续?"
         android:layout_gravity="center"/>
-    <com.example.linktocomputer.view.ConfirmSeekBar
+    <com.suisho.linktocomputer.view.ConfirmSeekBar
         android:layout_marginTop="15dp"
         android:id="@+id/wipe_data_confirm_seek_bar"
         android:layout_marginBottom="20dp"

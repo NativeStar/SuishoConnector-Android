@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <PreferenceCategory android:title="@string/text_manage">
         <Preference
             android:icon="@drawable/baseline_computer_24"
@@ -28,6 +29,14 @@
             android:key="function_file_manager"
             android:summary="@string/setting_function_file_manager_desc"
             android:title="@string/setting_function_file_manager" />
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:persistent="false"
+            app:defaultValue="true"
+            android:icon="@drawable/baseline_short_text_24"
+            android:key="function_text_selection_shortcut"
+            android:summary="@string/setting_function_text_send_shortcut_desc"
+            android:title="@string/setting_function_text_send_shortcut" />
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:icon="@drawable/baseline_close_24"

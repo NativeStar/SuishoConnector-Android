@@ -33,7 +33,7 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:manageSpaceActivity="com.example.linktocomputer.activity.StorageManageActivity"
+        android:manageSpaceActivity="com.suisho.linktocomputer.activity.StorageManageActivity"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.LinkToComputer"
         android:usesCleartextTraffic="true">
@@ -73,6 +73,17 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
+        <activity-alias
+            android:name=".TextUploadEntry"
+            android:exported="true"
+            android:label="@string/label_send_text"
+            android:targetActivity=".activity.FileUploadActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity-alias>
         <activity
             android:name=".activity.CrashDialogActivity"
             android:excludeFromRecents="true"
