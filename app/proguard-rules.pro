@@ -19,3 +19,11 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+-keep class ch.qos.logback.** { *; }
+-keep class org.slf4j.** { *; }
+-dontwarn ch.qos.logback.**
+-dontwarn org.slf4j.**
+-keepclassmembers class com.journeyapps.barcodescanner.camera.CameraManager {
+    *** setCameraDisplayOrientation(...);
+}
+-keep class com.suisho.linktocomputer.jsonClass.** { *; }
