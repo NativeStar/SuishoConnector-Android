@@ -45,6 +45,8 @@
 ### 开发
 项目使用纯Java实现 将源码clone到本地后通过AndroidStudio打开 等待安装依赖即可
 
+编译方面 直接在AndroidStudio选择生成签名的apk即可
+
 项目基于MIT协议开源
 ### 反馈与建议
 所有操作通过Github issues进行
