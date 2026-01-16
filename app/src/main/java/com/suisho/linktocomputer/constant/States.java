@@ -30,7 +30,7 @@ public class States {
             //电池优化
             StateList.put("info_battery_opt",new State("info_battery_opt",R.string.state_name_battery_opt,R.string.state_desc_battery_opt,StateLevel.INFO,true));
             //查询软件包列表权限
-            StateList.put("warn_query_package_permission",new State("warn_query_package_permission",R.string.state_name_query_package_permission,R.string.state_desc_query_package_permission,StateLevel.WARN,false));
+            StateList.put("warn_query_package_permission",new State("warn_query_package_permission",R.string.state_name_query_package_permission,R.string.state_desc_query_package_permission,StateLevel.WARN,true));
             //图标打包异常
             StateList.put("error_packing_icon",new State("error_packing_icon",R.string.state_name_error,R.string.state_desc_error_packing_icon,StateLevel.ERROR,false));
             //通知监听权限

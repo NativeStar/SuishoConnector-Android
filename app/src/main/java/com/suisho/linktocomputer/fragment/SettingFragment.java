@@ -78,7 +78,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
         ComponentName sendTextAliasComponent=new ComponentName(activity,activity.getPackageName()+".TextUploadEntry");
         int componentState = activity.getPackageManager().getComponentEnabledSetting(sendTextAliasComponent);
         logger.debug("Text selection shortcut component state:{}",componentState);
-        ((SwitchPreferenceCompat) findPreference("function_text_selection_shortcut")).setChecked(componentState==PackageManager.COMPONENT_ENABLED_STATE_ENABLED);
+        ((SwitchPreferenceCompat) findPreference("function_text_selection_shortcut")).setChecked(componentState==PackageManager.COMPONENT_ENABLED_STATE_ENABLED||componentState==PackageManager.COMPONENT_ENABLED_STATE_DEFAULT);
         //版本名称
         String finalDisplayName = String.format("%s(%s)", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE);
         ((TextView) aboutDialogLayout.findViewById(R.id.versionNameText)).setText(finalDisplayName);
@@ -164,7 +164,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                         //Download目录
                         if(which == 1) {
                             if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
-                                logger.info("Request storage permission because android version lower 10");
+                                logger.info("Change transmit file save location request storage permission because android version lower 10");
                                 //读写存储空间权限
                                 Context context = getContext();
                                 if(context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED || context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -175,7 +175,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                                             .setNegativeButton(R.string.text_cancel, (dialog1, which1) -> {
                                             })
                                             .setPositiveButton(R.string.text_ok, (dialog1, which1) -> {
-                                                logger.debug("Request write external storage permission");
+                                                logger.debug("Request write external storage permission by change transmit file save location");
                                                 getActivity().requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1000);
                                             })
                                             .show();
@@ -198,6 +198,24 @@ public class SettingFragment extends PreferenceFragmentCompat {
                 logger.debug("No transmit files in private directory.Don't export");
                 Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), "私有目录中不存在互传文件 无需导出", 2500).show();
                 return true;
+            }
+            if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+                logger.info("Export in private directory transmit files request storage permission because android version lower 10");
+                //读写存储空间权限
+                Context context = getContext();
+                if(context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED || context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    new MaterialAlertDialogBuilder(getActivity())
+                            .setTitle(R.string.permission_request_alert_title)
+                            .setMessage(R.string.dialog_write_external_storage_permission_message)
+                            .setNegativeButton(R.string.text_cancel, (dialog1, which1) -> {
+                            })
+                            .setPositiveButton(R.string.text_ok, (dialog1, which1) -> {
+                                logger.debug("Request write external storage permission by Export in private directory transmit files");
+                                getActivity().requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1000);
+                            })
+                            .show();
+                    return true;
+                }
             }
             String path = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector").getAbsolutePath();
             logger.debug("Show export transmit file confirm dialog.Target path:{}", path);
@@ -406,9 +424,12 @@ public class SettingFragment extends PreferenceFragmentCompat {
         return true;
     }
     private void exportAllLogs() {
+        //TODO 改SAF导出
         logger.info("Start export all logs");
         File crashLogDirectory = new File(getActivity().getDataDir() + "/files/crash/");
         File commonLogDirectory = new File(getActivity().getDataDir() + "/files/logs/");
+        crashLogDirectory.mkdirs();
+        commonLogDirectory.mkdirs();
         if(!crashLogDirectory.isDirectory() && !commonLogDirectory.isDirectory()) {
             logger.debug("No log file folder found");
             Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_not_log, 2500).show();
@@ -426,7 +447,27 @@ public class SettingFragment extends PreferenceFragmentCompat {
             Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_not_log, 2500).show();
             return;
         }
+        if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            logger.info("Export logs request storage permission because android version lower 10");
+            //读写存储空间权限
+            Context context = getContext();
+            if(context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED || context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                new MaterialAlertDialogBuilder(getActivity())
+                        .setTitle(R.string.permission_request_alert_title)
+                        .setMessage(R.string.dialog_write_external_storage_permission_message)
+                        .setNegativeButton(R.string.text_cancel, (dialog1, which1) -> {
+                        })
+                        .setPositiveButton(R.string.text_ok, (dialog1, which1) -> {
+                            logger.debug("Request write external storage permission with export logs");
+                            getActivity().requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1000);
+                        })
+                        .show();
+                return;
+            }
+        }
         new Thread(() -> {
+            File logZipPath = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/");
+            logZipPath.mkdirs();
             File logZipFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/logs-" + System.currentTimeMillis() + ".zip");
             try {
                 ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(logZipFile.toPath()));
@@ -455,6 +496,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                 getActivity().runOnUiThread(() -> Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), getString(R.string.text_export_to) + logZipFile.getName(), 5000).show());
                 logger.info("Export all logs success");
             } catch (IOException e) {
+                logger.error("Export all logs failed with exception", e);
                 getActivity().runOnUiThread(() -> {
                     new MaterialAlertDialogBuilder(getActivity())
                             .setTitle(R.string.text_export_failed)

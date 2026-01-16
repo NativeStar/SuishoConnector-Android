@@ -12,6 +12,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.util.TypedValue;
 
 import androidx.annotation.Nullable;
@@ -94,7 +95,7 @@ public class Util {
     }
 
     public static void buildAppListCache(Activity activity) {
-        if(activity.checkSelfPermission("android.permission.QUERY_ALL_PACKAGES") == PackageManager.PERMISSION_DENIED) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R&&activity.checkSelfPermission("android.permission.QUERY_ALL_PACKAGES") == PackageManager.PERMISSION_DENIED) {
             logger.info("Not query all packages permission");
             ((NewMainActivity)activity).stateBarManager.addState(States.getStateList().get("warn_query_package_permission"));
             return;

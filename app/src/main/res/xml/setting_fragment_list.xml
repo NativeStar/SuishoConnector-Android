@@ -30,7 +30,6 @@
             android:summary="@string/setting_function_file_manager_desc"
             android:title="@string/setting_function_file_manager" />
         <SwitchPreferenceCompat
-            android:defaultValue="true"
             android:persistent="false"
             android:icon="@drawable/baseline_short_text_24"
             android:key="function_text_selection_shortcut"

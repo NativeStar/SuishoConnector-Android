@@ -15,6 +15,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.constant.States;
 import com.suisho.linktocomputer.enums.StateLevel;
@@ -108,6 +109,18 @@ public class StateListAdapter extends RecyclerView.Adapter {
                 intent.putExtra("android.provider.extra.APP_PACKAGE",activity.getPackageName());
                 activity.startActivity(intent);
                 logger.debug("Open notification permission activity");
+                break;
+            case "warn_query_package_permission":
+                new MaterialAlertDialogBuilder(activity)
+                        .setTitle(R.string.permission_request_alert_title)
+                        .setMessage(R.string.dialog_query_all_packages_permission_desc)
+                        .setNegativeButton(R.string.text_cancel,null)
+                        .setPositiveButton(R.string.text_ok, (dialog, which) -> {
+                            Intent appDetailPageIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            appDetailPageIntent.setData(Uri.parse("package:" + activity.getPackageName()));
+                            activity.startActivity(appDetailPageIntent);
+                            logger.debug("Open app detail activity");
+                        }).show();
                 break;
             default:
                 logger.warn("Unknown state card type:{}",state.id);
