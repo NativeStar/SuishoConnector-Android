@@ -26,14 +26,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.suisho.linktocomputer.GlobalVariables;
-import com.suisho.linktocomputer.R;
-import com.suisho.linktocomputer.activity.NewMainActivity;
-import com.suisho.linktocomputer.constant.States;
-import com.suisho.linktocomputer.databinding.FragmentHomeBinding;
-import com.suisho.linktocomputer.interfaces.IQRCodeDetected;
-import com.suisho.linktocomputer.jsonClass.HandshakePacket;
-import com.suisho.linktocomputer.service.ConnectMainService;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
@@ -50,6 +42,14 @@ import com.journeyapps.barcodescanner.SourceData;
 import com.journeyapps.barcodescanner.camera.CameraManager;
 import com.journeyapps.barcodescanner.camera.CameraSettings;
 import com.journeyapps.barcodescanner.camera.PreviewCallback;
+import com.suisho.linktocomputer.GlobalVariables;
+import com.suisho.linktocomputer.R;
+import com.suisho.linktocomputer.activity.NewMainActivity;
+import com.suisho.linktocomputer.constant.States;
+import com.suisho.linktocomputer.databinding.FragmentHomeBinding;
+import com.suisho.linktocomputer.interfaces.IQRCodeDetected;
+import com.suisho.linktocomputer.jsonClass.HandshakePacket;
+import com.suisho.linktocomputer.service.ConnectMainService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,6 +86,7 @@ public class HomeFragment extends Fragment {
                 binding.cardTextMediaProjectionMode.setText(R.string.text_authorized);
             }
         });
+
     }
 
     @Override
@@ -211,8 +212,9 @@ public class HomeFragment extends Fragment {
         });
         //调试
         binding.cardConnectionStateIcon.setOnClickListener(v1 -> {
-            if(0 == (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE)) {
-                logger.debug("Not debug mode,Ignore debug menu create");
+            if((0 == (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE))&&!NewMainActivity.hasDebuggableArg) {
+                //再判断启动参数
+                logger.debug("Not in debug mode,Ignore debug menu create");
                 return;
             }
             logger.debug("Show debug menu");

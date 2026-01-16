@@ -5,7 +5,7 @@ import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -23,7 +23,6 @@ import com.suisho.linktocomputer.instances.ComputerConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -105,7 +104,7 @@ public class Util {
             HashMap<String, String> appMap = new HashMap<>();
             SharedPreferences vals = activity.getSharedPreferences("iconPackVars", Context.MODE_PRIVATE);
             PackageManager pm = activity.getPackageManager();
-            List<PackageInfo> allPackage = pm.getInstalledPackages(0);
+            List<ApplicationInfo> allPackage = pm.getInstalledApplications(0);
             //根据应用列表长度判断 上面可能不返回拒绝
             if(allPackage.size()<= 10){
                 //正常不可能少于10个软件
@@ -117,8 +116,8 @@ public class Util {
             File appListMapObjectFile = new File(activity.getCacheDir() + "/appPackageMapper.hm");
             File iconZipFile=new File(activity.getCacheDir()+"/packing");
             //构建hashmap
-            for(PackageInfo app : allPackage) {
-                appMap.put(app.packageName, (String) app.applicationInfo.loadLabel(pm));
+            for(ApplicationInfo app : allPackage) {
+                appMap.put(app.packageName, (String) app.loadLabel(pm));
             }
             //是否有打包未完成的文件 以及映射文件是否存在
             if(!iconZipFile.exists()&&appListMapObjectFile.exists()) {
@@ -201,10 +200,10 @@ public class Util {
                         //懒得自己折腾 麻烦
                         int width = iconDrawable.getIntrinsicWidth();
                         int height = iconDrawable.getIntrinsicHeight();
-                        iconDrawable.setBounds(0, 0, width, height);
+                        iconDrawable.setBounds(0, 0, Math.min(width, 128), Math.min(height, 128));
                         Bitmap.Config config = iconDrawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888
                                 : Bitmap.Config.RGB_565;
-                        iconBitmap = Bitmap.createBitmap(width, height, config);
+                        iconBitmap = Bitmap.createBitmap(Math.min(width, 128), Math.min(height, 128), config);
                         Canvas canvas = new Canvas(iconBitmap);
                         // 将drawable 内容画到画布中
                         iconDrawable.draw(canvas);
@@ -213,11 +212,9 @@ public class Util {
                         continue;
                     }
                     //直接打进zip
-                    ByteArrayOutputStream bitmapBytes = new ByteArrayOutputStream();
-                    iconBitmap.compress(Bitmap.CompressFormat.PNG, 80, bitmapBytes);
                     zipOutputStream.putNextEntry(new ZipEntry(packageName));
-                    zipOutputStream.write(bitmapBytes.toByteArray());
-                    bitmapBytes.close();
+                    iconBitmap.compress(Bitmap.CompressFormat.PNG, 80, zipOutputStream);
+                    zipOutputStream.closeEntry();
                     iconBitmap.recycle();
                 }
                 zipOutputStream.flush();

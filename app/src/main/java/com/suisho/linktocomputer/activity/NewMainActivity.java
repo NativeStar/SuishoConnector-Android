@@ -102,6 +102,7 @@ public class NewMainActivity extends AppCompatActivity {
     private final int[] navigationIds = {R.id.connected_activity_navigation_bar_menu_home, R.id.connected_activity_navigation_bar_menu_transmit, R.id.connected_activity_navigation_bar_menu_setting};
     public AutoConnector autoConnector;
     private boolean autoConnectorWorked = false;
+    public static boolean hasDebuggableArg;
     private final Logger logger = LoggerFactory.getLogger(NewMainActivity.class);
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -154,6 +155,9 @@ public class NewMainActivity extends AppCompatActivity {
                 }
             });
         }
+        //debug参数
+        hasDebuggableArg = getIntent().getBooleanExtra("enableDebugMenu", false);
+        if(hasDebuggableArg) logger.info("Launch with debug menu");
     }
 
 
@@ -168,7 +172,8 @@ public class NewMainActivity extends AppCompatActivity {
                     .setPositiveButton("后台运行", (dialog, which) -> {
                         logger.debug("onBackPressed called.Move task to back");
                         dialog.dismiss();
-                        moveTaskToBack(true);
+                        super.onBackPressed();
+//                        moveTaskToBack(true);
                     })
                     .setNegativeButton("退出", (dialog, which) -> {
                         logger.debug("onBackPressed called.Exit");
@@ -178,7 +183,8 @@ public class NewMainActivity extends AppCompatActivity {
                     .show();
         } else {
             logger.debug("onBackPressed called.Move task to back by has connection");
-            moveTaskToBack(true);
+            super.onBackPressed();
+//            moveTaskToBack(true);
         }
     }
 
