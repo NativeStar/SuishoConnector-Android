@@ -160,7 +160,7 @@ public class StorageManageActivity extends AppCompatActivity {
                             clearFolder(crashLogsFolder);
                             //运行日志
                             File commonLogsFolder = new File(getDataDir().getAbsolutePath() + "/files/logs/");
-                            clearFolder(commonLogsFolder,true);
+                            clearFolder(commonLogsFolder, true);
                             Snackbar.make(findViewById(R.id.storage_manage_activity_root), getString(R.string.text_cleared), 2000).show();
                             initTextShow();
                         }).show();
@@ -185,8 +185,8 @@ public class StorageManageActivity extends AppCompatActivity {
                                 try {
                                     if(GlobalVariables.computerConfigManager != null) {
                                         ConnectMainService service = GlobalVariables.computerConfigManager.getNetworkService();
-                                        if(service != null&&service.isConnected){
-                                            service.disconnect(1010,"SURE");
+                                        if(service != null && service.isConnected) {
+                                            service.disconnect(1010, "SURE");
                                         }
                                     }
                                     //大概让人看清字
@@ -247,10 +247,6 @@ public class StorageManageActivity extends AppCompatActivity {
             exceptionOnInitDialog("Error on get storage state");
             return true;
         }
-        //总占用
-        ((TextView) findViewById(R.id.text_storage_usage_app)).setText(Util.coverFileSize(selfStorageState.getAppBytes() + selfStorageState.getCacheBytes() + selfStorageState.getDataBytes()));
-        //缓存
-        ((TextView) findViewById(R.id.text_storage_usage_cache)).setText(Util.coverFileSize(selfStorageState.getCacheBytes()));
         //互传记录及文件
         File transmitDataPath = new File(getExternalFilesDir(null).getAbsolutePath() + "/transmit/files/");
         //传输记录文件
@@ -260,8 +256,6 @@ public class StorageManageActivity extends AppCompatActivity {
             transmitFilesTotalSize += transmitRecordFile.length();
         }
         transmitFilesTotalSize += getFolderSize(transmitDataPath);
-        //互传占用 文本
-        ((TextView) findViewById(R.id.text_storage_usage_transmit)).setText(Util.coverFileSize(transmitFilesTotalSize));
         //杂项占用
         long chaosFilesTotalSize = 0L;
         //证书
@@ -273,9 +267,18 @@ public class StorageManageActivity extends AppCompatActivity {
         //运行日志
         File commonLogsFolder = new File(getDataDir().getAbsolutePath() + "/files/logs/");
         chaosFilesTotalSize += getFolderSize(commonLogsFolder);
-        ((TextView) findViewById(R.id.text_storage_usage_chaos_data)).setText(Util.coverFileSize(chaosFilesTotalSize));
         //设置按钮可用
+        StorageStats finalSelfStorageState = selfStorageState;
+        long finalTransmitFilesTotalSize = transmitFilesTotalSize;
+        long finalChaosFilesTotalSize = chaosFilesTotalSize;
         runOnUiThread(() -> {
+            //总占用
+            ((TextView) findViewById(R.id.text_storage_usage_app)).setText(Util.coverFileSize(finalSelfStorageState.getAppBytes() + finalSelfStorageState.getCacheBytes() + finalSelfStorageState.getDataBytes()));
+            //缓存
+            ((TextView) findViewById(R.id.text_storage_usage_cache)).setText(Util.coverFileSize(finalSelfStorageState.getCacheBytes()));
+            //互传占用 文本
+            ((TextView) findViewById(R.id.text_storage_usage_transmit)).setText(Util.coverFileSize(finalTransmitFilesTotalSize));
+            ((TextView) findViewById(R.id.text_storage_usage_chaos_data)).setText(Util.coverFileSize(finalChaosFilesTotalSize));
             findViewById(R.id.button_storage_manage_clear_cache).setEnabled(true);
             findViewById(R.id.button_storage_manage_clear_transmit_data).setEnabled(true);
             findViewById(R.id.button_storage_manage_clear_chaos_data).setEnabled(true);
@@ -287,11 +290,14 @@ public class StorageManageActivity extends AppCompatActivity {
 
     private void exceptionOnInitDialog(String message) {
         logger.warn("Show error dialog with message:{}", message);
-        new MaterialAlertDialogBuilder(this)
-                .setTitle("Error")
-                .setMessage(message)
-                .setPositiveButton("确定", ((dialog, which) -> this.finish()))
-                .show();
+        runOnUiThread(() -> {
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Error")
+                    .setMessage(message)
+                    .setPositiveButton("确定", ((dialog, which) -> this.finish()))
+                    .show();
+
+        });
     }
 
     /**
@@ -308,25 +314,27 @@ public class StorageManageActivity extends AppCompatActivity {
                 tempFilesSize += file.length();
             }
         }
-        logger.debug("Calc folder '{}' size {}",path.getName(), tempFilesSize);
+        logger.debug("Calc folder '{}' size {}", path.getName(), tempFilesSize);
         return tempFilesSize;
     }
+
     private boolean clearFolder(File path) {
-        return clearFolder(path,false);
+        return clearFolder(path, false);
     }
+
     /**
      * 清空文件夹 仅限其中文件
      *
      * @param path 目标文件内File
      * @return 是否完成清理
      */
-    private boolean clearFolder(File path,boolean isLog) {
+    private boolean clearFolder(File path, boolean isLog) {
         if(path.exists()) {
             File[] files = path.listFiles();
             //文件夹不存在
             if(files == null) return true;
             for(File file : files) {
-                if(isLog&&file.getPath().equals(GlobalVariables.currentBootLogFilePath))continue;
+                if(isLog && file.getPath().equals(GlobalVariables.currentBootLogFilePath)) continue;
                 if(!file.delete()) return false;
             }
             return true;
