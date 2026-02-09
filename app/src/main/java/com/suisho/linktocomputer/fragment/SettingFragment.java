@@ -427,7 +427,6 @@ public class SettingFragment extends PreferenceFragmentCompat {
 
     private void exportAllLogs(Uri uri) {
         if(uri == null) return;
-        //TODO 改SAF导出
         logger.info("Start export all logs");
         File crashLogDirectory = new File(getActivity().getDataDir() + "/files/crash/");
         File commonLogDirectory = new File(getActivity().getDataDir() + "/files/logs/");
