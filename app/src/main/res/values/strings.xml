@@ -83,7 +83,6 @@
     <string name="text_untrusted">不信任</string>
     <string name="text_trusted">已信任</string>
     <string name="text_cancel_trust">取消信任</string>
-    <string name="text_deleted">已删除</string>
     <string name="dialog_trust_computer_title">信任此设备?</string>
     <string name="dialog_trust_computer_message">此计算机将可以访问设备的通知、文件等数据
         这可能包含隐私信息 建议仅对私人设备授予信任</string>
@@ -125,7 +124,6 @@
     <string name="dialog_transmit_file_save_location">文件存储位置</string>
     <string name="home_card_trust_mode">信任模式</string>
     <string name="home_card_media_projection">音频转发(点击授权)</string>
-    <string name="dialog_close_application_confirm_title">关闭应用</string>
     <string name="dialog_close_application_confirm_message">确认关闭应用?</string>
     <string name="text_connect_failed">连接失败</string>
     <string name="text_invalid_qrcode">无效二维码</string>
@@ -148,8 +146,6 @@
     <string name="text_export_success">导出完成</string>
     <string name="text_not_log">无可导出日志</string>
     <string name="text_export_failed">导出失败</string>
-    <string name="dialog_log_export_message">所有日志将被打包至\"/内部存储/Download/SuishoConnector/\"目录下</string>
-    <string name="text_export_to">已导出为:</string>
     <string name="setting_launch_verify_summary_device_not_password">无法使用:设备未设置锁屏密码</string>
     <string name="auth_dialog_title">身份验证</string>
     <string name="setting_launch_verify_summary_unsupported">无法使用:设备不支持</string>
