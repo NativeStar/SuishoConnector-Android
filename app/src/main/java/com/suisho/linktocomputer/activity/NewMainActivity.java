@@ -44,6 +44,7 @@ import com.suisho.linktocomputer.constant.States;
 import com.suisho.linktocomputer.databinding.ActivityConnectedBinding;
 import com.suisho.linktocomputer.enums.TransmitRecyclerAddItemType;
 import com.suisho.linktocomputer.fragment.TransmitFragment;
+import com.suisho.linktocomputer.instances.CheckUpdateHandle;
 import com.suisho.linktocomputer.instances.ComputerConfigManager;
 import com.suisho.linktocomputer.instances.StateBarManager;
 import com.suisho.linktocomputer.instances.adapter.HomeViewPagerAdapter;
@@ -158,6 +159,12 @@ public class NewMainActivity extends AppCompatActivity {
         //debug参数
         hasDebuggableArg = getIntent().getBooleanExtra("enableDebugMenu", false);
         if(hasDebuggableArg) logger.info("Launch with debug menu");
+        //检查更新
+        if(GlobalVariables.preferences.getBoolean("enable_auto_check_update", true)){
+            logger.debug("Add idle check update handle");
+            CheckUpdateHandle handle=new CheckUpdateHandle(this);
+            Looper.myQueue().addIdleHandler(handle);
+        }
     }
 
 

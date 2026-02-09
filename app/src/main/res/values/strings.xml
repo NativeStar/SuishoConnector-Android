@@ -166,5 +166,7 @@
     <string name="text_unbind_failed_not_bound">当前未绑定任何设备</string>
     <string name="text_android_version_not_support">当前Android版本过低 不支持此功能</string>
     <string name="error_media_projection_manager_null">授权失败:无法获取MediaProjectionManager</string>
+    <string name="state_title_update_available">发现版本更新</string>
+    <string name="state_desc_update_available">点击跳转至Github下载</string>
 
 </resources>

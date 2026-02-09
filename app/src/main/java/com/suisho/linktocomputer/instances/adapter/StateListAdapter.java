@@ -122,6 +122,12 @@ public class StateListAdapter extends RecyclerView.Adapter {
                             logger.debug("Open app detail activity");
                         }).show();
                 break;
+            case "info_update_available":
+                //打开Github release
+                Intent githubUrlIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/NativeStar/SuishoConnector-Android/releases"));
+                activity.startActivity(githubUrlIntent);
+                logger.debug("Open github release page");
+                break;
             default:
                 logger.warn("Unknown state card type:{}",state.id);
         }

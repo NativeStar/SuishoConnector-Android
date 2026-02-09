@@ -73,6 +73,12 @@
             android:key="enable_debug_log"
             android:summary="可能影响性能 建议仅在需要反馈异常时使用(重启后生效)"
             android:title="开启调试日志" />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:icon="@drawable/baseline_update_24"
+            android:key="enable_auto_check_update"
+            android:summary="在程序启动时自动检查更新"
+            android:title="检查更新" />
         <Preference
             android:icon="@drawable/baseline_archive_24"
             android:key="key_export_crash_logs"

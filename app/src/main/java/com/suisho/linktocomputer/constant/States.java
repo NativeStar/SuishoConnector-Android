@@ -43,6 +43,8 @@ public class States {
             StateList.put("info_auto_connect_not_wifi",new State("info_auto_connect_not_wifi",R.string.state_title_auto_connect_pause,R.string.state_desc_auto_connect_pause_not_wifi,StateLevel.INFO,false));
             //文件浏览服务器初始化异常
             StateList.put("error_phone_file_server",new State("error_phone_file_server",R.string.state_title_error_file_server,R.string.state_desc_error_file_server,StateLevel.ERROR,false));
+            //有更新可用
+            StateList.put("info_update_available",new State("info_update_available",R.string.state_title_update_available,R.string.state_desc_update_available,StateLevel.INFO,true));
         }
         return StateList;
     }
