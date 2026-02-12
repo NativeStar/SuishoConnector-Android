@@ -1,5 +1,6 @@
 package com.suisho.linktocomputer.service;
 
+import android.app.KeyguardManager;
 import android.app.Notification;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -31,7 +32,7 @@ public class NotificationListenerService extends android.service.notification.No
     private String appPackageName;
     private MediaSessionManager mediaSessionManager;
     private final Logger logger = LoggerFactory.getLogger(NotificationListenerService.class);
-
+    private KeyguardManager keyguardManager;
     public NotificationListenerService() {
     }
 
@@ -64,6 +65,10 @@ public class NotificationListenerService extends android.service.notification.No
     }
 
     public void setMainService(ConnectMainService service) {
+        //在这初始化避免 NPE
+        if(keyguardManager==null){
+            keyguardManager=(KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+        }
         networkService = service;
     }
 
@@ -131,7 +136,8 @@ public class NotificationListenerService extends android.service.notification.No
                         appNameCache.get(sbn.getPackageName()),
                         sbn.getKey(),
                         (notificationInstance.flags & Notification.FLAG_ONGOING_EVENT) != 0,
-                        notificationInstance.extras.getInt(Notification.EXTRA_PROGRESS, -1)
+                        notificationInstance.extras.getInt(Notification.EXTRA_PROGRESS, -1),
+                        keyguardManager != null && keyguardManager.isKeyguardLocked()
                 );
             } catch (PackageManager.NameNotFoundException e) {
                 logger.error("Error on create notification packet", e);
@@ -144,7 +150,8 @@ public class NotificationListenerService extends android.service.notification.No
                         sbn.getPackageName(),
                         sbn.getKey(),
                         (notificationInstance.flags & Notification.FLAG_ONGOING_EVENT) != 0,
-                        notificationInstance.extras.getInt(Notification.EXTRA_PROGRESS, -1)
+                        notificationInstance.extras.getInt(Notification.EXTRA_PROGRESS, -1),
+                        keyguardManager != null && keyguardManager.isKeyguardLocked()
                 );
             }
             networkService.sendObject(packet.getJsonObject());

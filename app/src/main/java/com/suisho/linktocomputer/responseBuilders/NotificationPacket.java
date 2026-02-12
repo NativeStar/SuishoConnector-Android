@@ -6,7 +6,7 @@ import com.google.gson.JsonObject;
 
 public class NotificationPacket {
     private final JsonObject jsonObject;
-    public NotificationPacket(String pkg,long time, String title, @Nullable String content,String appName,String key,boolean ongoing,int progress) {
+    public NotificationPacket(String pkg,long time, String title, @Nullable String content,String appName,String key,boolean ongoing,int progress,boolean isLockedScreen) {
         jsonObject=new JsonObject();
         jsonObject.addProperty("packetType","action_notificationForward");
         //包名
@@ -26,6 +26,8 @@ public class NotificationPacket {
         jsonObject.addProperty("ongoing",ongoing);
         //可能的进度条
         jsonObject.addProperty("progress",progress);
+        //锁屏状态
+        jsonObject.addProperty("isLockScreen",isLockedScreen);
     }
     public JsonObject getJsonObject(){
         return jsonObject;
