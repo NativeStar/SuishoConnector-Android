@@ -36,6 +36,7 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/transmit_file_name"
                 android:textSize="18sp"
+                android:scrollbars="none"
                 android:layout_marginStart="74dp"
                 android:layout_marginTop="3dp"
                 android:textStyle="bold"
