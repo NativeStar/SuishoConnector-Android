@@ -26,6 +26,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/text_delete" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/long_click_menu_action_open_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/text_open_url" />
 
 <!--        <com.google.android.material.button.MaterialButton-->
 <!--            android:layout_width="match_parent"-->

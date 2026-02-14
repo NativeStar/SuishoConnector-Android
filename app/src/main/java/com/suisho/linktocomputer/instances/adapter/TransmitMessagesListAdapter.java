@@ -6,6 +6,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -126,17 +127,25 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
             case MessageConf.MESSAGE_TYPE_TEXT:
                 logger.debug("Init text message");
                 TextView textView = holder.messageView.findViewById(R.id.transmit_message_text_view);
-                textView.setText(((TransmitMessageTypeText) dataList.get(position)).msg);
+                String text = ((TransmitMessageTypeText) dataList.get(position)).msg;
+                textView.setText(text);
+                final boolean isUrl=!text.isEmpty()&& Patterns.WEB_URL.matcher(text).matches();
                 holder.messageView.setOnLongClickListener(view -> {
                     logger.debug("Text message long clicked.Show menu");
                     //文本卡片长按事件
                     View menuLayout = LayoutInflater.from(activity).inflate(R.layout.transmit_message_action_menu_text, null, false);
                     PopupWindow popupWindow = new PopupWindow(menuLayout, ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
                     setUniversalLongClickMenuAction(menuLayout, messagesView, popupWindow, holder);
+                    menuLayout.findViewById(R.id.long_click_menu_action_open_url).setEnabled(isUrl);
+                    menuLayout.findViewById(R.id.long_click_menu_action_open_url).setOnClickListener(v -> {
+                        Intent urlIntent=new Intent(Intent.ACTION_VIEW);
+                        urlIntent.setData(Uri.parse(text));
+                        activity.startActivity(urlIntent);
+                    });
                     menuLayout.findViewById(R.id.long_click_menu_action_copy_full).setOnClickListener(v -> {
                         logger.info("Copy text message full");
                         popupWindow.dismiss();
-                        ClipData clipData = ClipData.newPlainText("CopyText", ((TransmitMessageTypeText) dataList.get(position)).msg);
+                        ClipData clipData = ClipData.newPlainText("CopyText", text);
                         clipboardManager.setPrimaryClip(clipData);
                         logger.debug("Copy full message:{}", clipData);
                         Snackbar.make(((NewMainActivity) activity).getBinding().getRoot(), "已复制", 2000).show();
@@ -148,6 +157,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         textView.setFocusable(true);
                         textView.setFocusableInTouchMode(true);
                     });
+
                     popupWindow.setOutsideTouchable(true);
                     popupWindow.showAsDropDown(view);
                     return true;
