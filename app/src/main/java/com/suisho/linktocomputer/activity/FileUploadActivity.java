@@ -85,10 +85,11 @@ public class FileUploadActivity extends Activity {
     }
 
     private void confirmSendText(String text) {
+        final String cutText =text.length()>100?text.substring(0,100)+"...":text;
         runOnUiThread(() -> {
             new MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.text_send_text)
-                    .setMessage(R.string.text_send_text_dialog_message)
+                    .setMessage(getString(R.string.text_send_text_dialog_message)+cutText)
                     .setPositiveButton(R.string.text_ok, (dialog, which) -> {
                         sendText(text);
                     })
