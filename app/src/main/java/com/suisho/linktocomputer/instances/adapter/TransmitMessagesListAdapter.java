@@ -191,7 +191,9 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     (holder.messageView.findViewById(R.id.transmit_file_openable_icon)).setVisibility(View.VISIBLE);
                     holder.messageView.requestLayout();
                 }
+                //注册点击事件 只有接收的文件才能打开
                 holder.messageView.setOnClickListener(v -> {
+                    if(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE) return;
                     //检查内容为"null"的字符串及真的null
                     if(messageInstance.filePath == null || messageInstance.filePath.equals("null")) {
                         //文件路径为空
@@ -229,8 +231,13 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     PopupWindow popupWindow = new PopupWindow(menuLayout, ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
                     //通用功能
                     setUniversalLongClickMenuAction(menuLayout, messagesView, popupWindow, holder);
+                    //长按自己发送的文件时屏蔽分享键
+                    if(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE) {
+                        menuLayout.findViewById(R.id.long_click_menu_action_share).setEnabled(false);
+                    }
                     //分享 文件专属
                     menuLayout.findViewById(R.id.long_click_menu_action_share).setOnClickListener(v -> activity.runOnUiThread(() -> {
+                        //兜底
                         if(messageInstance.filePath == null || messageInstance.filePath.equals("null")) {
                             //应该没错
                             logger.info("Share file message but path is null");
@@ -258,7 +265,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                             uri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".transmitOpenFileProvider", new File(messageInstance.filePath));
                             logger.debug("Not repeat file name.Using system provider");
                         } else {
-                            //自己的provider
+                            //自己的 provider
                             logger.debug("Has repeat file name.Using custom provider");
                             ShareFileProvider.setShareFileName(messageInstance.fileName);
                             uri = ShareFileProvider.getUriForFile(activity, activity.getPackageName() + ".ShareFileProvider", new File(messageInstance.filePath));
