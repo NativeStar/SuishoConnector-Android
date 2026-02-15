@@ -19,6 +19,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.os.RemoteException;
 
 import androidx.annotation.NonNull;
@@ -496,6 +497,10 @@ public class ConnectMainService extends Service implements INetworkService {
                                             //注册电池状态广播
                                             IntentFilter batteryBroadcastFilter = new IntentFilter();
                                             batteryBroadcastFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+                                            batteryBroadcastFilter.addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED);
+                                            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                batteryBroadcastFilter.addAction(PowerManager.ACTION_DEVICE_LIGHT_IDLE_MODE_CHANGED);
+                                            }
                                             if(batteryStateReceiver == null) {
                                                 logger.debug("Register battery state receiver");
                                                 batteryStateReceiver = new BatteryStateReceiver(ConnectMainService.this);
