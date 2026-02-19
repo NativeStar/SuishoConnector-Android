@@ -151,6 +151,7 @@
     <string name="setting_launch_verify_summary_device_not_password">无法使用:设备未设置锁屏密码</string>
     <string name="auth_dialog_title">身份验证</string>
     <string name="setting_launch_verify_summary_unsupported">无法使用:设备不支持</string>
+    <string name="setting_report_light_doze_mode_not_support">设备Android版本过低 无法上报该数据</string>
     <string name="text_verify_success">验证成功</string>
     <string name="auth_dialog_desc">我们需要确保您是机主</string>
     <string name="setting_launch_verify_summary_exception">无法使用:初始化时发生异常</string>

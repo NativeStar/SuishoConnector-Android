@@ -7,6 +7,7 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.PowerManager;
 
+import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.responseBuilders.DeviceStateUpdatePacket;
 import com.suisho.linktocomputer.service.ConnectMainService;
 
@@ -40,13 +41,16 @@ public class BatteryStateReceiver extends BroadcastReceiver {
             if(intent.getAction().equals(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED) || intent.getAction().equals(PowerManager.ACTION_DEVICE_LIGHT_IDLE_MODE_CHANGED)) {
                 isDeviceIdle = checkDeviceIdle();
             }
-
         }
     }
 
     private boolean checkDeviceIdle() {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return powerManager.isDeviceIdleMode() || powerManager.isDeviceLightIdleMode();
+            boolean reportLightDoze=GlobalVariables.preferences.getBoolean("report_light_doze",true);
+            if(reportLightDoze) {
+                return powerManager.isDeviceIdleMode() || powerManager.isDeviceLightIdleMode();
+            }
+            return powerManager.isDeviceIdleMode();
         } else {
             return powerManager.isDeviceIdleMode();
         }

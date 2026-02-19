@@ -866,7 +866,7 @@ public class ConnectMainService extends Service implements INetworkService {
         JsonObject obj = new JsonObject();
         obj.addProperty("packetType", "connect_handshake");
         //协议版本
-        obj.addProperty("protocolVersion", 1);
+        obj.addProperty("protocolVersion", getResources().getInteger(R.integer.protoVersion));
         return obj.toString();
     }
 

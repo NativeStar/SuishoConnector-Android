@@ -322,6 +322,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
             findPreference("function_launch_verify").setSummary(R.string.setting_launch_verify_summary_exception);
         }
         saveLogResultLauncher = registerForActivityResult(new ActivityResultContracts.CreateDocument("application/zip"), this::exportAllLogs);
+        initReportLightDozeModeSwitch();
     }
 
     private void initLaunchVerifySwitch() {
@@ -491,7 +492,18 @@ public class SettingFragment extends PreferenceFragmentCompat {
             }
         }).start();
     }
-
+    private void initReportLightDozeModeSwitch(){
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU){
+            SwitchPreferenceCompat preference = findPreference("report_light_doze");
+            if(preference == null) {
+                return;
+            }
+            preference.setEnabled(false);
+            preference.setSummary(R.string.setting_report_light_doze_mode_not_support);
+            preference.setChecked(false);
+            preference.setDefaultValue(false);
+        }
+    }
     @Override
     public void onCreatePreferences(@Nullable Bundle savedInstanceState, String rootKey) {
         addPreferencesFromResource(R.xml.setting_fragment_list);
