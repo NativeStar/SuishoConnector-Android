@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 
@@ -82,6 +83,7 @@ public class TransmitFragment extends Fragment {
 
     public TransmitFragment() {
     }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -123,7 +125,7 @@ public class TransmitFragment extends Fragment {
     }
 
     public void scrollMessagesViewToBottom(boolean force) {
-        logger.debug("Transmit message list scroll to bottom with force:{}",force);
+        logger.debug("Transmit message list scroll to bottom with force:{}", force);
         activity.runOnUiThread(() -> {
             if(force) {
                 TransmitMessagesListAdapter transmitMessagesListAdapter = (TransmitMessagesListAdapter) binding.transmitMessageList.getAdapter();
@@ -153,129 +155,131 @@ public class TransmitFragment extends Fragment {
             Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
             return;
         }
-        try {
-            ParcelFileDescriptor pickFile = getContext().getContentResolver().openFileDescriptor(uri, "r");
-            //获取文件名
-            Cursor cursor = getContext().getContentResolver().query(uri, null, null, null, null, null);
-            cursor.moveToFirst();
-            long fileSize = pickFile.getStatSize();
-            /*异常的文件大小*/
-            if(fileSize == -1) {
-                logger.warn("Invalid file.File size is -1");
-                throw new FileNotFoundException("File size is -1");
-            }
-            String fileName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
-            cursor.close();
-            //加密key
-            logger.debug("Got file base info.Name:{}.Size:{}",fileName,fileSize);
-            EncryptionKey encryptionKey;
-            try {
-                encryptionKey = EncryptionKey.getInstance("AES", 128);
-            } catch (NoSuchAlgorithmException e) {
-                logger.error("Failed to create encryption key",e);
-                activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
-                        .setMessage(e.getMessage())
-                        .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
-                        .show());
-                return;
-            }
-            //构建请求
-            JsonObject uploadRequestObject = new JsonObject();
-            /*基础参数*/
-            uploadRequestObject.addProperty("packetType", "action_transmit");
-            uploadRequestObject.addProperty("messageType", "file");
-            /*文件名*/
-            uploadRequestObject.addProperty("name", fileName);
-            /*大小*/
-            uploadRequestObject.addProperty("size", fileSize);
-            //密钥
-            uploadRequestObject.addProperty("encryptKey", encryptionKey.getKeyBase64());
-            //向量
-            uploadRequestObject.addProperty("encryptIv", encryptionKey.getIvBase64());
-            //发送请求
-            logger.debug("Send upload file request packet");
-            networkService.sendRequestPacket(uploadRequestObject, new RequestHandle() {
-                @Override
-                public void run(String responseData) {
-                    super.run(responseData);
-                    /*加上_result字段 分开报错和正常*/
-                    MainServiceJson jsonObj = GlobalVariables.jsonBuilder.fromJson(responseData, MainServiceJson.class);
-                    //检查是否发生异常
-                    if(jsonObj._result.equals("ERROR")) {
-                        logger.warn("Upload request failed with message:{}",jsonObj.msg);
-                        //异常
-                        activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
-                                .setMessage(jsonObj.msg)
-                                .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
-                                .show());
-                        return;
-                    }
-                    try {
-                        //上传文件
-                        logger.info("Start upload file data");
-                        networkService.uploadFile(getContext().getContentResolver().openInputStream(uri), jsonObj.port, fileSize <= 8192L, new FileUploadStateHandle() {
-                            @Override
-                            //上传服务异常处理
-                            public void onError(Exception error) {
-                                super.onError(error);
-                                logger.error("Upload file failed",error);
-                                activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
-                                        .setMessage(error.getMessage())
-                                        .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
-                                        .show());
-                            }
-
-                            @Override
-                            public void onSuccess() {
-                                super.onSuccess();
-                                logger.info("Upload file success");
-                                //activity是否被销毁
-                                if(getActivity() == null || getActivity().isDestroyed())
-                                    return;
-                                Snackbar.make(activity.findViewById(R.id.transmit_message_list), "上传完成", 2000).show();
-                                notificationManager.cancel(NotificationID.NOTIFICATION_TRANSMIT_UPLOAD_FILE);
-                                TransmitDatabaseEntity message = new TransmitDatabaseEntity();
-                                message.messageFrom = TransmitMessage.MESSAGE_FROM_PHONE;
-                                message.type = TransmitMessage.MESSAGE_TYPE_FILE;
-                                message.isDeleted = false;
-                                message.fileName = fileName;
-                                message.fileSize = fileSize;
-                                //上传文件 该属性无效
-                                message.filePath = "null";
-                                message.timestamp = System.currentTimeMillis();
-                                transmitMessagesListAdapter.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE, new TransmitMessageTypeFile(message));
-                                scrollMessagesViewToBottom(false);
-                                logger.debug("Upload success.Add new transmit file message to list");
-                            }
-
-                            @Override
-                            public void onProgress(long uploadedSize, Notification.Builder notificationBuilder) {
-                                //每16次更新触发
-                                super.onProgress(uploadedSize, notificationBuilder);
-                                int uploadProgress = (int) (((float) uploadedSize / fileSize) * 100);
-                                notificationBuilder.setProgress(100, uploadProgress, false);
-                                notificationBuilder.setContentText("已上传" + uploadProgress + "%");
-                                notificationManager.notify(1, notificationBuilder.build());
-                            }
-                        }, fileSize, encryptionKey);
-                        //打开输入流捕捉
-                    } catch (FileNotFoundException | NullPointerException e) {
-                        logger.error("Failed to open file in upload",e);
-                        new MaterialAlertDialogBuilder(getContext()).setTitle("打开文件异常")
-                                .setMessage(e.getMessage())
-                                .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
-                                .show();
-                    }
+        new Thread(() -> {
+            try(ParcelFileDescriptor pickFile = getContext().getContentResolver().openFileDescriptor(uri, "r")) {
+                //获取文件名
+                Cursor cursor = getContext().getContentResolver().query(uri, new String[]{OpenableColumns.DISPLAY_NAME}, null, null, null, null);
+                cursor.moveToFirst();
+                long fileSize = pickFile.getStatSize();
+                pickFile.close();
+                /*异常的文件大小*/
+                if(fileSize == -1) {
+                    logger.warn("Invalid file.File size is -1");
+                    throw new FileNotFoundException("File size is -1");
                 }
-            });
-            //整个方法
-        } catch (FileNotFoundException | NullPointerException fe) {
-            logger.error("Failed to open file in ready upload",fe);
-            new MaterialAlertDialogBuilder(getContext()).setTitle("打开文件异常")
-                    .setMessage(fe.getMessage())
-                    .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
-                    .show();
-        }
+                String fileName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
+                cursor.close();
+                //加密key
+                logger.debug("Got file base info.Name:{}.Size:{}", fileName, fileSize);
+                EncryptionKey encryptionKey;
+                try {
+                    encryptionKey = EncryptionKey.getInstance("AES", 128);
+                } catch (NoSuchAlgorithmException e) {
+                    logger.error("Failed to create encryption key", e);
+                    activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
+                            .setMessage(e.getMessage())
+                            .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
+                            .show());
+                    return;
+                }
+                //构建请求
+                JsonObject uploadRequestObject = new JsonObject();
+                /*基础参数*/
+                uploadRequestObject.addProperty("packetType", "action_transmit");
+                uploadRequestObject.addProperty("messageType", "file");
+                /*文件名*/
+                uploadRequestObject.addProperty("name", fileName);
+                /*大小*/
+                uploadRequestObject.addProperty("size", fileSize);
+                //密钥
+                uploadRequestObject.addProperty("encryptKey", encryptionKey.getKeyBase64());
+                //向量
+                uploadRequestObject.addProperty("encryptIv", encryptionKey.getIvBase64());
+                //发送请求
+                logger.debug("Send upload file request packet");
+                networkService.sendRequestPacket(uploadRequestObject, new RequestHandle() {
+                    @Override
+                    public void run(String responseData) {
+                        super.run(responseData);
+                        /*加上_result字段 分开报错和正常*/
+                        MainServiceJson jsonObj = GlobalVariables.jsonBuilder.fromJson(responseData, MainServiceJson.class);
+                        //检查是否发生异常
+                        if(jsonObj._result.equals("ERROR")) {
+                            logger.warn("Upload request failed with message:{}", jsonObj.msg);
+                            //异常
+                            activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
+                                    .setMessage(jsonObj.msg)
+                                    .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
+                                    .show());
+                            return;
+                        }
+                        try {
+                            //上传文件
+                            logger.info("Start upload file data");
+                            networkService.uploadFile(getContext().getContentResolver().openInputStream(uri), jsonObj.port, fileSize <= 8192L, new FileUploadStateHandle() {
+                                @Override
+                                //上传服务异常处理
+                                public void onError(Exception error) {
+                                    super.onError(error);
+                                    logger.error("Upload file failed", error);
+                                    activity.runOnUiThread(() -> new MaterialAlertDialogBuilder(getContext()).setTitle("上传文件异常")
+                                            .setMessage(error.getMessage())
+                                            .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
+                                            .show());
+                                }
+
+                                @Override
+                                public void onSuccess() {
+                                    super.onSuccess();
+                                    logger.info("Upload file success");
+                                    //activity是否被销毁
+                                    if(getActivity() == null || getActivity().isDestroyed())
+                                        return;
+                                    notificationManager.cancel(NotificationID.NOTIFICATION_TRANSMIT_UPLOAD_FILE);
+                                    TransmitDatabaseEntity message = new TransmitDatabaseEntity();
+                                    message.messageFrom = TransmitMessage.MESSAGE_FROM_PHONE;
+                                    message.type = TransmitMessage.MESSAGE_TYPE_FILE;
+                                    message.isDeleted = false;
+                                    message.fileName = fileName;
+                                    message.fileSize = fileSize;
+                                    //上传文件 该属性无效
+                                    message.filePath = "null";
+                                    message.timestamp = System.currentTimeMillis();
+                                    activity.runOnUiThread(() -> {
+                                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), "上传完成", 2000).show();
+                                        transmitMessagesListAdapter.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE, new TransmitMessageTypeFile(message));
+                                        scrollMessagesViewToBottom(false);
+                                    });
+                                    logger.debug("Upload success.Add new transmit file message to list");
+                                }
+
+                                @Override
+                                public void onProgress(long uploadedSize, Notification.Builder notificationBuilder) {
+                                    //每16次更新触发
+                                    super.onProgress(uploadedSize, notificationBuilder);
+                                    int uploadProgress = (int) (((float) uploadedSize / fileSize) * 100);
+                                    notificationBuilder.setProgress(100, uploadProgress, false);
+                                    notificationBuilder.setContentText("已上传" + uploadProgress + "%");
+                                    notificationManager.notify(1, notificationBuilder.build());
+                                }
+                            }, fileSize, encryptionKey);
+                            //打开输入流捕捉
+                        } catch (FileNotFoundException | NullPointerException e) {
+                            logger.error("Failed to open file in upload", e);
+                            activity.runOnUiThread(new MaterialAlertDialogBuilder(getContext()).setTitle("打开文件异常")
+                                    .setMessage(e.getMessage())
+                                    .setPositiveButton("确认", (dialog, which) -> dialog.cancel())::show);
+                        }
+                    }
+                });
+                //整个方法
+            } catch (NullPointerException | IOException fe) {
+                logger.error("Failed to open file in ready upload", fe);
+                activity.runOnUiThread(new MaterialAlertDialogBuilder(getContext()).setTitle("打开文件异常")
+                        .setMessage(fe.getMessage())
+                        .setPositiveButton("确认", (dialog, which) -> dialog.cancel())::show);
+            }
+        }).start();
     }
 
     @SuppressLint("ClickableViewAccessibility")

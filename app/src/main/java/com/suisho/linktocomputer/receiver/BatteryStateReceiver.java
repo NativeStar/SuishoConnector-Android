@@ -46,14 +46,14 @@ public class BatteryStateReceiver extends BroadcastReceiver {
 
     private boolean checkDeviceIdle() {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            boolean reportLightDoze=GlobalVariables.preferences.getBoolean("report_light_doze",true);
+            boolean reportLightDoze = GlobalVariables.preferences.getBoolean("report_light_doze", true);
             if(reportLightDoze) {
+                logger.debug("Check device idle mode with light doze");
                 return powerManager.isDeviceIdleMode() || powerManager.isDeviceLightIdleMode();
             }
-            return powerManager.isDeviceIdleMode();
-        } else {
-            return powerManager.isDeviceIdleMode();
         }
+        logger.debug("Check device idle mode with normal");
+        return powerManager.isDeviceIdleMode();
     }
 
 }
