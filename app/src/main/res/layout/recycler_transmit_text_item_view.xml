@@ -1,25 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
 
     <androidx.cardview.widget.CardView
+        android:id="@+id/transmit_message_text_card_view"
         android:layout_width="285dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="3dp"
-        android:layout_marginTop="1dp"
         android:layout_gravity="center"
-        android:id="@+id/transmit_message_text_card_view"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="1dp"
+        android:layout_marginEnd="3dp"
         android:layout_marginBottom="3dp">
-        <TextView
-            android:layout_width="wrap_content"
-            android:maxWidth="275dp"
-            android:layout_marginStart="5dp"
-            android:textIsSelectable="false"
-            android:id="@+id/transmit_message_text_view"
-            android:layout_marginBottom="5dp"
-            android:layout_height="wrap_content"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/transmit_message_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_marginBottom="5dp"
+                android:maxWidth="275dp"
+                android:textIsSelectable="false" />
+
+            <TextView
+                android:id="@+id/transmit_message_text_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:layout_marginBottom="5dp"
+                android:maxWidth="275dp"
+                android:textColor="@color/text_gray"
+                android:text="@string/auth_dialog_title"
+                android:textIsSelectable="false"
+                android:textSize="11sp" />
+
+        </LinearLayout>
     </androidx.cardview.widget.CardView>
 </LinearLayout>

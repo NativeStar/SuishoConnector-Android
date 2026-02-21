@@ -51,6 +51,15 @@
                 android:textSize="18sp"
                 android:layout_marginStart="74dp"
                 android:layout_marginTop="55dp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/transmit_file_time"
+                android:textSize="11sp"
+                android:textColor="@color/text_gray"
+                android:text="@string/text_open_url"
+                android:layout_marginStart="74dp"
+                android:layout_marginTop="82dp"/>
         </FrameLayout>
     </androidx.cardview.widget.CardView>
 

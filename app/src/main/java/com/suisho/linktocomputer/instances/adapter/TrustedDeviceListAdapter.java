@@ -18,13 +18,13 @@ import com.suisho.linktocomputer.activity.NewMainActivity;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Locale;
 
 public class TrustedDeviceListAdapter extends RecyclerView.Adapter<TrustedDeviceListAdapter.DeviceHolder> {
     private final ArrayList<DeviceTrustInstance> deviceList;
     private final NewMainActivity context;
     private Runnable onDeviceListEmptyCallback;
-    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
     public TrustedDeviceListAdapter(NewMainActivity context, ArrayList<DeviceTrustInstance> deviceList) {
         this.deviceList = deviceList;
@@ -42,7 +42,7 @@ public class TrustedDeviceListAdapter extends RecyclerView.Adapter<TrustedDevice
         holder.itemView.setBackgroundColor(Color.TRANSPARENT);
         //文本显示
         ((TextView) holder.itemView.findViewById(R.id.device_trust_manager_device_id)).setText(deviceList.get(position).name);
-        ((TextView) holder.itemView.findViewById(R.id.device_trust_manager_last_connect_time)).setText("上次连接:" + simpleDateFormat.format(new Date(deviceList.get(position).lastConnectTime)));
+        ((TextView) holder.itemView.findViewById(R.id.device_trust_manager_last_connect_time)).setText(context.getString(R.string.setting_last_connect_time_text_head, simpleDateFormat.format(deviceList.get(position).lastConnectTime)));
         //按钮
         Button removeTrustButton = holder.itemView.findViewById(R.id.removeDeviceTrustButton);
         if(GlobalVariables.computerConfigManager != null && GlobalVariables.computerConfigManager.getId().equals(deviceList.get(position).id) && context.isServerConnected()) {

@@ -40,8 +40,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.net.FileNameMap;
 import java.net.URLConnection;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import io.objectbox.Box;
 
@@ -61,8 +63,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
     private final RecyclerView messagesView;
     private Activity activity;
     private final Logger logger = LoggerFactory.getLogger(TransmitMessagesListAdapter.class);
-
-
+    private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -127,8 +128,12 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
             case MessageConf.MESSAGE_TYPE_TEXT:
                 logger.debug("Init text message");
                 TextView textView = holder.messageView.findViewById(R.id.transmit_message_text_view);
-                String text = ((TransmitMessageTypeText) dataList.get(position)).msg;
+                TextView timeTextView = holder.messageView.findViewById(R.id.transmit_message_text_time);
+                TransmitMessageTypeText textMessageInstance = (TransmitMessageTypeText) dataList.get(position);
+                String text = textMessageInstance.msg;
+                String time=simpleDateFormat.format(textMessageInstance.timestamp);
                 textView.setText(text);
+                timeTextView.setText(time);
                 final boolean isUrl=!text.isEmpty()&& Patterns.WEB_URL.matcher(text).matches();
                 holder.messageView.setOnLongClickListener(view -> {
                     logger.debug("Text message long clicked.Show menu");
@@ -185,6 +190,8 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                 ((TextView) holder.messageView.findViewById(R.id.transmit_file_name)).setText(messageInstance.fileName);
                 //文件大小
                 ((TextView) holder.messageView.findViewById(R.id.transmit_file_size)).setText(Util.coverFileSize(messageInstance.fileSize));
+                //时间
+                ((TextView) holder.messageView.findViewById(R.id.transmit_file_time)).setText(simpleDateFormat.format(messageInstance.timestamp));
                 //是本地上传的文件 无法打开 不显示图标
                 logger.debug("File message name:{},size:{}", messageInstance.fileName, messageInstance.fileSize);
                 if(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE) {
