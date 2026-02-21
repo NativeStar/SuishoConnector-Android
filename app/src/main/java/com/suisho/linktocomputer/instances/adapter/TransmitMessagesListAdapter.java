@@ -5,6 +5,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.util.Patterns;
 import android.view.LayoutInflater;
@@ -19,6 +20,9 @@ import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.Util;
@@ -30,9 +34,6 @@ import com.suisho.linktocomputer.enums.TransmitRecyclerAddItemType;
 import com.suisho.linktocomputer.instances.transmit.TransmitMessageTypeFile;
 import com.suisho.linktocomputer.instances.transmit.TransmitMessageTypeText;
 import com.suisho.linktocomputer.provider.ShareFileProvider;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.snackbar.Snackbar;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +65,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
     private Activity activity;
     private final Logger logger = LoggerFactory.getLogger(TransmitMessagesListAdapter.class);
     private final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -131,10 +133,10 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                 TextView timeTextView = holder.messageView.findViewById(R.id.transmit_message_text_time);
                 TransmitMessageTypeText textMessageInstance = (TransmitMessageTypeText) dataList.get(position);
                 String text = textMessageInstance.msg;
-                String time=simpleDateFormat.format(textMessageInstance.timestamp);
+                String time = simpleDateFormat.format(textMessageInstance.timestamp);
                 textView.setText(text);
                 timeTextView.setText(time);
-                final boolean isUrl=!text.isEmpty()&& Patterns.WEB_URL.matcher(text).matches();
+                final boolean isUrl = !text.isEmpty() && Patterns.WEB_URL.matcher(text).matches();
                 holder.messageView.setOnLongClickListener(view -> {
                     logger.debug("Text message long clicked.Show menu");
                     //文本卡片长按事件
@@ -143,7 +145,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     setUniversalLongClickMenuAction(menuLayout, messagesView, popupWindow, holder);
                     menuLayout.findViewById(R.id.long_click_menu_action_open_url).setEnabled(isUrl);
                     menuLayout.findViewById(R.id.long_click_menu_action_open_url).setOnClickListener(v -> {
-                        Intent urlIntent=new Intent(Intent.ACTION_VIEW);
+                        Intent urlIntent = new Intent(Intent.ACTION_VIEW);
                         urlIntent.setData(Uri.parse(text));
                         activity.startActivity(urlIntent);
                     });
@@ -162,9 +164,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         textView.setFocusable(true);
                         textView.setFocusableInTouchMode(true);
                     });
-
-                    popupWindow.setOutsideTouchable(true);
-                    popupWindow.showAsDropDown(view);
+                    showPopupMenu(popupWindow, view, menuLayout);
                     return true;
                 });
                 //来自手机的消息额外处理
@@ -303,8 +303,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         }
                         popupWindow.dismiss();
                     }));
-                    popupWindow.setOutsideTouchable(true);
-                    popupWindow.showAsDropDown(view);
+                    showPopupMenu(popupWindow, view, menuLayout);
                     return true;
                 });
                 break;
@@ -421,6 +420,26 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
 
     private boolean enableSaveHistory() {
         return GlobalVariables.preferences.getBoolean("transmit_save_history", true);
+    }
+
+    private void showPopupMenu(PopupWindow popupWindow, View parent, View menuLayout) {
+        popupWindow.setOutsideTouchable(true);
+        Rect visibleFrame = new Rect();
+        parent.getWindowVisibleDisplayFrame(visibleFrame);
+        menuLayout.measure(View.MeasureSpec.makeMeasureSpec(visibleFrame.width(), View.MeasureSpec.AT_MOST), View.MeasureSpec.makeMeasureSpec(visibleFrame.height(), View.MeasureSpec.AT_MOST));
+        int popupHeight = menuLayout.getMeasuredHeight();
+        int[] location = new int[2];
+        parent.getLocationOnScreen(location);
+        int anchorTop = location[1];
+        int anchorBottom = anchorTop + parent.getHeight();
+        int spaceBelow = visibleFrame.bottom - anchorBottom;
+        //向下
+        if(spaceBelow >= popupHeight || spaceBelow >= anchorTop - visibleFrame.top) {
+            popupWindow.showAsDropDown(parent);
+        } else {
+            //向上
+            popupWindow.showAsDropDown(parent, 0, -(parent.getHeight() + popupHeight));
+        }
     }
 
     public void setActivity(Activity act) {
