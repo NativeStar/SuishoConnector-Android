@@ -45,6 +45,7 @@ import com.suisho.linktocomputer.jsonClass.MainServiceJson;
 import com.suisho.linktocomputer.network.FileServer;
 import com.suisho.linktocomputer.network.TransmitDownloadFile;
 import com.suisho.linktocomputer.network.TransmitUploadFile;
+import com.suisho.linktocomputer.network.udp.FileSyncDownloader;
 import com.suisho.linktocomputer.receiver.BatteryStateReceiver;
 import com.suisho.linktocomputer.responseBuilders.AllPackageResponse;
 import com.suisho.linktocomputer.responseBuilders.CurrentNotificationsListPacket;
@@ -522,28 +523,53 @@ public class ConnectMainService extends Service implements INetworkService {
                                             break;
                                         case "transmit_uploadFile":
                                             //互传文件
-                                            File file;
+                                            File transmitTargetFile;
                                             logger.debug("Transmit request download file");
                                             //Download目录下
                                             if(GlobalVariables.preferences.getInt("file_save_location", 0) == 1) {
-                                                logger.debug("Save to public download path");
-                                                file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/Transmit");
+                                                logger.debug("Save to public transmit file path");
+                                                transmitTargetFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/Transmit");
                                             } else {
                                                 //私有目录
-                                                logger.debug("Save to private path");
-                                                file = new File(ConnectMainService.this.getExternalFilesDir(null).getAbsolutePath() + "/transmit/files");
+                                                logger.debug("Save to private transmit file path");
+                                                transmitTargetFile = new File(ConnectMainService.this.getExternalFilesDir(null).getAbsolutePath() + "/transmit");
                                             }
-                                            file.mkdirs();
-                                            File outputFile = new File(file.getAbsolutePath() + "/" + jsonObj.fileName);
-                                            logger.debug("Create output file: {}", outputFile.getAbsolutePath());
-                                            if(outputFile.exists()) {
+                                            transmitTargetFile.mkdirs();
+                                            File transmitOutputFile = new File(transmitTargetFile.getAbsolutePath() + "/" + jsonObj.fileName);
+                                            logger.debug("Create transmit output file: {}", transmitOutputFile.getAbsolutePath());
+                                            if(transmitOutputFile.exists()) {
                                                 //重名 末尾加时间戳保存
                                                 //不能影响显示
-                                                logger.debug("File exists, append timestamp to new file name");
-                                                new TransmitDownloadFile(jsonObj.port, file.getAbsolutePath() + "/" + System.currentTimeMillis() + jsonObj.fileName, jsonObj.fileName, jsonObj.fileSize, activityMethods);
+                                                logger.debug("Transmit file exists, append timestamp to new file name");
+                                                new TransmitDownloadFile(jsonObj.port, transmitTargetFile.getAbsolutePath() + "/" + System.currentTimeMillis() + jsonObj.fileName, jsonObj.fileName, jsonObj.fileSize, activityMethods);
                                             } else {
                                                 //没重名 一切正常
-                                                new TransmitDownloadFile(jsonObj.port, outputFile.getAbsolutePath(), jsonObj.fileName, jsonObj.fileSize, activityMethods);
+                                                new TransmitDownloadFile(jsonObj.port, transmitOutputFile.getAbsolutePath(), jsonObj.fileName, jsonObj.fileSize, activityMethods);
+                                            }
+                                            webSocketClient.send(EmptyResponsePacketBuilder.buildEmptyResponsePacket(jsonObj).toString());
+                                            break;
+                                        case "main_fileSyncDownload":
+                                            logger.debug("Request download sync file");
+                                            File syncTargetFile;
+                                            if(GlobalVariables.preferences.getInt("file_save_location", 0) == 1) {
+                                                logger.debug("Save to public file sync path");
+                                                syncTargetFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/FileSync");
+                                            } else {
+                                                //私有目录
+                                                logger.debug("Save to private file sync path");
+                                                syncTargetFile = new File(ConnectMainService.this.getExternalFilesDir(null).getAbsolutePath() + "/FileSync");
+                                            }
+                                            syncTargetFile.mkdirs();
+                                            File fileSyncOutputFile = new File(syncTargetFile.getAbsolutePath() + "/" + jsonObj.fileName);
+                                            logger.debug("Create file sync output file: {}", fileSyncOutputFile.getAbsolutePath());
+                                            if(fileSyncOutputFile.exists()) {
+                                                //重名 末尾加时间戳保存
+                                                //不能影响显示
+                                                logger.debug("Sync file exists, append timestamp to new file name");
+                                                new FileSyncDownloader(jsonObj.port, syncTargetFile.getAbsolutePath() + "/" + System.currentTimeMillis() + jsonObj.fileName, jsonObj.fileName, jsonObj.fileSize, activityMethods);
+                                            } else {
+                                                //没重名 一切正常
+                                                new FileSyncDownloader(jsonObj.port, fileSyncOutputFile.getAbsolutePath(), jsonObj.fileName, jsonObj.fileSize, activityMethods);
                                             }
                                             webSocketClient.send(EmptyResponsePacketBuilder.buildEmptyResponsePacket(jsonObj).toString());
                                             break;
@@ -725,7 +751,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             break;
                                         case "main_getCurrentNotificationsList":
                                             CurrentNotificationsListPacket packet = new CurrentNotificationsListPacket();
-                                            JsonObject notificationListJson = packet.build(jsonObj._request_id, notificationListenerService.getActiveNotifications(), notificationListenerService,checkNotificationListenerPermission());
+                                            JsonObject notificationListJson = packet.build(jsonObj._request_id, notificationListenerService.getActiveNotifications(), notificationListenerService, checkNotificationListenerPermission());
                                             sendObject(notificationListJson);
                                             break;
                                         case "removeCurrentNotification":

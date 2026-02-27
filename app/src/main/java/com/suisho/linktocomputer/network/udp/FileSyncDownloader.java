@@ -1,20 +1,10 @@
-package com.suisho.linktocomputer.network;
-
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
+package com.suisho.linktocomputer.network.udp;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.suisho.linktocomputer.GlobalVariables;
-import com.suisho.linktocomputer.R;
-import com.suisho.linktocomputer.Util;
-import com.suisho.linktocomputer.constant.NotificationID;
-import com.suisho.linktocomputer.enums.TransmitRecyclerAddItemType;
-import com.suisho.linktocomputer.instances.transmit.TransmitMessageTypeFile;
 import com.suisho.linktocomputer.interfaces.IConnectedActivityMethods;
-import com.suisho.linktocomputer.jsonClass.TransmitMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,29 +34,25 @@ import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
-
-public class TransmitDownloadFile {
+//核心和互传下载文件基本一致 但砍掉ui操作
+public class FileSyncDownloader {
     int socketPort;
     FileOutputStream fileOutputStream;
     WebSocket ws;
     IConnectedActivityMethods activityMethods;
-    final boolean hasNotification;
-    final NotificationManager notificationManager;
     final String fileName;
     final long fileSize;
     final String filePath;
     SSLContext sslContext;
     TrustManager trustManager;
-    private final Logger logger = LoggerFactory.getLogger(TransmitDownloadFile.class);
+    private final Logger logger = LoggerFactory.getLogger(FileSyncDownloader.class);
 
-    public TransmitDownloadFile(int port, String path, String name, long size, IConnectedActivityMethods am) {
+    public FileSyncDownloader(int port, String path, String name, long size, IConnectedActivityMethods am) {
         activityMethods = am;
         socketPort = port;
         filePath = path;
         fileName = name;
         fileSize = size;
-        notificationManager = am.getActivity().getSystemService(NotificationManager.class);
-        hasNotification = Util.checkNotificationPermission(notificationManager);
         start();
     }
 
@@ -117,12 +103,8 @@ public class TransmitDownloadFile {
                                 super.onOpen(webSocket, response);
                                 logger.debug("File data download socket open");
                                 //验证 同时表示已经准备好了
-                                if(hasNotification) {
-                                    logger.debug("Request create transmit download notification");
-                                    activityMethods.getActivity().runOnUiThread(TransmitDownloadFile.this::createNotification);
-                                }
-                                logger.debug("Send verify session id");
                                 ws.send(GlobalVariables.computerConfigManager.getSessionId());
+                                logger.debug("Send verify session id");
                             }
 
                             @Override
@@ -147,10 +129,6 @@ public class TransmitDownloadFile {
                             public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
                                 //1000正常 4000验证失败 4001PC端被关闭
                                 super.onClosing(webSocket, code, reason);
-                                //关闭通知
-                                notificationManager.cancel(NotificationID.NOTIFICATION_TRANSMIT_DOWNLOAD_FILE);
-                                activityMethods.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE, new TransmitMessageTypeFile(fileName, fileSize, TransmitMessage.MESSAGE_FROM_COMPUTER, false, filePath), true);
-                                activityMethods.getTransmitFragment().scrollMessagesViewToBottom(false);
                                 try {
                                     fileOutputStream.flush();
                                     fileOutputStream.close();
@@ -158,7 +136,6 @@ public class TransmitDownloadFile {
                                     if(code != 1000) {
                                         logger.warn("Download transmit file failed with code:{}",code);
                                         new File(filePath).delete();
-                                        activityMethods.showAlert("接收文件失败", code == 4000 ? "连接验证失败" : "传输提早中断", "确定");
                                     }
                                 } catch (IOException e) {
                                     logger.error("Close transmit file error", e);
@@ -179,35 +156,7 @@ public class TransmitDownloadFile {
     }
 
     private void onError(Exception e) {
-        activityMethods.showAlert("接收失败", e.toString(), "确定");
-        //通知pc端
         File file = new File(filePath);
         file.delete();
-
-    }
-
-    private void ensureNotificationChannel(NotificationManager notificationManager) {
-        //判断通道是否存在
-        if(notificationManager.getNotificationChannel("fileDownloadProgress") != null) {
-            logger.debug("File download notification channel exists");
-            return;
-        }
-        logger.debug("Create file download notification channel");
-        NotificationChannel channel = new NotificationChannel("fileDownloadProgress", "文件接收进度显示", NotificationManager.IMPORTANCE_LOW);
-        channel.setDescription("请勿关闭该通知");
-        notificationManager.createNotificationChannel(channel);
-    }
-
-    private void createNotification() {
-        logger.debug("Show transmit file download notification");
-        ensureNotificationChannel(notificationManager);
-        Notification.Builder builder = new Notification.Builder(activityMethods.getActivity(), "fileDownloadProgress");
-        builder.setOngoing(true)
-                .setAutoCancel(false)
-                .setContentTitle("文件接收中...")
-                .setContentText("请在PC端查看接收进度")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setProgress(100, 0, true);
-        notificationManager.notify(NotificationID.NOTIFICATION_TRANSMIT_DOWNLOAD_FILE, builder.build());
     }
 }
