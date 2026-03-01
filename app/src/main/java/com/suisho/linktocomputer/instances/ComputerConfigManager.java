@@ -36,6 +36,7 @@ public class ComputerConfigManager {
     private final SharedPreferences historyComputerList;
     private final boolean firstConnect;
     private final String sessionId;
+    private final int protocolVersion;
     //避免频繁读取sharedpref
     private boolean trusted;
     //如果请求上传时文件未打包完成将此设为true 打完包会检查
@@ -46,12 +47,13 @@ public class ComputerConfigManager {
     private boolean synced = false;
     private final Logger logger = LoggerFactory.getLogger(ComputerConfigManager.class);
 
-    public ComputerConfigManager(String name, String id, NewMainActivity context, ConnectMainService networkService,String sessionId) {
+    public ComputerConfigManager(String name, String id, NewMainActivity context, ConnectMainService networkService,String sessionId,int protocolVersion) {
         this.name = name;
         this.id = id;
         this.context = context;
         this.sessionId=sessionId;
         this.config = context.getSharedPreferences(this.id, Context.MODE_PRIVATE);
+        this.protocolVersion = protocolVersion;
         this.historyComputerList = context.getSharedPreferences("computerHistory", Context.MODE_PRIVATE);
         this.firstConnect = config.getBoolean("isFirstConnect", true);
         //首次连接标记
@@ -190,4 +192,5 @@ public class ComputerConfigManager {
     public void changeTrustMode() {
         setTrusted(!trusted);
     }
+    public int getProtocolVersion() {return protocolVersion;}
 }

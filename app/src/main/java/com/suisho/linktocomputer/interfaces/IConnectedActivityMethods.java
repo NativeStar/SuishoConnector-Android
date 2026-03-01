@@ -13,7 +13,7 @@ public interface IConnectedActivityMethods {
     TransmitFragment getTransmitFragment();
     void showConnectingDialog();
     void closeConnectingDialog();
-    void onConnected(String sessionId);
+    void onConnected(String sessionId,int protocolVersion);
     void onDisconnect();
     void onNotificationListenerServiceConnect();
 }

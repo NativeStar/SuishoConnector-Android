@@ -432,9 +432,9 @@ public class NewMainActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onConnected(String sessionId) {
+                    public void onConnected(String sessionId,int protocolVersion) {
                         logger.info("Service connected.Init views");
-                        GlobalVariables.computerConfigManager = new ComputerConfigManager(GlobalVariables.computerName, GlobalVariables.computerId, NewMainActivity.this, networkService, sessionId);
+                        GlobalVariables.computerConfigManager = new ComputerConfigManager(GlobalVariables.computerName, GlobalVariables.computerId, NewMainActivity.this, networkService, sessionId,protocolVersion);
                         GlobalVariables.computerConfigManager.init(null);
                         //设置
                         updateConnectionStateDisplay();
@@ -625,7 +625,7 @@ public class NewMainActivity extends AppCompatActivity {
             }
             //文本
             ((TextView) findViewById(R.id.card_text_computer_id)).setText(GlobalVariables.computerId);
-            ((TextView) findViewById(R.id.card_text_connection_state)).setText(R.string.text_connected);
+            ((TextView) findViewById(R.id.card_text_connection_state)).setText(getString(R.string.text_connected,GlobalVariables.computerConfigManager.getProtocolVersion()));
             ((TextView) findViewById(R.id.card_text_connection_state_subtitle)).setText(GlobalVariables.computerName);
             ((TextView) findViewById(R.id.card_title_trust_mode)).setText(R.string.home_card_trust_mode_connected);
             ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(networkService.getMediaProjectionServiceIntent() == null ? R.string.text_unauthorized : R.string.text_authorized);

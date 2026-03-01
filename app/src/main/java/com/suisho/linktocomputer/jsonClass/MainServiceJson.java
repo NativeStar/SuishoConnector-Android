@@ -1,5 +1,7 @@
 package com.suisho.linktocomputer.jsonClass;
 
+import javax.annotation.Nullable;
+
 public class MainServiceJson {
     public String packetType;
     public String msg;
@@ -14,4 +16,6 @@ public class MainServiceJson {
     public int port;
     public String fileName;
     public long fileSize;
+    @Nullable
+    public Integer protocolVersion;
 }

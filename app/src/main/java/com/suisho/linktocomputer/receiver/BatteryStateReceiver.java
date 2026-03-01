@@ -19,6 +19,7 @@ public class BatteryStateReceiver extends BroadcastReceiver {
     private final Logger logger = LoggerFactory.getLogger(BatteryStateReceiver.class);
     private final PowerManager powerManager;
     private boolean isDeviceIdle = false;
+    private DeviceStateUpdatePacket lastStateUpdatePacket;
 
     public BatteryStateReceiver(ConnectMainService service) {
         this.networkService = service;
@@ -34,12 +35,18 @@ public class BatteryStateReceiver extends BroadcastReceiver {
                 updatePacket.setBatteryLevel(intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1));
                 updatePacket.setBatteryTemp(intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1));
                 updatePacket.setIsDozeMode(isDeviceIdle);
+                //缓存数据包 当doze状态更新时可以直接用
+                lastStateUpdatePacket = updatePacket;
                 networkService.sendString(updatePacket.build().toString());
                 return;
             }
-            //TODO 直接上报数据 可能得等到改协议一起弄
             if(intent.getAction().equals(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED) || intent.getAction().equals(PowerManager.ACTION_DEVICE_LIGHT_IDLE_MODE_CHANGED)) {
                 isDeviceIdle = checkDeviceIdle();
+                if(lastStateUpdatePacket != null) {
+                    //直接用缓存 没必要单开一种数据包类型了
+                    lastStateUpdatePacket.setIsDozeMode(isDeviceIdle);
+                    networkService.sendString(lastStateUpdatePacket.build().toString());
+                }
             }
         }
     }

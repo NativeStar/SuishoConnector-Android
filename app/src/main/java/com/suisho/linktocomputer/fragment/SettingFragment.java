@@ -162,7 +162,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
         findPreference("file_save_location").setOnPreferenceClickListener(preference -> {
             logger.debug("Open file save location dialog");
             new MaterialAlertDialogBuilder(getActivity())
-                    .setTitle(R.string.dialog_transmit_file_save_location)
+                    .setTitle(R.string.setting_transmit_file_save_location)
                     .setSingleChoiceItems(R.array.array_setting_dropdown_transmit_save_file_path, GlobalVariables.preferences.getInt("file_save_location", 0), (dialog, which) -> {
                         //需要用户打开权限并手动选择路径
                         //Download目录

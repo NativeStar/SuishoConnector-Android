@@ -79,6 +79,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -486,7 +487,8 @@ public class ConnectMainService extends Service implements INetworkService {
                                             isConnected = true;
                                             activityMethods.closeConnectingDialog();
                                             Snackbar.make(activityMethods.getActivity().findViewById(R.id.homeViewPager2), R.string.service_connect_success, 2000).show();
-                                            activityMethods.onConnected(jsonObj.sessionId);
+                                            //旧版PC端不会上报协议版本 需要处理
+                                            activityMethods.onConnected(jsonObj.sessionId, Optional.ofNullable(jsonObj.protocolVersion).orElse(1));
                                             certInput.close();
                                             logger.info("Connection handshake success!");
                                             File p12CertFile = new File(getDataDir().getAbsolutePath() + "/files/cert/" + computerId + ".p12");

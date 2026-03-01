@@ -52,7 +52,8 @@
         <Preference
             android:icon="@drawable/baseline_drive_file_move_24"
             android:key="file_save_location"
-            android:title="接收文件存储位置" />
+            android:summary="@string/setting_transmit_file_save_location_desc"
+            android:title="@string/setting_transmit_file_save_location" />
         <Preference
             android:icon="@drawable/baseline_file_copy_24"
             android:key="key_export_transmit_files"
