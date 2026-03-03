@@ -448,6 +448,11 @@ public class NewMainActivity extends AppCompatActivity {
                         //释放
                         unregisterNetworkCallback();
                         autoConnector = null;
+                        final int selfProtocolVersion=getResources().getInteger(R.integer.protoVersion);
+                        if(selfProtocolVersion >protocolVersion) {
+                            logger.info("Show pc protocol version too low state");
+                            stateBarManager.addState(States.getStateList().get("warn_pc_protocol_version_low"));
+                        }
                     }
 
                     @Override
@@ -468,6 +473,7 @@ public class NewMainActivity extends AppCompatActivity {
                                 ((TextView) findViewById(R.id.card_title_trust_mode)).setText(R.string.home_card_trust_mode);
                                 ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_close_24);
                                 ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(R.string.text_unauthorized);
+                                stateBarManager.removeState("warn_pc_protocol_version_low");
                             } catch (NullPointerException e) {
                                 logger.error("Error when init views", e);
                                 finish();
@@ -599,7 +605,6 @@ public class NewMainActivity extends AppCompatActivity {
             logger.info("No notification listener permission in recheck.Add state");
             stateBarManager.addState(States.getStateList().get("info_notification_listener_permission"));
         }
-        //
     }
 
     @Override

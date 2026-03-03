@@ -76,6 +76,8 @@
     <string name="state_desc_send_notification">前台服务不能通过常驻通知保活</string>
     <string name="state_name_auto_connect_error">自动连接异常</string>
     <string name="state_desc_auto_connect_error">功能运行过程中发生异常</string>
+    <string name="state_title_pc_protocol_version_low">PC端版本低</string>
+    <string name="state_desc_pc_protocol_version_low">部分功能可能无法正常工作 请更新PC端</string>
     <string name="title_activity_file_upload">发送到计算机</string>
     <string name="text_send_file">发送文件</string>
     <string name="text_send_text">发送文本</string>

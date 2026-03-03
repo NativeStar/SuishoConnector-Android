@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 
 import androidx.annotation.Nullable;
 
+import com.google.gson.JsonObject;
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.abstracts.RequestHandle;
@@ -13,7 +14,6 @@ import com.suisho.linktocomputer.instances.adapter.TrustedDeviceListAdapter;
 import com.suisho.linktocomputer.jsonClass.MainServiceJson;
 import com.suisho.linktocomputer.network.FileUploader;
 import com.suisho.linktocomputer.service.ConnectMainService;
-import com.google.gson.JsonObject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

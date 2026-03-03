@@ -45,6 +45,8 @@ public class States {
             StateList.put("error_phone_file_server",new State("error_phone_file_server",R.string.state_title_error_file_server,R.string.state_desc_error_file_server,StateLevel.ERROR,false));
             //有更新可用
             StateList.put("info_update_available",new State("info_update_available",R.string.state_title_update_available,R.string.state_desc_update_available,StateLevel.INFO,true));
+            //PC端协议版本低
+            StateList.put("warn_pc_protocol_version_low",new State("warn_pc_protocol_version_low",R.string.state_title_pc_protocol_version_low,R.string.state_desc_pc_protocol_version_low,StateLevel.WARN,false));
         }
         return StateList;
     }
