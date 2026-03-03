@@ -44,6 +44,7 @@ public class BatteryStateReceiver extends BroadcastReceiver {
                 isDeviceIdle = checkDeviceIdle();
                 if(lastStateUpdatePacket != null) {
                     //直接用缓存 没必要单开一种数据包类型了
+                    logger.debug("Send doze mode update packet.Mode:{}", isDeviceIdle);
                     lastStateUpdatePacket.setIsDozeMode(isDeviceIdle);
                     networkService.sendString(lastStateUpdatePacket.build().toString());
                 }

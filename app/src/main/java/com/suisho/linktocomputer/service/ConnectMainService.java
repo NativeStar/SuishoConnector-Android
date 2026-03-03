@@ -492,8 +492,8 @@ public class ConnectMainService extends Service implements INetworkService {
                                             certInput.close();
                                             logger.info("Connection handshake success!");
                                             File p12CertFile = new File(getDataDir().getAbsolutePath() + "/files/cert/" + computerId + ".p12");
+                                            logger.info("Call file manager init");
                                             webFileServer.init(Files.newInputStream(p12CertFile.toPath()), jsonObj.sessionId, activityMethods.getActivity());
-                                            logger.info("Start file manager init");
                                             break;
                                         case "main_server_initialled":
                                             //pc端窗口初始化完成

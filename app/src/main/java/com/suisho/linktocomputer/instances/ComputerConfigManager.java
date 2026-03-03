@@ -69,6 +69,8 @@ public class ComputerConfigManager {
         clonedComputerListSet.add(this.id);
         historyComputerList.edit().putStringSet("list", clonedComputerListSet).apply();
         this.networkService = networkService;
+        logger.debug("ComputerConfigManager initialized");
+        logger.debug("Computer name:{}\nComputer ID:{}\nSession ID:{}\nComputer protocol version:{}",name,id,sessionId,protocolVersion);
     }
 
     public void init(@Nullable Runnable onSuccess) {

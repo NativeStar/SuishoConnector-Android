@@ -17,7 +17,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
@@ -28,6 +27,10 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.gson.JsonObject;
 import com.suisho.linktocomputer.Crystal;
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
@@ -47,10 +50,6 @@ import com.suisho.linktocomputer.jsonClass.MainServiceJson;
 import com.suisho.linktocomputer.jsonClass.TransmitMessage;
 import com.suisho.linktocomputer.network.TransmitUploadFile;
 import com.suisho.linktocomputer.service.ConnectMainService;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.gson.JsonObject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -348,7 +347,12 @@ public class TransmitFragment extends Fragment {
                     popupWindow.dismiss();
                     if(TransmitUploadFile.hasUploadingFile) {
                         logger.debug("Request upload file but has uploading file.Return");
-                        Toast.makeText(networkService, R.string.transmit_upload_failed_has_uploading_file, Toast.LENGTH_LONG).show();
+                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_upload_failed_has_uploading_file, 2500).show();
+                        return;
+                    }
+                    if(networkService == null||!networkService.isConnected) {
+                        logger.debug("Blocked file picker because net connected");
+                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
                         return;
                     }
                     logger.debug("Launch file picker activity");
@@ -359,7 +363,12 @@ public class TransmitFragment extends Fragment {
                     //检查文件上传
                     if(TransmitUploadFile.hasUploadingFile) {
                         logger.debug("Request upload image but has uploading file.Return");
-                        Toast.makeText(networkService, R.string.transmit_upload_failed_has_uploading_file, Toast.LENGTH_LONG).show();
+                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_upload_failed_has_uploading_file, 2500).show();
+                        return;
+                    }
+                    if(networkService == null||!networkService.isConnected) {
+                        logger.debug("Blocked image picker because net connected");
+                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
                         return;
                     }
                     logger.debug("Launch image picker sheet");
