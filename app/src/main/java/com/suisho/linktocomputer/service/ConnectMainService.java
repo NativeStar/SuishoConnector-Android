@@ -352,8 +352,10 @@ public class ConnectMainService extends Service implements INetworkService {
                         .hostnameVerifier((hostname, session) -> hostname.equals(computerAddress))
                         .writeTimeout(Duration.ofSeconds(10))
                         .callTimeout(Duration.ofSeconds(10))
+                        .pingInterval(Duration.ofSeconds(180))
                         .build()
                         .newWebSocket(wsReq, new WebSocketListener() {
+//                            TODO 将掉线处理合并成一个方法
                             @Override
                             public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
                                 super.onOpen(webSocket, response);
@@ -453,6 +455,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                 }
                                 stopSelf();
                             }
+
 
                             @Override
                             public void onMessage(@NonNull WebSocket webSocket, @NonNull String text) {
