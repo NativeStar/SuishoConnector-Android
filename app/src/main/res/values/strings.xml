@@ -29,6 +29,7 @@
     <string name="transmit_open_file_failed_not_resolve_application">无法打开文件:没有应用程序支持打开它</string>
     <string name="transmit_open_file_failed_not_exists">打开失败:文件已被删除</string>
     <string name="transmit_open_file_failed_null_path">无法打开文件:路径数据异常</string>
+    <string name="transmit_send_text_save_local_failed_not_exists">未连接计算机 文本将仅保存至本地</string>
     <string name="transmit_send_failed_network">请先连接计算机或检查网络状况</string>
     <string name="service_connect_success">连接成功</string>
     <string name="text_not_connect">未连接</string>

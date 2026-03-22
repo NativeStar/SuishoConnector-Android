@@ -155,7 +155,7 @@ public class TransmitFragment extends Fragment {
             return;
         }
         new Thread(() -> {
-            try(ParcelFileDescriptor pickFile = getContext().getContentResolver().openFileDescriptor(uri, "r")) {
+            try (ParcelFileDescriptor pickFile = getContext().getContentResolver().openFileDescriptor(uri, "r")) {
                 //获取文件名
                 Cursor cursor = getContext().getContentResolver().query(uri, new String[]{OpenableColumns.DISPLAY_NAME}, null, null, null, null);
                 cursor.moveToFirst();
@@ -319,14 +319,17 @@ public class TransmitFragment extends Fragment {
                     logger.debug("Text input is empty.Return");
                     return;
                 }
-                if(networkService == null || !networkService.isConnected) {
-                    /*掉线了*/
-                    Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
-                    logger.debug("Request send text but not connected computer.Return");
-                    return;
-                }
                 logger.info("Send transmit text message");
                 logger.debug("Transmit text message data: {}", inputMessage);
+                if(networkService == null || !networkService.isConnected) {
+                    /*掉线了*/
+                    Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_text_save_local_failed_not_exists, 1200).show();
+                    logger.debug("Request send text but not connected computer.Save to local");
+                    transmitMessagesListAdapter.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_TEXT, new TransmitMessageTypeText(inputMessage), true, true);
+                    scrollMessagesViewToBottom(false);
+                    binding.sendMessageInput.setText("");
+                    return;
+                }
                 JsonObject jsonObject = new JsonObject();
                 jsonObject.addProperty("packetType", "action_transmit");
                 jsonObject.addProperty("messageType", "planeText");
@@ -350,7 +353,7 @@ public class TransmitFragment extends Fragment {
                         Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_upload_failed_has_uploading_file, 2500).show();
                         return;
                     }
-                    if(networkService == null||!networkService.isConnected) {
+                    if(networkService == null || !networkService.isConnected) {
                         logger.debug("Blocked file picker because net connected");
                         Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
                         return;
@@ -366,7 +369,7 @@ public class TransmitFragment extends Fragment {
                         Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_upload_failed_has_uploading_file, 2500).show();
                         return;
                     }
-                    if(networkService == null||!networkService.isConnected) {
+                    if(networkService == null || !networkService.isConnected) {
                         logger.debug("Blocked image picker because net connected");
                         Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
                         return;
