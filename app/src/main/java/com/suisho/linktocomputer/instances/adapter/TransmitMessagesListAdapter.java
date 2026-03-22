@@ -164,6 +164,15 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         textView.setFocusable(true);
                         textView.setFocusableInTouchMode(true);
                     });
+                    menuLayout.findViewById(R.id.long_click_menu_action_share).setOnClickListener(v -> {
+                        logger.debug("Share text message");
+                        popupWindow.dismiss();
+                        Intent shareIntent = new Intent();
+                        shareIntent.setAction(Intent.ACTION_SEND);
+                        shareIntent.putExtra(Intent.EXTRA_TEXT, text);
+                        shareIntent.setType("text/plain");
+                        activity.startActivity(shareIntent);
+                    });
                     showPopupMenu(popupWindow, view, menuLayout);
                     return true;
                 });
