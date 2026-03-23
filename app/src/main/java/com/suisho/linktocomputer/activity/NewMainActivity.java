@@ -217,7 +217,6 @@ public class NewMainActivity extends AppCompatActivity {
         stateBarManager.onMenuClick();
         return super.onOptionsItemSelected(item);
     }
-//    TODO 为双端添加文本消息重发功能
 
     private void setViewsInteraction() {
         logger.debug("Init views interaction");

@@ -212,7 +212,7 @@ public class HomeFragment extends Fragment {
         });
         //调试
         binding.cardConnectionStateIcon.setOnClickListener(v1 -> {
-            if((0 == (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE))&&!NewMainActivity.hasDebuggableArg) {
+            if((0 == (getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE)) && !NewMainActivity.hasDebuggableArg) {
                 //再判断启动参数
                 logger.debug("Not in debug mode,Ignore debug menu create");
                 return;
@@ -413,13 +413,14 @@ public class HomeFragment extends Fragment {
 
     private void detectQrcode(IQRCodeDetected runnable) {
         detectThread = new Thread(() -> {
+            QRCodeReader reader = new QRCodeReader();
             while (cameraManager.isOpen() && !detectThread.isInterrupted()) {
                 cameraManager.requestPreviewFrame(new PreviewCallback() {
                     @Override
                     public void onPreview(SourceData sourceData) {
+                        reader.reset();
                         sourceData.setCropRect(new Rect(0, 0, sourceData.getDataWidth(), sourceData.getDataHeight()));
                         BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(sourceData.createSource()));
-                        QRCodeReader reader = new QRCodeReader();
                         try {
                             Result result = reader.decode(bitmap);
                             if(result != null) {
