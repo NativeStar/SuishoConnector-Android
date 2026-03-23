@@ -226,7 +226,7 @@ public class NewMainActivity extends AppCompatActivity {
         viewPagerAdapter = new HomeViewPagerAdapter(this);
         binding.homeViewPager2.setAdapter(viewPagerAdapter);
         //如果是重新创建就不在这设置了
-        binding.homeViewPager2.setOffscreenPageLimit(1);
+        binding.homeViewPager2.setOffscreenPageLimit(2);
         viewPagerAdapter.getTransmitFragment().setActivity(this);
         //尝试修复进软件初始化失败
         binding.getRoot().post(() -> {
