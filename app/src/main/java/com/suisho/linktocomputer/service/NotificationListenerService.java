@@ -64,7 +64,7 @@ public class NotificationListenerService extends android.service.notification.No
         return super.onBind(intent);
     }
 
-    public void setMainService(ConnectMainService service) {
+    public void setMainService(@Nullable ConnectMainService service) {
         //在这初始化避免 NPE
         if(keyguardManager==null){
             keyguardManager=(KeyguardManager) getSystemService(KEYGUARD_SERVICE);

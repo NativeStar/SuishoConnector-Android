@@ -217,6 +217,7 @@ public class NewMainActivity extends AppCompatActivity {
         stateBarManager.onMenuClick();
         return super.onOptionsItemSelected(item);
     }
+//    TODO 为双端添加文本消息重发功能
 
     private void setViewsInteraction() {
         logger.debug("Init views interaction");
@@ -384,7 +385,7 @@ public class NewMainActivity extends AppCompatActivity {
                     @Override
                     public void showAlert(String title, String content, String buttonText) {
                         runOnUiThread(() -> {
-                            if(isFinishing()) return;
+                            if(isFinishing()||isDestroyed()) return;
                             logger.debug("Showing alert from network service(String)");
                             new MaterialAlertDialogBuilder(NewMainActivity.this)
                                     .setTitle(title)
@@ -397,7 +398,7 @@ public class NewMainActivity extends AppCompatActivity {
                     @Override
                     public void showAlert(int title, int content, int buttonText) {
                         runOnUiThread(() -> {
-                            if(isFinishing()) return;
+                            if(isFinishing()||isDestroyed()) return;
                             logger.debug("Showing alert from network service(ResId)");
                             new MaterialAlertDialogBuilder(NewMainActivity.this)
                                     .setTitle(getText(title))
@@ -409,7 +410,7 @@ public class NewMainActivity extends AppCompatActivity {
 
                     public void showConnectingDialog() {
                         runOnUiThread(() -> {
-                            if(isFinishing()) return;
+                            if(isFinishing()||isDestroyed()) return;
                             connectingDialogInstance = new MaterialAlertDialogBuilder(getActivity())
                                     .setView(R.layout.connecting_dialog)
                                     .setCancelable(false)

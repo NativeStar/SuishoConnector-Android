@@ -26,6 +26,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.google.android.material.snackbar.Snackbar;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.IMediaProjectionServiceIPC;
 import com.suisho.linktocomputer.R;
@@ -50,12 +54,8 @@ import com.suisho.linktocomputer.receiver.BatteryStateReceiver;
 import com.suisho.linktocomputer.responseBuilders.AllPackageResponse;
 import com.suisho.linktocomputer.responseBuilders.CurrentNotificationsListPacket;
 import com.suisho.linktocomputer.responseBuilders.DetailBuilder;
-import com.suisho.linktocomputer.responseBuilders.HandshakeResponse;
 import com.suisho.linktocomputer.responseBuilders.EmptyResponsePacketBuilder;
-import com.google.android.material.snackbar.Snackbar;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
+import com.suisho.linktocomputer.responseBuilders.HandshakeResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,7 +115,8 @@ public class ConnectMainService extends Service implements INetworkService {
     //电池状广播接收器
     BatteryStateReceiver batteryStateReceiver = null;
     private BroadcastReceiver closeConnectionBroadcastReceiver = null;
-    private ServiceConnection bindServiceConnection = null;
+    private ServiceConnection bindAudioForwardServiceConnection = null;
+    private ServiceConnection bingNotificationListenerServiceConnection = null;
     //文件管理器 远程播放流媒体等的文件服务器
     public final FileServer webFileServer = new FileServer(30767);
     //投屏同意返回intent
@@ -158,8 +159,10 @@ public class ConnectMainService extends Service implements INetworkService {
     public void onDestroy() {
         if(closeConnectionBroadcastReceiver != null)
             unregisterReceiver(closeConnectionBroadcastReceiver);
-        if(bindServiceConnection != null)
-            unbindService(bindServiceConnection);
+        if(bindAudioForwardServiceConnection != null)
+            unbindService(bindAudioForwardServiceConnection);
+        if(bingNotificationListenerServiceConnection != null)
+            unbindService(bingNotificationListenerServiceConnection);
         logger.debug("Network service destroy");
         super.onDestroy();
     }
@@ -355,7 +358,6 @@ public class ConnectMainService extends Service implements INetworkService {
                         .pingInterval(Duration.ofSeconds(180))
                         .build()
                         .newWebSocket(wsReq, new WebSocketListener() {
-//                            TODO 将掉线处理合并成一个方法
                             @Override
                             public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
                                 super.onOpen(webSocket, response);
@@ -367,29 +369,16 @@ public class ConnectMainService extends Service implements INetworkService {
                             @Override
                             public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
                                 super.onClosed(webSocket, code, reason);
+                                isConnected = false;
                                 //关闭音频
                                 logger.info("Connection close with code:{}", code);
-                                if(projectionServiceIPC != null) {
-                                    try {
-                                        logger.debug("Closing media projection service");
-                                        projectionServiceIPC.exit();
-                                    } catch (RemoteException ignored) {
-                                    } finally {
-                                        ConnectMainService.this.projectionServiceIPC = null;
-                                        ConnectMainService.this.mediaProjectionIntent = null;
-                                    }
-                                }
-                                if(webFileServer != null) webFileServer.stop();
-                                isConnected = false;
-                                NewMainActivity activity = activityMethods.getActivity();
-                                if(!activity.isDestroyed()) {
-                                    activity.unregisterNetworkCallback();
-                                }
+                                removeListeners();
                                 if(GlobalVariables.preferences.getBoolean("function_auto_exit_on_disconnect", false)) {
                                     logger.debug("User enabled auto exit,check activity on top");
                                     ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
                                     am.getRunningAppProcesses().forEach(runningAppProcessInfo -> {
                                         if(runningAppProcessInfo.processName.equals("com.suisho.linktocomputer")) {
+                                            logger.debug("Found self process");
                                             if(runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND && runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING) {
                                                 //直接killProcess退出会导致下次启动带上莫名其妙的savedInstanceState
                                                 logger.info("Activity not on stack top.Suicide");
@@ -397,16 +386,13 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 System.exit(0);
                                             } else {
                                                 if(code != ConnectionCloseCode.CloseFromClient) {
-                                                    //检测是否在栈顶
-                                                    am.getAppTasks().forEach(appTask -> {
-                                                        if(appTask.getTaskInfo().baseIntent.getComponent().getShortClassName().equals(NewMainActivity.class.getName())) {
-                                                            logger.info("Activity on stack top,show disconnect alert");
-                                                            activityMethods.showAlert("通讯关闭", reason.isEmpty() ? "计算机关闭连接" : reason, "确定");
-                                                            activityMethods.closeConnectingDialog();
-                                                        }
-                                                    });
+                                                    NewMainActivity activity = activityMethods == null ? null : activityMethods.getActivity();
+                                                    if(activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+                                                        logger.info("Activity on stack top,show disconnect alert");
+                                                        activityMethods.showAlert("通讯关闭", reason.isEmpty() ? "计算机关闭连接" : reason, "确定");
+                                                        activityMethods.closeConnectingDialog();
+                                                    }
                                                 }
-                                                stopSelf();
                                             }
                                         }
                                     });
@@ -421,20 +407,14 @@ public class ConnectMainService extends Service implements INetworkService {
                                 isConnected = false;
                                 activityMethods.closeConnectingDialog();
                                 activityMethods.onDisconnect();
-                                if(batteryStateReceiver != null)
-                                    try {
-                                        //偶发异常
-                                        unregisterReceiver(batteryStateReceiver);
-                                    } catch (IllegalArgumentException ignore) {
-                                    }
-                                ;
-                                if(webFileServer != null) webFileServer.stop();
+                                removeListeners();
                                 try {
                                     if(Objects.requireNonNull(t.getMessage()).contains("java.security.cert.CertPathValidatorException")) {
                                         //证书异常
                                         logger.warn("Disconnect because SSL verify failed");
                                         activityMethods.showAlert(R.string.text_error, R.string.text_ssl_verify_error, R.string.text_ok);
                                     } else if(Objects.requireNonNull(t.getMessage()).contains("Connection reset")) {
+                                        //网络突然断开之类的
                                         logger.warn("Disconnect because connection reset");
                                         activityMethods.showAlert("通讯关闭", "连接异常中断", "确定");
                                         this.onClosed(webSocket, 1000, "");
@@ -445,17 +425,9 @@ public class ConnectMainService extends Service implements INetworkService {
                                 } catch (NullPointerException nullPointerException) {
                                     logger.warn("Disconnect because unknown reason null pointer", nullPointerException);
                                     activityMethods.showAlert(R.string.text_error, R.string.dialog_connectFailedAlertText, R.string.text_ok);
-                                    stopSelf();
-                                }
-                                if(projectionServiceIPC != null) {
-                                    try {
-                                        projectionServiceIPC.exit();
-                                    } catch (RemoteException ignored) {
-                                    }
                                 }
                                 stopSelf();
                             }
-
 
                             @Override
                             public void onMessage(@NonNull WebSocket webSocket, @NonNull String text) {
@@ -653,7 +625,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             mediaProjectionPacket.addProperty("result", true);
                                             Intent intent = new Intent(ConnectMainService.this, MediaProjectionService.class);
                                             logger.info("Start audio forward service");
-                                            bindServiceConnection = new ServiceConnection() {
+                                            bindAudioForwardServiceConnection = new ServiceConnection() {
                                                 @Override
                                                 public void onServiceConnected(ComponentName name, IBinder service) {
                                                     projectionServiceIPC = IMediaProjectionServiceIPC.Stub.asInterface(service);
@@ -674,7 +646,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 public void onServiceDisconnected(ComponentName name) {
                                                 }
                                             };
-                                            bindService(intent, bindServiceConnection, BIND_AUTO_CREATE);
+                                            bindService(intent, bindAudioForwardServiceConnection, BIND_AUTO_CREATE);
                                             webSocketClient.send(mediaProjectionPacket.toString());
                                             break;
                                         case "main_stopAudioForward":
@@ -689,7 +661,8 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 } finally {
                                                     mediaProjectionIntent = null;
                                                     projectionServiceIPC = null;
-                                                    unbindService(bindServiceConnection);
+                                                    unbindService(bindAudioForwardServiceConnection);
+                                                    bindAudioForwardServiceConnection = null;
                                                 }
                                             }
                                             webSocketClient.send(stopProjectionPacket.toString());
@@ -795,17 +768,41 @@ public class ConnectMainService extends Service implements INetworkService {
                             @Override
                             public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
                                 super.onClosing(webSocket, code, reason);
-                                webSocketClient.close(ConnectionCloseCode.CloseFromClient, null);
+                                webSocketClient.close(code, null);
                                 isConnected = false;
                                 activityMethods.onDisconnect();
-                                //注销电池广播监听
-                                if(batteryStateReceiver != null)
-                                    unregisterReceiver(batteryStateReceiver);
+                                removeListeners();
                             }
                         });
             }
         };
         websocketThread.start();
+    }
+
+    //一些通用的socket关闭处理
+    private void removeListeners() {
+        if(projectionServiceIPC != null) {
+            try {
+                logger.debug("Closing media projection service");
+                projectionServiceIPC.exit();
+            } catch (RemoteException ignored) {
+            } finally {
+                ConnectMainService.this.projectionServiceIPC = null;
+                ConnectMainService.this.mediaProjectionIntent = null;
+            }
+        }
+        if(batteryStateReceiver != null)
+            try {
+                //偶发异常
+                unregisterReceiver(batteryStateReceiver);
+            } catch (IllegalArgumentException ignore) {
+            }
+        if(webFileServer.wasStarted()) webFileServer.stop();
+        NewMainActivity activity = activityMethods.getActivity();
+        if(!activity.isDestroyed()) {
+            activity.unregisterNetworkCallback();
+        }
+        if(notificationListenerService != null) notificationListenerService.setMainService(null);
     }
 
     @Override
@@ -912,7 +909,7 @@ public class ConnectMainService extends Service implements INetworkService {
         Intent listenerServiceIntent = new Intent(this, NotificationListenerService.class);
         listenerServiceIntent.setAction("networkServiceLaunch");
         logger.debug("Bind notification listener service");
-        bindService(listenerServiceIntent, new ServiceConnection() {
+        bingNotificationListenerServiceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
                 //获取服务
@@ -938,7 +935,8 @@ public class ConnectMainService extends Service implements INetworkService {
             public void onServiceDisconnected(ComponentName name) {
                 notificationListenerServiceWorking = false;
             }
-        }, BIND_AUTO_CREATE);
+        };
+        bindService(listenerServiceIntent, bingNotificationListenerServiceConnection, BIND_AUTO_CREATE);
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
