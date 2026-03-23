@@ -143,7 +143,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     View menuLayout = LayoutInflater.from(activity).inflate(R.layout.transmit_message_action_menu_text, null, false);
                     PopupWindow popupWindow = new PopupWindow(menuLayout, ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
                     setUniversalLongClickMenuAction(menuLayout, messagesView, popupWindow, holder);
-                    menuLayout.findViewById(R.id.long_click_menu_action_open_url).setEnabled(isUrl);
+                    menuLayout.findViewById(R.id.long_click_menu_action_open_url).setVisibility(isUrl? View.VISIBLE : View.GONE);
                     menuLayout.findViewById(R.id.long_click_menu_action_open_url).setOnClickListener(v -> {
                         Intent urlIntent = new Intent(Intent.ACTION_VIEW);
                         urlIntent.setData(Uri.parse(text));
@@ -259,7 +259,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     setUniversalLongClickMenuAction(menuLayout, messagesView, popupWindow, holder);
                     //长按自己发送的文件时屏蔽分享键
                     if(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE) {
-                        menuLayout.findViewById(R.id.long_click_menu_action_share).setEnabled(false);
+                        menuLayout.findViewById(R.id.long_click_menu_action_share).setVisibility(View.GONE);
                     }
                     //分享 文件专属
                     menuLayout.findViewById(R.id.long_click_menu_action_share).setOnClickListener(v -> activity.runOnUiThread(() -> {
