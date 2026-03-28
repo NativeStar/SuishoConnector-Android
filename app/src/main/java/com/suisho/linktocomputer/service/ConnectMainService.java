@@ -373,30 +373,44 @@ public class ConnectMainService extends Service implements INetworkService {
                                 //关闭音频
                                 logger.info("Connection close with code:{}", code);
                                 onDisconnectCleanup();
-                                if(GlobalVariables.preferences.getBoolean("function_auto_exit_on_disconnect", false)) {
-                                    logger.debug("User enabled auto exit,check activity on top");
-                                    ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-                                    am.getRunningAppProcesses().forEach(runningAppProcessInfo -> {
-                                        if(runningAppProcessInfo.processName.equals("com.suisho.linktocomputer")) {
-                                            logger.debug("Found self process");
-                                            if(runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND && runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING) {
-                                                //直接killProcess退出会导致下次启动带上莫名其妙的savedInstanceState
-                                                logger.info("Activity not on stack top.Suicide");
+                                logger.debug("Checking activity on top");
+                                ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                                am.getRunningAppProcesses().forEach(runningAppProcessInfo -> {
+                                    if(runningAppProcessInfo.processName.equals("com.suisho.linktocomputer")) {
+                                        logger.debug("Found self process");
+                                        if(runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND && runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING) {
+                                            //软件在后台 发送掉线通知
+                                            //前台一是已经有对话框 二是可能连接是用户手动点击关的
+                                            Intent notificationBodyIntent = new Intent(ConnectMainService.this, NewMainActivity.class);
+                                            notificationBodyIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                                            PendingIntent notificationBodyPendingIntent = PendingIntent.getActivity(ConnectMainService.this, 126, notificationBodyIntent, PendingIntent.FLAG_IMMUTABLE);
+                                            Notification notification = new Notification.Builder(ConnectMainService.this, "onDisconnectNotification")
+                                                    .setSmallIcon(R.drawable.baseline_link_off_24)
+                                                    .setContentTitle("连接断开")
+                                                    .setContentText("与计算机连接中断")
+                                                    .setContentIntent(notificationBodyPendingIntent)
+                                                    .setAutoCancel(true)
+                                                    .build();
+                                            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                                            notificationManager.notify(128, notification);
+                                            //直接killProcess退出会导致下次启动带上莫名其妙的savedInstanceState
+                                            if(GlobalVariables.preferences.getBoolean("function_auto_exit_on_disconnect", false)) {
+                                                logger.info("User enabled auto exit and activity not on stack top.Suicide");
                                                 activityMethods.getActivity().finishAffinity();
                                                 System.exit(0);
-                                            } else {
-                                                if(code != ConnectionCloseCode.CloseFromClient) {
-                                                    NewMainActivity activity = activityMethods == null ? null : activityMethods.getActivity();
-                                                    if(activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
-                                                        logger.info("Activity on stack top,show disconnect alert");
-                                                        activityMethods.showAlert("通讯关闭", reason.isEmpty() ? "计算机关闭连接" : reason, "确定");
-                                                        activityMethods.closeConnectingDialog();
-                                                    }
+                                            }
+                                        } else {
+                                            if(code != ConnectionCloseCode.CloseFromClient) {
+                                                NewMainActivity activity = activityMethods == null ? null : activityMethods.getActivity();
+                                                if(activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
+                                                    logger.info("Activity on stack top,show disconnect alert");
+                                                    activityMethods.showAlert("通讯关闭", reason.isEmpty() ? "计算机关闭连接" : reason, "确定");
+                                                    activityMethods.closeConnectingDialog();
                                                 }
                                             }
                                         }
-                                    });
-                                }
+                                    }
+                                });
                                 stopSelf();
                             }
 
@@ -964,9 +978,13 @@ public class ConnectMainService extends Service implements INetworkService {
 
     //创建通知渠道 重复创建不会有任何问题
     private void createNotificationChannel() {
-        NotificationChannel channel = new NotificationChannel("foregroundService", "前台服务通知", NotificationManager.IMPORTANCE_LOW);
-        channel.setDescription("请勿关闭该通知");
-        getSystemService(NotificationManager.class).createNotificationChannel(channel);
+        NotificationChannel foregroundServiceChannel = new NotificationChannel("foregroundService", "前台服务通知", NotificationManager.IMPORTANCE_LOW);
+        foregroundServiceChannel.setDescription("请勿关闭该通知");
+        NotificationChannel onDisconnectNotificationChannel = new NotificationChannel("onDisconnectNotification", "断开连接通知", NotificationManager.IMPORTANCE_DEFAULT);
+        onDisconnectNotificationChannel.setDescription("如不需要此功能可关闭该渠道或降低通知优先级");
+        NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(foregroundServiceChannel);
+        notificationManager.createNotificationChannel(onDisconnectNotificationChannel);
         logger.debug("Created foreground notification channel");
     }
 
