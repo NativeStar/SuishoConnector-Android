@@ -13,6 +13,8 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.gson.JsonObject;
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.abstracts.FileUploadStateHandle;
@@ -22,13 +24,14 @@ import com.suisho.linktocomputer.database.TransmitDatabaseEntity;
 import com.suisho.linktocomputer.enums.TransmitRecyclerAddItemType;
 import com.suisho.linktocomputer.fragment.TransmitFragment;
 import com.suisho.linktocomputer.instances.EncryptionKey;
+import com.suisho.linktocomputer.instances.TransmitQueueItem;
 import com.suisho.linktocomputer.instances.transmit.TransmitMessageTypeFile;
 import com.suisho.linktocomputer.instances.transmit.TransmitMessageTypeText;
 import com.suisho.linktocomputer.jsonClass.MainServiceJson;
 import com.suisho.linktocomputer.jsonClass.TransmitMessage;
+import com.suisho.linktocomputer.network.TransmitUploadFile;
+import com.suisho.linktocomputer.responseBuilders.TransmitUploadFilePacket;
 import com.suisho.linktocomputer.service.ConnectMainService;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.gson.JsonObject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,11 +75,11 @@ public class FileUploadActivity extends Activity {
         } else if(intent.getAction().equals(Intent.ACTION_VIEW)) {
             logger.debug("Show file send confirm dialog with ACTION_VIEW");
             checkFile(intent.getData());
-        }else if(intent.getAction().equals(Intent.ACTION_PROCESS_TEXT)){
+        } else if(intent.getAction().equals(Intent.ACTION_PROCESS_TEXT)) {
             String text = intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT);
             sendText(text);
             Toast.makeText(this, R.string.text_sent, Toast.LENGTH_LONG).show();
-            logger.debug("Text sent by selection shortcut:{}",text);
+            logger.debug("Text sent by selection shortcut:{}", text);
         } else {
             Toast.makeText(this, "不支持的操作", Toast.LENGTH_LONG).show();
             logger.warn("Unsupported action:{}", intent.getAction());
@@ -85,11 +88,11 @@ public class FileUploadActivity extends Activity {
     }
 
     private void confirmSendText(String text) {
-        final String cutText =text.length()>100?text.substring(0,100)+"...":text;
+        final String cutText = text.length() > 100 ? text.substring(0, 100) + "..." : text;
         runOnUiThread(() -> {
             new MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.text_send_text)
-                    .setMessage(getString(R.string.text_send_text_dialog_message)+cutText)
+                    .setMessage(getString(R.string.text_send_text_dialog_message) + cutText)
                     .setPositiveButton(R.string.text_ok, (dialog, which) -> {
                         sendText(text);
                     })
@@ -140,7 +143,7 @@ public class FileUploadActivity extends Activity {
                 }
                 String fileName = cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
                 cursor.close();
-                logger.debug("File name:{}. File size:{}", fileName,fileSize);
+                logger.debug("File name:{}. File size:{}", fileName, fileSize);
                 logger.debug("Show upload file confirm dialog");
                 runOnUiThread(() -> {
                     new MaterialAlertDialogBuilder(this)
@@ -177,7 +180,7 @@ public class FileUploadActivity extends Activity {
         try {
             encryptionKey = EncryptionKey.getInstance("AES", 128);
         } catch (NoSuchAlgorithmException e) {
-            logger.error("Failed to create encryption key",e);
+            logger.error("Failed to create encryption key", e);
             runOnUiThread(() -> new MaterialAlertDialogBuilder(FileUploadActivity.this).setTitle("上传文件发生异常")
                     .setMessage("发生异常:" + e.getMessage())
                     .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
@@ -185,19 +188,21 @@ public class FileUploadActivity extends Activity {
             return;
         }
         ConnectMainService networkService = GlobalVariables.computerConfigManager.getNetworkService();
-        JsonObject uploadRequest = new JsonObject();
-        uploadRequest.addProperty("packetType", "action_transmit");
-        uploadRequest.addProperty("messageType", "file");
-        /*文件名*/
-        uploadRequest.addProperty("name", name);
-        /*大小*/
-        uploadRequest.addProperty("size", size);
-        //密钥
-        uploadRequest.addProperty("encryptKey", encryptionKey.getKeyBase64());
-        //向量
-        uploadRequest.addProperty("encryptIv", encryptionKey.getIvBase64());
+        TransmitUploadFilePacket uploadRequest = new TransmitUploadFilePacket(name, size, encryptionKey);
+        if(TransmitUploadFile.hasUploadingFile) {
+            try {
+                TransmitQueueItem queueItem = new TransmitQueueItem(getContentResolver().openInputStream(file), uploadRequest.getJsonObject(), size, encryptionKey, name);
+                boolean addQueueResult = TransmitUploadFile.addQueueItem(queueItem);
+                Toast.makeText(this, addQueueResult ? "已添加至上传队列" : "队列已满 添加失败", Toast.LENGTH_LONG).show();
+            } catch (FileNotFoundException e) {
+                Toast.makeText(this, "打开文件流时发生异常", Toast.LENGTH_LONG).show();
+            } finally {
+                finish();
+            }
+            return;
+        }
         logger.debug("Send upload file request packet");
-        networkService.sendRequestPacket(uploadRequest, new RequestHandle() {
+        networkService.sendRequestPacket(uploadRequest.getJsonObject(), new RequestHandle() {
             @Override
             public void run(String data) {
                 super.run(data);
@@ -206,7 +211,7 @@ public class FileUploadActivity extends Activity {
                 //检查是否发生异常
                 if(jsonObj._result.equals("ERROR")) {
                     //异常
-                    logger.warn("Upload file request failed with message:{}",jsonObj.msg);
+                    logger.warn("Upload file request failed with message:{}", jsonObj.msg);
                     runOnUiThread(() -> new MaterialAlertDialogBuilder(FileUploadActivity.this).setTitle("上传文件发生异常")
                             .setMessage(jsonObj.msg)
                             .setPositiveButton("确认", (dialog, which) -> dialog.cancel())
@@ -225,7 +230,7 @@ public class FileUploadActivity extends Activity {
 
                         @Override
                         public void onError(Exception error) {
-                            logger.error("Upload file failed",error);
+                            logger.error("Upload file failed", error);
                             super.onError(error);
                         }
 
@@ -248,7 +253,7 @@ public class FileUploadActivity extends Activity {
                         }
                     }, size, encryptionKey);
                 } catch (FileNotFoundException e) {
-                    logger.error("Failed to open file",e);
+                    logger.error("Failed to open file", e);
                     if(FileUploadActivity.this.isDestroyed()) return;
                     Notification.Builder builder = new Notification.Builder(FileUploadActivity.this, "fileUploadProgress");
                     builder.setSmallIcon(R.mipmap.ic_launcher)

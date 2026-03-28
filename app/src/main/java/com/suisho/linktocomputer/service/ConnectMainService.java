@@ -372,7 +372,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                 isConnected = false;
                                 //关闭音频
                                 logger.info("Connection close with code:{}", code);
-                                removeListeners();
+                                onDisconnectCleanup();
                                 if(GlobalVariables.preferences.getBoolean("function_auto_exit_on_disconnect", false)) {
                                     logger.debug("User enabled auto exit,check activity on top");
                                     ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
@@ -407,7 +407,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                 isConnected = false;
                                 activityMethods.closeConnectingDialog();
                                 activityMethods.onDisconnect();
-                                removeListeners();
+                                onDisconnectCleanup();
                                 try {
                                     if(Objects.requireNonNull(t.getMessage()).contains("java.security.cert.CertPathValidatorException")) {
                                         //证书异常
@@ -771,7 +771,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                 webSocketClient.close(code, null);
                                 isConnected = false;
                                 activityMethods.onDisconnect();
-                                removeListeners();
+                                onDisconnectCleanup();
                             }
                         });
             }
@@ -780,7 +780,7 @@ public class ConnectMainService extends Service implements INetworkService {
     }
 
     //一些通用的socket关闭处理
-    private void removeListeners() {
+    private void onDisconnectCleanup() {
         if(projectionServiceIPC != null) {
             try {
                 logger.debug("Closing media projection service");
@@ -803,6 +803,8 @@ public class ConnectMainService extends Service implements INetworkService {
             activity.unregisterNetworkCallback();
         }
         if(notificationListenerService != null) notificationListenerService.setMainService(null);
+        //清空队列
+        TransmitUploadFile.clearQueue();
     }
 
     @Override
@@ -848,7 +850,7 @@ public class ConnectMainService extends Service implements INetworkService {
 
     @Override
     public void uploadFile(InputStream stream, int port, boolean isSmallFile, @Nullable FileUploadStateHandle onErrorListener, long fileSize, EncryptionKey encryptionKey) {
-        new TransmitUploadFile(stream, port, isSmallFile, onErrorListener, this, fileSize, encryptionKey);
+        new TransmitUploadFile(stream, port, isSmallFile, onErrorListener, getApplicationContext(), fileSize, encryptionKey);
     }
 
     @Override

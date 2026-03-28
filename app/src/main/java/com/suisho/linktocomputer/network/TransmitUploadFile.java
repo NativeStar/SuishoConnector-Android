@@ -9,8 +9,18 @@ import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.abstracts.FileUploadStateHandle;
+import com.suisho.linktocomputer.abstracts.RequestHandle;
 import com.suisho.linktocomputer.constant.NotificationID;
+import com.suisho.linktocomputer.database.TransmitDatabaseEntity;
+import com.suisho.linktocomputer.enums.TransmitRecyclerAddItemType;
+import com.suisho.linktocomputer.fragment.TransmitFragment;
+import com.suisho.linktocomputer.instances.ComputerConfigManager;
 import com.suisho.linktocomputer.instances.EncryptionKey;
+import com.suisho.linktocomputer.instances.TransmitQueueItem;
+import com.suisho.linktocomputer.instances.transmit.TransmitMessageTypeFile;
+import com.suisho.linktocomputer.jsonClass.MainServiceJson;
+import com.suisho.linktocomputer.jsonClass.TransmitMessage;
+import com.suisho.linktocomputer.service.ConnectMainService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +35,7 @@ import java.net.Socket;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayDeque;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -35,6 +46,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class TransmitUploadFile {
     public static boolean hasUploadingFile = false;
+    private static final ArrayDeque<TransmitQueueItem> uploadFileQueue = new ArrayDeque<>(10);
     //源文件输入 读取用户选择的文件
     private final InputStream fileInputStream;
     //socket输出 上行文件数据用
@@ -43,14 +55,14 @@ public class TransmitUploadFile {
     private final int serverPort;
     private final int maxBufferSize;
     private FileUploadStateHandle stateHandle;
-    private final Context serviceContext;
+    private final Context applicationContext;
     //通知对象
     private Notification.Builder notificationBuilder;
     private long uploadedSize = 0;
     private final boolean enableNotification;
     private final long fileSize;
     private Cipher cipher;
-    private final Logger logger = LoggerFactory.getLogger(TransmitUploadFile.class);
+    private static final Logger logger = LoggerFactory.getLogger(TransmitUploadFile.class);
 
     /**
      * 节流 更新状态栏进度很浪费性能
@@ -61,7 +73,7 @@ public class TransmitUploadFile {
         fileInputStream = stream;
         serverPort = port;
         this.fileSize = fileSize;
-        serviceContext = context;
+        applicationContext = context;
         logger.debug("Transmit upload small file:{}", isSmallFile);
         //设置最小缓冲区
         if(isSmallFile) {
@@ -83,6 +95,8 @@ public class TransmitUploadFile {
                  InvalidAlgorithmParameterException e) {
             logger.error("Failed to init transmit upload crypt", e);
             stateHandle.onError(e);
+            closeStream(stream);
+            updateUploadQueue();
             return;
         }
         start();
@@ -95,27 +109,32 @@ public class TransmitUploadFile {
             public void run() {
                 super.run();
                 hasUploadingFile = true;
+                InputStream socketInputStream = null;
+                BufferedReader bufferedReader = null;
                 try {
                     socket = new Socket(GlobalVariables.serverAddress, serverPort);
                     //保活
                     socket.setKeepAlive(true);
                     socketOutputStream = socket.getOutputStream();
-                    InputStream socketInputStream = socket.getInputStream();
-                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(socketInputStream));
+                    socketInputStream = socket.getInputStream();
+                    bufferedReader = new BufferedReader(new InputStreamReader(socketInputStream));
                     socketOutputStream.write(GlobalVariables.computerConfigManager.getSessionId().getBytes());
                     String msg = bufferedReader.readLine();
                     if(msg != null) {
                         if(!msg.equals("START")) {
                             logger.warn("Computer rejected request");
                             stateHandle.onError(new IOException("PC端拒绝接收请求"));
+                            hasUploadingFile = false;
                             return;
                         }
                     } else {
                         stateHandle.onError(new IOException("PC端响应无效"));
                         logger.warn("Computer response invalid");
+                        hasUploadingFile = false;
                         if(socket.isConnected()) {
                             socket.close();
                         }
+                        return;
                     }
                     //开始上传回调
                     stateHandle.onStart();
@@ -149,9 +168,6 @@ public class TransmitUploadFile {
                     }
                     try {
                         sleep(700);
-                        fileInputStream.close();
-                        bufferedReader.close();
-                        socketInputStream.close();
                         socket.close();
                         bufferedFileInputStream.close();
                         hasUploadingFile = false;
@@ -159,19 +175,27 @@ public class TransmitUploadFile {
                         logger.info("Transmit upload file success");
                         stateHandle.onSuccess();
                     } catch (InterruptedException ie) {
-                        logger.error("Transmit upload end sleep exception",ie);
+                        logger.error("Transmit upload end sleep exception", ie);
                         hasUploadingFile = false;
                     }
                 } catch (IOException | BadPaddingException | IllegalBlockSizeException e) {
                     if(stateHandle == null) {
-                        logger.error("Transmit upload file error",e);
-                        hasUploadingFile = false;
+                        logger.error("Transmit upload file error", e);
                         return;
                     }
                     stateHandle.onError(e);
                 } catch (InterruptedException ie) {
-                    logger.error("Transmit upload write end sleep error",ie);
+                    logger.error("Transmit upload write end sleep error", ie);
+                } finally {
                     hasUploadingFile = false;
+                    try {
+                        fileInputStream.close();
+                        bufferedReader.close();
+                        socketInputStream.close();
+                    } catch (IOException | NullPointerException e) {
+                        logger.error("Transmit upload close stream error", e);
+                    }
+                    updateUploadQueue();
                 }
             }
         };
@@ -182,10 +206,10 @@ public class TransmitUploadFile {
      * 检查是否有权限并创建通知
      */
     private boolean ensureNotification() {
-        NotificationManager notificationManager = serviceContext.getSystemService(NotificationManager.class);
+        NotificationManager notificationManager = applicationContext.getSystemService(NotificationManager.class);
         if(!Util.checkNotificationPermission(notificationManager)) return false;
         createNotificationChannel(notificationManager);
-        Notification.Builder builder = new Notification.Builder(serviceContext, "fileUploadProgress");
+        Notification.Builder builder = new Notification.Builder(applicationContext, "fileUploadProgress");
         builder.setOngoing(true)
                 .setAutoCancel(false)
                 .setContentTitle("文件上传中...")
@@ -207,5 +231,88 @@ public class TransmitUploadFile {
         channel.setDescription("请勿关闭该通知");
         notificationManager.createNotificationChannel(channel);
         logger.debug("Create transmit upload file notification channel");
+    }
+
+    private static void updateUploadQueue() {
+        ComputerConfigManager computerConfigManager = GlobalVariables.computerConfigManager;
+        if(computerConfigManager == null) {
+//            这种情况通常是传一半掉线了 清空队列避免异常
+            clearQueue();
+            return;
+        }
+        ConnectMainService networkService = computerConfigManager.getNetworkService();
+        if(networkService == null || !networkService.isConnected) {
+            clearQueue();
+            return;
+        }
+        TransmitQueueItem item = uploadFileQueue.pollFirst();
+        if(item == null) return;
+        networkService.sendRequestPacket(item.requestPacket, new RequestHandle() {
+            @Override
+            public void run(String data) {
+                super.run(data);
+                MainServiceJson jsonObj = GlobalVariables.jsonBuilder.fromJson(data, MainServiceJson.class);
+                //检查是否发生异常
+                try {
+                    if(jsonObj._result.equals("ERROR")) {
+                        closeStream(item.fileInputStream);
+                        updateUploadQueue();
+                        return;
+                    }
+                    networkService.uploadFile(item.fileInputStream, jsonObj.port, item.fileSize <= 8192L, new FileUploadStateHandle() {
+                        @Override
+                        public void onSuccess() {
+                            super.onSuccess();
+                            NotificationManager notificationService = networkService.getSystemService(NotificationManager.class);
+                            notificationService.cancel(NotificationID.NOTIFICATION_TRANSMIT_UPLOAD_FILE);
+                            if(TransmitFragment.transmitMessagesListAdapter == null) return;
+                            TransmitDatabaseEntity message = new TransmitDatabaseEntity();
+                            message.messageFrom = TransmitMessage.MESSAGE_FROM_PHONE;
+                            message.type = TransmitMessage.MESSAGE_TYPE_TEXT;
+                            message.isDeleted = false;
+                            message.fileName = item.fileName;
+                            message.fileSize = item.fileSize;
+                            message.timestamp = System.currentTimeMillis();
+                            //上传文件 该属性无效
+                            message.filePath = "null";
+                            TransmitFragment.transmitMessagesListAdapter.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE, new TransmitMessageTypeFile(message));
+                            logger.info("Transmit upload queue file success: {}", item.fileName);
+                        }
+                    }, item.fileSize, item.encryptionKey);
+                } catch (Exception e) {
+                    logger.error("Transmit upload queue file error", e);
+                    closeStream(item.fileInputStream);
+                    updateUploadQueue();
+                }
+            }
+        });
+    }
+
+    private static void closeStream(InputStream itemStream) {
+        try {
+            itemStream.close();
+        } catch (IOException e) {
+            logger.warn("Close file input stream error", e);
+        }
+    }
+
+    public static boolean addQueueItem(TransmitQueueItem item) {
+        if(uploadFileQueue.size() < 10) {
+            uploadFileQueue.offerLast(item);
+            return true;
+        }
+        closeStream(item.fileInputStream);
+        return false;
+    }
+
+    public static void clearQueue() {
+        uploadFileQueue.forEach(item -> {
+            try {
+                item.fileInputStream.close();
+            } catch (IOException e) {
+                logger.warn("Close file input stream error", e);
+            }
+        });
+        uploadFileQueue.clear();
     }
 }

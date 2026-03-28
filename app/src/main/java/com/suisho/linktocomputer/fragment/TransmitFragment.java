@@ -43,12 +43,14 @@ import com.suisho.linktocomputer.database.TransmitDatabaseEntity;
 import com.suisho.linktocomputer.databinding.FragmentTransmitBinding;
 import com.suisho.linktocomputer.enums.TransmitRecyclerAddItemType;
 import com.suisho.linktocomputer.instances.EncryptionKey;
+import com.suisho.linktocomputer.instances.TransmitQueueItem;
 import com.suisho.linktocomputer.instances.adapter.TransmitMessagesListAdapter;
 import com.suisho.linktocomputer.instances.transmit.TransmitMessageTypeFile;
 import com.suisho.linktocomputer.instances.transmit.TransmitMessageTypeText;
 import com.suisho.linktocomputer.jsonClass.MainServiceJson;
 import com.suisho.linktocomputer.jsonClass.TransmitMessage;
 import com.suisho.linktocomputer.network.TransmitUploadFile;
+import com.suisho.linktocomputer.responseBuilders.TransmitUploadFilePacket;
 import com.suisho.linktocomputer.service.ConnectMainService;
 
 import org.slf4j.Logger;
@@ -181,22 +183,19 @@ public class TransmitFragment extends Fragment {
                             .show());
                     return;
                 }
-                //构建请求
-                JsonObject uploadRequestObject = new JsonObject();
-                /*基础参数*/
-                uploadRequestObject.addProperty("packetType", "action_transmit");
-                uploadRequestObject.addProperty("messageType", "file");
-                /*文件名*/
-                uploadRequestObject.addProperty("name", fileName);
-                /*大小*/
-                uploadRequestObject.addProperty("size", fileSize);
-                //密钥
-                uploadRequestObject.addProperty("encryptKey", encryptionKey.getKeyBase64());
-                //向量
-                uploadRequestObject.addProperty("encryptIv", encryptionKey.getIvBase64());
-                //发送请求
+                TransmitUploadFilePacket uploadRequestPacket = new TransmitUploadFilePacket(fileName, fileSize, encryptionKey);
                 logger.debug("Send upload file request packet");
-                networkService.sendRequestPacket(uploadRequestObject, new RequestHandle() {
+                if(TransmitUploadFile.hasUploadingFile) {
+                    try {
+                        TransmitQueueItem queueItem = new TransmitQueueItem(getContext().getContentResolver().openInputStream(uri), uploadRequestPacket.getJsonObject(), fileSize, encryptionKey, fileName);
+                        boolean addQueueResult = TransmitUploadFile.addQueueItem(queueItem);
+                        Snackbar.make(binding.getRoot(), addQueueResult?"已添加至上传队列":"队列已满 添加失败", Snackbar.LENGTH_LONG).show();
+                    } catch (FileNotFoundException e) {
+                        Snackbar.make(binding.getRoot(), "打开文件流时发生异常", Snackbar.LENGTH_LONG).show();
+                    }
+                    return;
+                }
+                networkService.sendRequestPacket(uploadRequestPacket.getJsonObject(), new RequestHandle() {
                     @Override
                     public void run(String responseData) {
                         super.run(responseData);
@@ -348,11 +347,11 @@ public class TransmitFragment extends Fragment {
                 //上传文件按钮点击
                 menuLayout.findViewById(R.id.uploadFileButton).setOnClickListener((uploadFileButtonView) -> {
                     popupWindow.dismiss();
-                    if(TransmitUploadFile.hasUploadingFile) {
-                        logger.debug("Request upload file but has uploading file.Return");
-                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_upload_failed_has_uploading_file, 2500).show();
-                        return;
-                    }
+//                    if(TransmitUploadFile.hasUploadingFile) {
+//                        logger.debug("Request upload file but has uploading file.Return");
+//                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_upload_failed_has_uploading_file, 2500).show();
+//                        return;
+//                    }
                     if(networkService == null || !networkService.isConnected) {
                         logger.debug("Blocked file picker because net connected");
                         Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
@@ -364,11 +363,11 @@ public class TransmitFragment extends Fragment {
                 menuLayout.findViewById(R.id.uploadImageButtton).setOnClickListener(buttonView -> {
                     popupWindow.dismiss();
                     //检查文件上传
-                    if(TransmitUploadFile.hasUploadingFile) {
-                        logger.debug("Request upload image but has uploading file.Return");
-                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_upload_failed_has_uploading_file, 2500).show();
-                        return;
-                    }
+//                    if(TransmitUploadFile.hasUploadingFile) {
+//                        logger.debug("Request upload image but has uploading file.Return");
+//                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_upload_failed_has_uploading_file, 2500).show();
+//                        return;
+//                    }
                     if(networkService == null || !networkService.isConnected) {
                         logger.debug("Blocked image picker because net connected");
                         Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
