@@ -197,7 +197,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
         findPreference("key_export_transmit_files").setOnPreferenceClickListener(preference -> {
             //检查私有目录互传文件夹下是否有文件
             logger.debug("User request export in private directory transmit files");
-            File transmitFilesPath = new File(getActivity().getExternalFilesDir(null).getAbsolutePath() + "/transmit/files/");
+            File transmitFilesPath = new File(getActivity().getExternalFilesDir(null).getAbsolutePath() + "/transmit/");
             if(!transmitFilesPath.exists() || transmitFilesPath.list().length == 0) {
                 logger.debug("No transmit files in private directory.Don't export");
                 Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), "私有目录中不存在互传文件 无需导出", 2500).show();
@@ -221,7 +221,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                     return true;
                 }
             }
-            String path = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector").getAbsolutePath();
+            String path = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/Transmit").getAbsolutePath();
             logger.debug("Show export transmit file confirm dialog.Target path:{}", path);
             new MaterialAlertDialogBuilder(getActivity())
                     .setTitle("导出互传文件")
