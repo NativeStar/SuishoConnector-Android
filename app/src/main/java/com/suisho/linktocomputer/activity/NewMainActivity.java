@@ -376,8 +376,10 @@ public class NewMainActivity extends AppCompatActivity {
                         logger.debug("Adding item to transmit fragment");
                         runOnUiThread(() -> {
                             HomeViewPagerAdapter homeViewPagerAdapter = (HomeViewPagerAdapter) binding.homeViewPager2.getAdapter();
-                            TransmitFragment transmitFragment = homeViewPagerAdapter.getTransmitFragment();
-                            transmitFragment.addItem(type, data, requestSave, false);
+                            if(homeViewPagerAdapter != null){
+                                TransmitFragment transmitFragment = homeViewPagerAdapter.getTransmitFragment();
+                                transmitFragment.addItem(type, data, requestSave, false);
+                            }
                         });
                     }
 
@@ -539,9 +541,7 @@ public class NewMainActivity extends AppCompatActivity {
                         dialog.cancel();
                     }
                 })
-                .setNegativeButton(R.string.text_cancel, (dialog, which) -> {
-                    dialog.cancel();
-                })
+                .setNegativeButton(R.string.text_cancel, (dialog, which) -> dialog.cancel())
                 .setMessage(R.string.text_disconnect_confirm_message)
                 .show();
     }
@@ -709,21 +709,19 @@ public class NewMainActivity extends AppCompatActivity {
     private void showTrustModeDialog() {
         if(isFinishing() || isDestroyed()) return;
         logger.debug("Show trust mode change dialog");
-        runOnUiThread(() -> {
-            new MaterialAlertDialogBuilder(this)
-                    .setTitle(R.string.dialog_trust_computer_title)
-                    .setMessage(R.string.dialog_trust_computer_message)
-                    .setPositiveButton(R.string.text_trust, (dialog, which) -> {
-                        GlobalVariables.computerConfigManager.setTrusted(true);
-                        updateConnectionStateDisplay();
-                    })
-                    .setNegativeButton(R.string.text_cancel, (dialog, which) -> {
-                        //用来保存
-                        GlobalVariables.computerConfigManager.setTrusted(false);
-                        //默认显示不信任 没必要改了
-                    })
-                    .show();
-        });
+        runOnUiThread(() -> new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.dialog_trust_computer_title)
+                .setMessage(R.string.dialog_trust_computer_message)
+                .setPositiveButton(R.string.text_trust, (dialog, which) -> {
+                    GlobalVariables.computerConfigManager.setTrusted(true);
+                    updateConnectionStateDisplay();
+                })
+                .setNegativeButton(R.string.text_cancel, (dialog, which) -> {
+                    //用来保存
+                    GlobalVariables.computerConfigManager.setTrusted(false);
+                    //默认显示不信任 没必要改了
+                })
+                .show());
     }
 
     public void connectByQRCode(String address, int port, String computerId, int certDownloadPort, String pairToken) {
@@ -817,9 +815,7 @@ public class NewMainActivity extends AppCompatActivity {
                     );
                     return;
                 }
-                runOnUiThread(() -> {
-                    Snackbar.make(binding.getRoot(), "已发起连接", 1500).show();
-                });
+                runOnUiThread(() -> Snackbar.make(binding.getRoot(), "已发起连接", 1500).show());
                 logger.debug("Call QRCode connect by manual connect response data");
                 //懒
                 connectByQRCode(url, packet.mainPort, packet.id, packet.certPort, packet.token);

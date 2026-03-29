@@ -8,16 +8,17 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.view.menu.ActionMenuItemView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.constant.States;
 import com.suisho.linktocomputer.instances.adapter.StateListAdapter;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +83,8 @@ public class StateBarManager {
         menuView = activity.findViewById(R.id.activity_state);
     }
 
-    public void addState(States.State state) {
+    public void addState(@Nullable States.State state) {
+        if(state==null) return;
         logger.debug("Add state:{}", state.id);
         if(!showedTip) {
             showTipPopup();
@@ -98,7 +100,8 @@ public class StateBarManager {
         setIcon();
     }
 
-    public void removeState(States.State state) {
+    public void removeState(@Nullable States.State state) {
+        if(state==null) return;
         logger.debug("Remove state by instance:{}", state.id);
         adapter.removeState(state, true);
         setIcon();

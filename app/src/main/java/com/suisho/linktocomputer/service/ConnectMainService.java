@@ -15,6 +15,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Icon;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Environment;
@@ -899,7 +900,6 @@ public class ConnectMainService extends Service implements INetworkService {
                         logger.debug("Disconnect timeout,Force close connection");
                         webSocketClient.cancel();
                     }
-                    ;
                 }
             }, 1000L);
             webSocketClient.close(code, reason);
@@ -969,9 +969,10 @@ public class ConnectMainService extends Service implements INetworkService {
                 .setWhen(System.currentTimeMillis())
                 .setOngoing(true)
                 .setAutoCancel(false)
-                .addAction(R.drawable.baseline_close_24, getText(R.string.service_notification_button_close), notificationButtonPendingIntent)
                 .setContentIntent(notificationBodyPendingIntent)
                 .setChannelId("foregroundService");
+        Notification.Action.Builder builder = new Notification.Action.Builder(Icon.createWithResource(this, R.drawable.baseline_close_24), getText(R.string.service_notification_button_close), notificationButtonPendingIntent);
+        nBuilder.addAction(builder.build());
         logger.debug("Created foreground service notification");
         return nBuilder.build();
     }
