@@ -3,5 +3,7 @@ package com.suisho.linktocomputer.interfaces;
 import com.google.zxing.Result;
 
 public interface IQRCodeDetectSuccess {
-    void onDetected(Result result);
+    void onSuccess(Result result);
+    void onInvalid();
+    void onNotFound();
 }

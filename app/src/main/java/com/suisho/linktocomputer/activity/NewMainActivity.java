@@ -733,7 +733,7 @@ public class NewMainActivity extends AppCompatActivity {
             logger.info("Invalid QRCode url");
             new MaterialAlertDialogBuilder(this)
                     .setTitle("连接失败")
-                    .setMessage("无效二维码")
+                    .setMessage("二维码内容异常")
                     .setCancelable(false)
                     .setNegativeButton(R.string.text_ok, (dialog, which) -> dialog.dismiss()).show();
             return;

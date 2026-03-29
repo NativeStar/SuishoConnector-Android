@@ -47,6 +47,7 @@ import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.activity.NewMainActivity;
 import com.suisho.linktocomputer.constant.States;
 import com.suisho.linktocomputer.databinding.FragmentHomeBinding;
+import com.suisho.linktocomputer.enums.CodeScannerState;
 import com.suisho.linktocomputer.interfaces.IQRCodeDetectSuccess;
 import com.suisho.linktocomputer.jsonClass.HandshakePacket;
 import com.suisho.linktocomputer.service.ConnectMainService;
@@ -151,6 +152,7 @@ public class HomeFragment extends Fragment {
             cameraManager = new CameraManager(activity);
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(getActivity());
             View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_qrcode_scan, getActivity().findViewById(R.id.coordinatorLayout3), false);
+            CodeScannerOverlay overlayView = bottomSheetView.findViewById(R.id.qrcode_scan_overlay);
             SurfaceHolder surfaceHolder = ((SurfaceView) bottomSheetView.findViewById(R.id.qrcode_scan_surface_view)).getHolder();
             surfaceHolder.addCallback(new SurfaceHolder.Callback() {
                 @Override
@@ -171,11 +173,23 @@ public class HomeFragment extends Fragment {
                         method.setAccessible(true);
                         method.invoke(cameraManager, 90);
                         cameraManager.startPreview();
-                        detectQrcode(result -> {
-                            cameraManager.stopPreview();
-                            cameraManager.close();
-                            bottomSheetDialog.cancel();
-                            readQRCodeContent(result.getText());
+                        detectQrcode(new IQRCodeDetectSuccess() {
+                            @Override
+                            public void onSuccess(Result result) {
+                                cameraManager.stopPreview();
+                                cameraManager.close();
+                                bottomSheetDialog.cancel();
+                            }
+
+                            @Override
+                            public void onInvalid() {
+                                overlayView.setState(CodeScannerState.INVALID);
+                            }
+
+                            @Override
+                            public void onNotFound() {
+                                overlayView.setState(CodeScannerState.DEFAULT);
+                            }
                         });
                         cameraManager.setPreviewDisplay(holder);
                     } catch (IOException | NoSuchMethodException | IllegalAccessException |
@@ -209,7 +223,6 @@ public class HomeFragment extends Fragment {
                 cameraManager.stopPreview();
                 cameraManager.close();
             });
-            CodeScannerOverlay overlayView=bottomSheetView.findViewById(R.id.qrcode_scan_overlay);
             overlayView.setParentSheetDialog(bottomSheetDialog);
             bottomSheetDialog.show();
         });
@@ -425,17 +438,21 @@ public class HomeFragment extends Fragment {
                         int dataWidth = sourceData.getDataWidth();
                         int dataHeight = sourceData.getDataHeight();
 //                        缩减探测大小
-                        sourceData.setCropRect(new Rect((int) (dataWidth-dataWidth*0.78), (int) (dataHeight-dataHeight*0.78), (int) (dataWidth-dataWidth*0.28), (int) (dataHeight-dataHeight*0.28)));
+                        sourceData.setCropRect(new Rect((int) (dataWidth - dataWidth * 0.78), (int) (dataHeight - dataHeight * 0.78), (int) (dataWidth - dataWidth * 0.28), (int) (dataHeight - dataHeight * 0.28)));
                         BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(sourceData.createSource()));
                         try {
                             Result result = reader.decode(bitmap);
-                            if(result != null) {
+                            if(readQRCodeContent(result.getText())) {
                                 detectThread.interrupt();
                                 cameraManager.stopPreview();
                                 cameraManager.close();
-                                runnable.onDetected(result);
+                                runnable.onSuccess(result);
+                            } else {
+                                runnable.onInvalid();
                             }
-                        } catch (NotFoundException | ChecksumException | FormatException ignored) {
+                        } catch (ChecksumException | FormatException ignored) {
+                        } catch (NotFoundException ignored) {
+                            runnable.onNotFound();
                         }
                     }
 
@@ -450,7 +467,7 @@ public class HomeFragment extends Fragment {
         detectThread.start();
     }
 
-    private void readQRCodeContent(String content) {
+    private boolean readQRCodeContent(String content) {
         try {
             //判断是否误扫pc端上的下载二维码
             //如果是 直接启动浏览器
@@ -478,18 +495,16 @@ public class HomeFragment extends Fragment {
                         })
                         .setCancelable(false)
                         .show();
-                return;
+                //要弹框了 按扫码成功处理
+                return true;
             }
             HandshakePacket jsonObject = GlobalVariables.jsonBuilder.fromJson(content, HandshakePacket.class);
-            if(jsonObject.id.length() != 32) throw new Exception("Invalid QRCode");
+            if(jsonObject.id.length() != 32) return false;
             ((NewMainActivity) getActivity()).connectByQRCode(jsonObject.address, jsonObject.port, jsonObject.id, jsonObject.certDownloadPort, jsonObject.token);
+            return true;
         } catch (Exception e) {
-            logger.warn("Invalid QRCode", e);
-            new MaterialAlertDialogBuilder(getActivity())
-                    .setTitle(getActivity().getResources().getString(R.string.text_connect_failed))
-                    .setMessage(getActivity().getResources().getString(R.string.text_invalid_qrcode))
-                    .setCancelable(false)
-                    .setNegativeButton(R.string.text_ok, (dialog, which) -> dialog.dismiss()).show();
+            logger.error("Error on read QRCode content", e);
+            return false;
         }
     }
 
