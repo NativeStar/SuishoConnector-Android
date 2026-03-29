@@ -47,9 +47,10 @@ import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.activity.NewMainActivity;
 import com.suisho.linktocomputer.constant.States;
 import com.suisho.linktocomputer.databinding.FragmentHomeBinding;
-import com.suisho.linktocomputer.interfaces.IQRCodeDetected;
+import com.suisho.linktocomputer.interfaces.IQRCodeDetectSuccess;
 import com.suisho.linktocomputer.jsonClass.HandshakePacket;
 import com.suisho.linktocomputer.service.ConnectMainService;
+import com.suisho.linktocomputer.view.CodeScannerOverlay;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -208,6 +209,8 @@ public class HomeFragment extends Fragment {
                 cameraManager.stopPreview();
                 cameraManager.close();
             });
+            CodeScannerOverlay overlayView=bottomSheetView.findViewById(R.id.qrcode_scan_overlay);
+            overlayView.setParentSheetDialog(bottomSheetDialog);
             bottomSheetDialog.show();
         });
         //调试
@@ -411,7 +414,7 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void detectQrcode(IQRCodeDetected runnable) {
+    private void detectQrcode(IQRCodeDetectSuccess runnable) {
         detectThread = new Thread(() -> {
             QRCodeReader reader = new QRCodeReader();
             while (cameraManager.isOpen() && !detectThread.isInterrupted()) {
@@ -419,7 +422,10 @@ public class HomeFragment extends Fragment {
                     @Override
                     public void onPreview(SourceData sourceData) {
                         reader.reset();
-                        sourceData.setCropRect(new Rect(0, 0, sourceData.getDataWidth(), sourceData.getDataHeight()));
+                        int dataWidth = sourceData.getDataWidth();
+                        int dataHeight = sourceData.getDataHeight();
+//                        缩减探测大小
+                        sourceData.setCropRect(new Rect((int) (dataWidth-dataWidth*0.78), (int) (dataHeight-dataHeight*0.78), (int) (dataWidth-dataWidth*0.28), (int) (dataHeight-dataHeight*0.28)));
                         BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(sourceData.createSource()));
                         try {
                             Result result = reader.decode(bitmap);

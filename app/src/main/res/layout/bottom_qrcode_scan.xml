@@ -11,14 +11,25 @@
         app:behavior_hideable="true"
         app:behavior_peekHeight="250dp"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
         <com.google.android.material.bottomsheet.BottomSheetDragHandleView
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
-        <SurfaceView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:id="@+id/qrcode_scan_surface_view">
 
-        </SurfaceView>
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <SurfaceView
+                android:id="@+id/qrcode_scan_surface_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <com.suisho.linktocomputer.view.CodeScannerOverlay
+                android:id="@+id/qrcode_scan_overlay"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </FrameLayout>
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
