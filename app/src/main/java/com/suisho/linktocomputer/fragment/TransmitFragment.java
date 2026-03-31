@@ -12,6 +12,7 @@ import android.os.ParcelFileDescriptor;
 import android.provider.OpenableColumns;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -320,6 +321,7 @@ public class TransmitFragment extends Fragment {
                 }
                 logger.info("Send transmit text message");
                 logger.debug("Transmit text message data: {}", inputMessage);
+                binding.sendMessageButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
                 if(networkService == null || !networkService.isConnected) {
                     /*掉线了*/
                     Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_text_save_local_failed_not_exists, 1200).show();
@@ -329,6 +331,7 @@ public class TransmitFragment extends Fragment {
                     binding.sendMessageInput.setText("");
                     return;
                 }
+                binding.sendMessageButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
                 JsonObject jsonObject = new JsonObject();
                 jsonObject.addProperty("packetType", "action_transmit");
                 jsonObject.addProperty("messageType", "planeText");
@@ -347,11 +350,6 @@ public class TransmitFragment extends Fragment {
                 //上传文件按钮点击
                 menuLayout.findViewById(R.id.uploadFileButton).setOnClickListener((uploadFileButtonView) -> {
                     popupWindow.dismiss();
-//                    if(TransmitUploadFile.hasUploadingFile) {
-//                        logger.debug("Request upload file but has uploading file.Return");
-//                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_upload_failed_has_uploading_file, 2500).show();
-//                        return;
-//                    }
                     if(networkService == null || !networkService.isConnected) {
                         logger.debug("Blocked file picker because net connected");
                         Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
@@ -362,12 +360,6 @@ public class TransmitFragment extends Fragment {
                 });
                 menuLayout.findViewById(R.id.uploadImageButtton).setOnClickListener(buttonView -> {
                     popupWindow.dismiss();
-                    //检查文件上传
-//                    if(TransmitUploadFile.hasUploadingFile) {
-//                        logger.debug("Request upload image but has uploading file.Return");
-//                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_upload_failed_has_uploading_file, 2500).show();
-//                        return;
-//                    }
                     if(networkService == null || !networkService.isConnected) {
                         logger.debug("Blocked image picker because net connected");
                         Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
@@ -378,6 +370,7 @@ public class TransmitFragment extends Fragment {
 
                 });
                 popupWindow.showAsDropDown(binding.sendMoreButton, -(binding.sendMoreButton.getWidth() + 50), -(binding.sendMoreButton.getHeight() * 2));
+                binding.sendMoreButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
             });
             //设置列表
             //如果再出现性能问题就改成GridLayoutManager

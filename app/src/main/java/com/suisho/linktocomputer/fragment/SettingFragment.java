@@ -17,16 +17,20 @@ import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Environment;
 import android.provider.Settings;
+import android.view.HapticFeedbackConstants;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.biometric.BiometricManager;
+import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreferenceCompat;
+import androidx.preference.TwoStatePreference;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -391,6 +395,17 @@ public class SettingFragment extends PreferenceFragmentCompat {
 
     }
 
+    @Override
+    public boolean onPreferenceTreeClick(@NonNull Preference preference) {
+        if(preference instanceof TwoStatePreference && preference.isEnabled()) {
+            View listView = getListView();
+            if(listView != null) {
+                listView.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
+            }
+        }
+        return super.onPreferenceTreeClick(preference);
+    }
+
     private boolean moveTransmitFiles(File transmitFilesPath) {
         logger.info("Start move transmit files");
         File[] transmitFiles = transmitFilesPath.listFiles();
@@ -492,8 +507,9 @@ public class SettingFragment extends PreferenceFragmentCompat {
             }
         }).start();
     }
-    private void initReportLightDozeModeSwitch(){
-        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU){
+
+    private void initReportLightDozeModeSwitch() {
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             SwitchPreferenceCompat preference = findPreference("report_light_doze");
             if(preference == null) {
                 return;
@@ -504,6 +520,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
             preference.setDefaultValue(false);
         }
     }
+
     @Override
     public void onCreatePreferences(@Nullable Bundle savedInstanceState, String rootKey) {
         addPreferencesFromResource(R.xml.setting_fragment_list);

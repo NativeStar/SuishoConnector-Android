@@ -2,6 +2,7 @@ package com.suisho.linktocomputer.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 
 import androidx.annotation.NonNull;
@@ -29,6 +30,7 @@ public class ConfirmSeekBar extends androidx.appcompat.widget.AppCompatSeekBar {
             }
             case MotionEvent.ACTION_MOVE: {
                 if(!allowTracking) return true;
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
                 return super.onTouchEvent(event);
             }
             case MotionEvent.ACTION_UP:

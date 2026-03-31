@@ -22,6 +22,7 @@ import android.os.Looper;
 import android.os.PowerManager;
 import android.os.Process;
 import android.provider.Settings;
+import android.view.HapticFeedbackConstants;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -313,6 +314,7 @@ public class NewMainActivity extends AppCompatActivity {
                 super.onAuthenticationSucceeded(result);
                 dialog.dismiss();
                 Snackbar.make(getBinding().getRoot(), R.string.text_verify_success, 1500).show();
+                binding.toolbar.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
                 if(!autoConnectorWorked) {
                     logger.debug("User verify success and enabled auto connect");
                     initAutoConnect();
@@ -455,6 +457,13 @@ public class NewMainActivity extends AppCompatActivity {
                             logger.info("Show pc protocol version too low state");
                             stateBarManager.addState(States.getStateList().get("warn_pc_protocol_version_low"));
                         }
+                        binding.toolbar.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                        new Timer().schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                binding.toolbar.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                            }
+                        },80);
                     }
 
                     @Override
