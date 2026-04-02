@@ -378,7 +378,10 @@ public class HomeFragment extends Fragment {
             bottomSheetDialog.show();
         });
         //关闭连接
-        binding.homeDisconnectActionButton.setOnClickListener(v -> ((NewMainActivity) getActivity()).showDisconnectOrCloseApplicationDialog());
+        binding.homeDisconnectActionButton.setOnClickListener(v -> {
+            v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+            ((NewMainActivity) getActivity()).showDisconnectOrCloseApplicationDialog();
+        });
         //信任模式
         binding.cardTrustModeClickable.setOnClickListener(v -> {
             NewMainActivity activity = (NewMainActivity) getActivity();

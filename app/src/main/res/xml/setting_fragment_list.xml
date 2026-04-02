@@ -95,6 +95,6 @@
             android:icon="@drawable/baseline_highlight_24"
             android:key="report_light_doze"
             android:summary="该状态可能并不影响数据传输及时性 根据情况选择是否执行提醒"
-            android:title="上报LightDoze状态" />
+            android:title="向计算机上报LightDoze状态" />
     </PreferenceCategory>
 </androidx.preference.PreferenceScreen>
