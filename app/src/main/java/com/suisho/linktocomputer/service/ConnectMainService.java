@@ -51,6 +51,7 @@ import com.suisho.linktocomputer.network.TransmitDownloadFile;
 import com.suisho.linktocomputer.network.TransmitUploadFile;
 import com.suisho.linktocomputer.network.udp.FileSyncDownloader;
 import com.suisho.linktocomputer.receiver.BatteryStateReceiver;
+import com.suisho.linktocomputer.receiver.ShutdownReceiver;
 import com.suisho.linktocomputer.responseBuilders.AllPackageResponse;
 import com.suisho.linktocomputer.responseBuilders.CurrentNotificationsListPacket;
 import com.suisho.linktocomputer.responseBuilders.DetailBuilder;
@@ -113,7 +114,9 @@ public class ConnectMainService extends Service implements INetworkService {
     //通知监听服务运行状态
     private boolean notificationListenerServiceWorking = false;
     //电池状广播接收器
-    BatteryStateReceiver batteryStateReceiver = null;
+    private BatteryStateReceiver batteryStateReceiver = null;
+    //设备关机接收器
+    private ShutdownReceiver shutdownReceiver = null;
     private BroadcastReceiver closeConnectionBroadcastReceiver = null;
     private ServiceConnection bindAudioForwardServiceConnection = null;
     private ServiceConnection bingNotificationListenerServiceConnection = null;
@@ -488,10 +491,16 @@ public class ConnectMainService extends Service implements INetworkService {
                                             //注册电池状态广播
                                             IntentFilter batteryBroadcastFilter = BatteryStateReceiver.createIntentFilter();
                                             if(batteryStateReceiver == null) {
-                                                logger.debug("Register battery state receiver");
+                                                logger.debug("Create battery state receiver");
                                                 batteryStateReceiver = new BatteryStateReceiver(ConnectMainService.this);
                                             }
+                                            if(shutdownReceiver == null){
+                                                logger.debug("Create shutdown receiver");
+                                                shutdownReceiver = new ShutdownReceiver(ConnectMainService.this);
+                                            }
+                                            logger.debug("Register battery state receiver");
                                             ContextCompat.registerReceiver(ConnectMainService.this, batteryStateReceiver, batteryBroadcastFilter, ContextCompat.RECEIVER_EXPORTED);
+                                            ContextCompat.registerReceiver(ConnectMainService.this, shutdownReceiver, ShutdownReceiver.createIntentFilter(), ContextCompat.RECEIVER_EXPORTED);
                                             setupNotificationListenerService();
                                             break;
                                         case "main_getDeviceDetailInfo":
@@ -803,6 +812,11 @@ public class ConnectMainService extends Service implements INetworkService {
             try {
                 //偶发异常
                 unregisterReceiver(batteryStateReceiver);
+            } catch (IllegalArgumentException ignore) {
+            }
+        if(shutdownReceiver != null)
+            try {
+                unregisterReceiver(shutdownReceiver);
             } catch (IllegalArgumentException ignore) {
             }
         if(webFileServer.wasStarted()) webFileServer.stop();

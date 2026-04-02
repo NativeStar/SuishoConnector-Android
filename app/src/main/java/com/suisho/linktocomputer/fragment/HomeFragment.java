@@ -245,7 +245,8 @@ public class HomeFragment extends Fragment {
                             "Finish activity",
                             "Throw exception",
                             "Edit state",
-                            "Test haptic"
+                            "Test haptic",
+                            "Test shutdown receiver"
                     }, (dialog, which) -> {
                         dialog.dismiss();
                         if(which == 0) {
@@ -294,6 +295,10 @@ public class HomeFragment extends Fragment {
                                     binding.cardConnectionStateIcon.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
                                 }
                             }, 80);
+                        }else if(which == 5){
+                            Intent intent = new Intent("debug_shutdown");
+                            intent.setPackage(getContext().getPackageName());
+                            getContext().sendBroadcast(intent);
                         }
                     })
                     .setTitle("Debug Menu")

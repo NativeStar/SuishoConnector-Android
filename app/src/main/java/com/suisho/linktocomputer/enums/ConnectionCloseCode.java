@@ -9,4 +9,6 @@ public class ConnectionCloseCode {
     public final static int CloseFromClientError=1002;
     //手机端崩溃
     public final static int CloseFromClientCrash=1007;
+    //手机关机
+    public final static int PhoneWillShutdown=1012;
 }

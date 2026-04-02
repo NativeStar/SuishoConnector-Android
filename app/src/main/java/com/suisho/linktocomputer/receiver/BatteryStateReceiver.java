@@ -9,13 +9,14 @@ import android.os.Build;
 import android.os.PowerManager;
 
 import com.suisho.linktocomputer.GlobalVariables;
+import com.suisho.linktocomputer.interfaces.IBroadcastReceiver;
 import com.suisho.linktocomputer.responseBuilders.DeviceStateUpdatePacket;
 import com.suisho.linktocomputer.service.ConnectMainService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BatteryStateReceiver extends BroadcastReceiver {
+public class BatteryStateReceiver extends BroadcastReceiver implements IBroadcastReceiver {
     private final ConnectMainService networkService;
     private final Logger logger = LoggerFactory.getLogger(BatteryStateReceiver.class);
     private final PowerManager powerManager;
