@@ -3,6 +3,7 @@ package com.suisho.linktocomputer.receiver;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.PowerManager;
@@ -64,4 +65,13 @@ public class BatteryStateReceiver extends BroadcastReceiver {
         return powerManager.isDeviceIdleMode();
     }
 
+    public static IntentFilter createIntentFilter() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_BATTERY_CHANGED);
+        filter.addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            filter.addAction(PowerManager.ACTION_DEVICE_LIGHT_IDLE_MODE_CHANGED);
+        }
+        return filter;
+    }
 }

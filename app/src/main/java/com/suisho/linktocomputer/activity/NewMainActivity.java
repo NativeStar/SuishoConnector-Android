@@ -1,6 +1,5 @@
 package com.suisho.linktocomputer.activity;
 
-import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -108,7 +107,6 @@ public class NewMainActivity extends AppCompatActivity {
     public static boolean hasDebuggableArg;
     private final Logger logger = LoggerFactory.getLogger(NewMainActivity.class);
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

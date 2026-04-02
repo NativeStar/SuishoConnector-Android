@@ -1,6 +1,5 @@
 package com.suisho.linktocomputer.service;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Notification;
@@ -20,12 +19,12 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
-import android.os.PowerManager;
 import android.os.RemoteException;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.google.gson.JsonArray;
@@ -168,7 +167,6 @@ public class ConnectMainService extends Service implements INetworkService {
         super.onDestroy();
     }
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     public void onCreate() {
         super.onCreate();
@@ -178,7 +176,7 @@ public class ConnectMainService extends Service implements INetworkService {
                 ConnectMainService.this.disconnect();
             }
         };
-        registerReceiver(closeConnectionBroadcastReceiver, new IntentFilter("close_connection"));
+        ContextCompat.registerReceiver(this, closeConnectionBroadcastReceiver, new IntentFilter("close_connection"), ContextCompat.RECEIVER_NOT_EXPORTED);
         createNotificationChannel();
     }
 
@@ -375,6 +373,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                 logger.info("Connection close with code:{}", code);
                                 onDisconnectCleanup();
                                 logger.debug("Checking activity on top");
+                                final String reasonString=reason.isEmpty()?"计算机关闭连接":reason;
                                 ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
                                 am.getRunningAppProcesses().forEach(runningAppProcessInfo -> {
                                     if(runningAppProcessInfo.processName.equals("com.suisho.linktocomputer")) {
@@ -382,18 +381,17 @@ public class ConnectMainService extends Service implements INetworkService {
                                         if(runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND && runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING) {
                                             //软件在后台 发送掉线通知
                                             //前台一是已经有对话框 二是可能连接是用户手动点击关的
-                                            Intent notificationBodyIntent = new Intent(ConnectMainService.this, NewMainActivity.class);
-                                            notificationBodyIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                                            PendingIntent notificationBodyPendingIntent = PendingIntent.getActivity(ConnectMainService.this, 126, notificationBodyIntent, PendingIntent.FLAG_IMMUTABLE);
-                                            Notification notification = new Notification.Builder(ConnectMainService.this, "onDisconnectNotification")
-                                                    .setSmallIcon(R.drawable.baseline_link_off_24)
-                                                    .setContentTitle("连接断开")
-                                                    .setContentText("与计算机连接中断")
-                                                    .setContentIntent(notificationBodyPendingIntent)
-                                                    .setAutoCancel(true)
-                                                    .build();
-                                            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                                            notificationManager.notify(128, notification);
+                                            //只在非自身原因关闭连接时才发送
+                                            if(code != ConnectionCloseCode.CloseFromClient){
+                                                Notification notification = new Notification.Builder(ConnectMainService.this, "onDisconnectNotification")
+                                                        .setSmallIcon(R.drawable.baseline_link_off_24)
+                                                        .setContentTitle("连接断开")
+                                                        .setContentText(reasonString)
+                                                        .setAutoCancel(true)
+                                                        .build();
+                                                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                                                notificationManager.notify(128, notification);
+                                            }
                                             //直接killProcess退出会导致下次启动带上莫名其妙的savedInstanceState
                                             if(GlobalVariables.preferences.getBoolean("function_auto_exit_on_disconnect", false)) {
                                                 logger.info("User enabled auto exit and activity not on stack top.Suicide");
@@ -405,7 +403,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 NewMainActivity activity = activityMethods == null ? null : activityMethods.getActivity();
                                                 if(activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
                                                     logger.info("Activity on stack top,show disconnect alert");
-                                                    activityMethods.showAlert("通讯关闭", reason.isEmpty() ? "计算机关闭连接" : reason, "确定");
+                                                    activityMethods.showAlert("通讯关闭", reasonString, "确定");
                                                     activityMethods.closeConnectingDialog();
                                                 }
                                             }
@@ -488,17 +486,12 @@ public class ConnectMainService extends Service implements INetworkService {
                                         case "main_server_initialled":
                                             //pc端窗口初始化完成
                                             //注册电池状态广播
-                                            IntentFilter batteryBroadcastFilter = new IntentFilter();
-                                            batteryBroadcastFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
-                                            batteryBroadcastFilter.addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED);
-                                            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                                batteryBroadcastFilter.addAction(PowerManager.ACTION_DEVICE_LIGHT_IDLE_MODE_CHANGED);
-                                            }
+                                            IntentFilter batteryBroadcastFilter = BatteryStateReceiver.createIntentFilter();
                                             if(batteryStateReceiver == null) {
                                                 logger.debug("Register battery state receiver");
                                                 batteryStateReceiver = new BatteryStateReceiver(ConnectMainService.this);
                                             }
-                                            registerReceiver(batteryStateReceiver, batteryBroadcastFilter);
+                                            ContextCompat.registerReceiver(ConnectMainService.this, batteryStateReceiver, batteryBroadcastFilter, ContextCompat.RECEIVER_EXPORTED);
                                             setupNotificationListenerService();
                                             break;
                                         case "main_getDeviceDetailInfo":
@@ -955,7 +948,6 @@ public class ConnectMainService extends Service implements INetworkService {
         bindService(listenerServiceIntent, bingNotificationListenerServiceConnection, BIND_AUTO_CREATE);
     }
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private Notification buildForegroundNotification(Activity activity) {
         Notification.Builder nBuilder = new Notification.Builder(this.getApplicationContext(), "MainServiceNotification");
         Intent notificationBodyIntent = new Intent(activity, activity.getClass());
