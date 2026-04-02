@@ -28,8 +28,8 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.window.OnBackInvokedDispatcher;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -133,13 +133,12 @@ public class NewMainActivity extends AppCompatActivity {
             bindNetworkService();
             updateConnectionStateDisplay();
         }
-        //返回键事件 高版本安卓用
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            logger.debug("Registering onBackInvokedCallback");
-            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, () -> {
+        getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
                 if(networkService == null || !networkService.isConnected) {
                     logger.debug("onBackInvokedCallback called.Show exit confirm dialog");
-                    new MaterialAlertDialogBuilder(this)
+                    new MaterialAlertDialogBuilder(NewMainActivity.this)
                             .setMessage("当前未连接任何设备\n你是希望退出程序还是希望其继续后台运行?")
                             .setPositiveButton("后台运行", (dialog, which) -> {
                                 logger.debug("onBackInvokedCallback called.Move task to back");
@@ -156,44 +155,17 @@ public class NewMainActivity extends AppCompatActivity {
                     logger.debug("onBackInvokedCallback called.Move task to back by has connection");
                     moveTaskToBack(true);
                 }
-            });
-        }
+            }
+
+        });
         //debug参数
         hasDebuggableArg = getIntent().getBooleanExtra("enableDebugMenu", false);
         if(hasDebuggableArg) logger.info("Launch with debug menu");
         //检查更新
-        if(GlobalVariables.preferences.getBoolean("enable_auto_check_update", true)){
+        if(GlobalVariables.preferences.getBoolean("enable_auto_check_update", true)) {
             logger.debug("Add idle check update handle");
-            CheckUpdateHandle handle=new CheckUpdateHandle(this);
+            CheckUpdateHandle handle = new CheckUpdateHandle(this);
             Looper.myQueue().addIdleHandler(handle);
-        }
-    }
-
-
-    @Override
-    public void onBackPressed() {
-        //低版本安卓可能有用
-        //如果未进行任何连接 弹出提示
-        if(networkService == null || !networkService.isConnected) {
-            logger.debug("onBackPressed called.Show exit confirm dialog");
-            new MaterialAlertDialogBuilder(this)
-                    .setMessage("当前未连接任何设备\n你是希望退出程序还是希望其继续后台运行?")
-                    .setPositiveButton("后台运行", (dialog, which) -> {
-                        logger.debug("onBackPressed called.Move task to back");
-                        dialog.dismiss();
-                        super.onBackPressed();
-//                        moveTaskToBack(true);
-                    })
-                    .setNegativeButton("退出", (dialog, which) -> {
-                        logger.debug("onBackPressed called.Exit");
-                        finishAffinity();
-                        System.exit(0);
-                    })
-                    .show();
-        } else {
-            logger.debug("onBackPressed called.Move task to back by has connection");
-            super.onBackPressed();
-//            moveTaskToBack(true);
         }
     }
 
@@ -376,7 +348,7 @@ public class NewMainActivity extends AppCompatActivity {
                         logger.debug("Adding item to transmit fragment");
                         runOnUiThread(() -> {
                             HomeViewPagerAdapter homeViewPagerAdapter = (HomeViewPagerAdapter) binding.homeViewPager2.getAdapter();
-                            if(homeViewPagerAdapter != null){
+                            if(homeViewPagerAdapter != null) {
                                 TransmitFragment transmitFragment = homeViewPagerAdapter.getTransmitFragment();
                                 transmitFragment.addItem(type, data, requestSave, false);
                             }
@@ -386,7 +358,7 @@ public class NewMainActivity extends AppCompatActivity {
                     @Override
                     public void showAlert(String title, String content, String buttonText) {
                         runOnUiThread(() -> {
-                            if(isFinishing()||isDestroyed()) return;
+                            if(isFinishing() || isDestroyed()) return;
                             logger.debug("Showing alert from network service(String)");
                             new MaterialAlertDialogBuilder(NewMainActivity.this)
                                     .setTitle(title)
@@ -399,7 +371,7 @@ public class NewMainActivity extends AppCompatActivity {
                     @Override
                     public void showAlert(int title, int content, int buttonText) {
                         runOnUiThread(() -> {
-                            if(isFinishing()||isDestroyed()) return;
+                            if(isFinishing() || isDestroyed()) return;
                             logger.debug("Showing alert from network service(ResId)");
                             new MaterialAlertDialogBuilder(NewMainActivity.this)
                                     .setTitle(getText(title))
@@ -411,7 +383,7 @@ public class NewMainActivity extends AppCompatActivity {
 
                     public void showConnectingDialog() {
                         runOnUiThread(() -> {
-                            if(isFinishing()||isDestroyed()) return;
+                            if(isFinishing() || isDestroyed()) return;
                             connectingDialogInstance = new MaterialAlertDialogBuilder(getActivity())
                                     .setView(R.layout.connecting_dialog)
                                     .setCancelable(false)
@@ -434,9 +406,9 @@ public class NewMainActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onConnected(String sessionId,int protocolVersion) {
+                    public void onConnected(String sessionId, int protocolVersion) {
                         logger.info("Service connected.Init views");
-                        GlobalVariables.computerConfigManager = new ComputerConfigManager(GlobalVariables.computerName, GlobalVariables.computerId, NewMainActivity.this, networkService, sessionId,protocolVersion);
+                        GlobalVariables.computerConfigManager = new ComputerConfigManager(GlobalVariables.computerName, GlobalVariables.computerId, NewMainActivity.this, networkService, sessionId, protocolVersion);
                         GlobalVariables.computerConfigManager.init(null);
                         //设置
                         updateConnectionStateDisplay();
@@ -450,8 +422,8 @@ public class NewMainActivity extends AppCompatActivity {
                         //释放
                         unregisterNetworkCallback();
                         autoConnector = null;
-                        final int selfProtocolVersion=getResources().getInteger(R.integer.protoVersion);
-                        if(selfProtocolVersion >protocolVersion) {
+                        final int selfProtocolVersion = getResources().getInteger(R.integer.protoVersion);
+                        if(selfProtocolVersion > protocolVersion) {
                             logger.info("Show pc protocol version too low state");
                             stateBarManager.addState(States.getStateList().get("warn_pc_protocol_version_low"));
                         }
@@ -461,7 +433,7 @@ public class NewMainActivity extends AppCompatActivity {
                             public void run() {
                                 binding.toolbar.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
                             }
-                        },80);
+                        }, 80);
                     }
 
                     @Override
@@ -637,7 +609,7 @@ public class NewMainActivity extends AppCompatActivity {
             }
             //文本
             ((TextView) findViewById(R.id.card_text_computer_id)).setText(GlobalVariables.computerId);
-            ((TextView) findViewById(R.id.card_text_connection_state)).setText(getString(R.string.text_connected,GlobalVariables.computerConfigManager.getProtocolVersion()));
+            ((TextView) findViewById(R.id.card_text_connection_state)).setText(getString(R.string.text_connected, GlobalVariables.computerConfigManager.getProtocolVersion()));
             ((TextView) findViewById(R.id.card_text_connection_state_subtitle)).setText(GlobalVariables.computerName);
             ((TextView) findViewById(R.id.card_title_trust_mode)).setText(R.string.home_card_trust_mode_connected);
             ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(networkService.getMediaProjectionServiceIntent() == null ? R.string.text_unauthorized : R.string.text_authorized);
