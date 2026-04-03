@@ -66,7 +66,7 @@ import java.util.Objects;
 import io.objectbox.Box;
 
 public class TransmitFragment extends Fragment {
-    private static FragmentTransmitBinding binding;
+    private FragmentTransmitBinding binding;
     //是否已完成初始化
     private boolean isInit = false;
 
@@ -114,6 +114,15 @@ public class TransmitFragment extends Fragment {
     }
 
     @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if(binding != null) {
+            binding.transmitMessageList.setAdapter(null);
+            binding = null;
+        }
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         if(!isInit) initTransmitMessages(null);
@@ -129,6 +138,7 @@ public class TransmitFragment extends Fragment {
     public void scrollMessagesViewToBottom(boolean force) {
         logger.debug("Transmit message list scroll to bottom with force:{}", force);
         activity.runOnUiThread(() -> {
+            if(binding == null) return;
             if(force) {
                 TransmitMessagesListAdapter transmitMessagesListAdapter = (TransmitMessagesListAdapter) binding.transmitMessageList.getAdapter();
                 binding.transmitMessageList.scrollToPosition(transmitMessagesListAdapter.getDataSize() - 1);
@@ -190,9 +200,9 @@ public class TransmitFragment extends Fragment {
                     try {
                         TransmitQueueItem queueItem = new TransmitQueueItem(getContext().getContentResolver().openInputStream(uri), uploadRequestPacket.getJsonObject(), fileSize, encryptionKey, fileName);
                         boolean addQueueResult = TransmitUploadFile.addQueueItem(queueItem);
-                        Snackbar.make(binding.getRoot(), addQueueResult?"已添加至上传队列":"队列已满 添加失败", Snackbar.LENGTH_LONG).show();
+                        if(binding != null) Snackbar.make(binding.getRoot(), addQueueResult?"已添加至上传队列":"队列已满 添加失败", Snackbar.LENGTH_LONG).show();
                     } catch (FileNotFoundException e) {
-                        Snackbar.make(binding.getRoot(), "打开文件流时发生异常", Snackbar.LENGTH_LONG).show();
+                        if(binding != null) Snackbar.make(binding.getRoot(), "打开文件流时发生异常", Snackbar.LENGTH_LONG).show();
                     }
                     return;
                 }
@@ -285,6 +295,7 @@ public class TransmitFragment extends Fragment {
     public void init() {
         notificationManager = getActivity().getSystemService(NotificationManager.class);
         binding.getRoot().post(() -> {
+            if(binding == null) return;
             binding.sendMessageInput.addTextChangedListener(new TextWatcher() {
                 @Override
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -292,6 +303,7 @@ public class TransmitFragment extends Fragment {
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    if(binding == null) return;
                     //更改发送按钮
                     if(!Objects.requireNonNull(binding.sendMessageInput.getText()).toString().isEmpty()) {
                         //有文本
@@ -373,7 +385,6 @@ public class TransmitFragment extends Fragment {
                 binding.sendMoreButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
             });
             //设置列表
-            //如果再出现性能问题就改成GridLayoutManager
             RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(activity);
             binding.transmitMessageList.setLayoutManager(layoutManager);
             //列表各项目间距
@@ -389,6 +400,7 @@ public class TransmitFragment extends Fragment {
                 logger.debug("Init transmit message list adapter");
                 //初始化和activity被杀
                 initTransmitMessages(() -> {
+                    if(binding == null) return;
                     binding.transmitMessageList.scrollToPosition(transmitMessagesListAdapter.getItemCount() - 1);
                     //重新设置adapter
                     binding.transmitMessageList.setAdapter(transmitMessagesListAdapter);

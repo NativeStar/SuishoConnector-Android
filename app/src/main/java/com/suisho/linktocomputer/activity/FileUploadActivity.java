@@ -242,7 +242,7 @@ public class FileUploadActivity extends Activity {
                             if(TransmitFragment.transmitMessagesListAdapter == null) return;
                             TransmitDatabaseEntity message = new TransmitDatabaseEntity();
                             message.messageFrom = TransmitMessage.MESSAGE_FROM_PHONE;
-                            message.type = TransmitMessage.MESSAGE_TYPE_TEXT;
+                            message.type = TransmitMessage.MESSAGE_TYPE_FILE;
                             message.isDeleted = false;
                             message.fileName = name;
                             message.fileSize = size;
