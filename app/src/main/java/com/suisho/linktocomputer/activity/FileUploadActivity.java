@@ -60,6 +60,12 @@ public class FileUploadActivity extends Activity {
             return;
         }
         Intent intent = getIntent();
+        String action = intent.getAction();
+        if(action == null) {
+            Toast.makeText(this, R.string.text_send_file_null_action, Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
         //阻止软件接收来自自身分享的文件
         if(checkFromSelf(intent)) {
             Toast.makeText(this, R.string.text_send_file_from_self, Toast.LENGTH_LONG).show();
@@ -67,26 +73,32 @@ public class FileUploadActivity extends Activity {
             logger.debug("Blocked file upload from self");
             return;
         }
-        if(intent.getAction().equals(Intent.ACTION_SEND)) {
-            if(intent.getStringExtra(Intent.EXTRA_TEXT) != null) {
-                confirmSendText(intent.getStringExtra(Intent.EXTRA_TEXT));
-                logger.debug("Show text send confirm dialog");
-                return;
-            }
-            logger.debug("Show file send confirm dialog with ACTION_SEND");
-            checkFile(intent.getParcelableExtra(Intent.EXTRA_STREAM));
-        } else if(intent.getAction().equals(Intent.ACTION_VIEW)) {
-            logger.debug("Show file send confirm dialog with ACTION_VIEW");
-            checkFile(intent.getData());
-        } else if(intent.getAction().equals(Intent.ACTION_PROCESS_TEXT)) {
-            String text = intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT);
-            sendText(text);
-            Toast.makeText(this, R.string.text_sent, Toast.LENGTH_LONG).show();
-            logger.debug("Text sent by selection shortcut:{}", text);
-        } else {
-            Toast.makeText(this, "不支持的操作", Toast.LENGTH_LONG).show();
-            logger.warn("Unsupported action:{}", intent.getAction());
-            finish();
+        switch (action) {
+            case Intent.ACTION_SEND:
+                String shareText = intent.getStringExtra(Intent.EXTRA_TEXT);
+                if(shareText != null) {
+                    confirmSendText(shareText);
+                    logger.debug("Show text send confirm dialog");
+                    return;
+                }
+                logger.debug("Show file send confirm dialog with ACTION_SEND");
+                checkFile(intent.getParcelableExtra(Intent.EXTRA_STREAM));
+                break;
+            case Intent.ACTION_VIEW:
+                logger.debug("Show file send confirm dialog with ACTION_VIEW");
+                checkFile(intent.getData());
+                break;
+            case Intent.ACTION_PROCESS_TEXT:
+                String text = intent.getStringExtra(Intent.EXTRA_PROCESS_TEXT);
+                sendText(text);
+                Toast.makeText(this, R.string.text_sent, Toast.LENGTH_LONG).show();
+                logger.debug("Text sent by selection shortcut:{}", text);
+                break;
+            default:
+                Toast.makeText(this, "不支持的操作", Toast.LENGTH_LONG).show();
+                logger.warn("Unsupported action:{}", intent.getAction());
+                finish();
+                break;
         }
     }
 

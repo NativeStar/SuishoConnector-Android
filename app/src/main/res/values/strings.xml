@@ -83,6 +83,7 @@
     <string name="text_send_file">发送文件</string>
     <string name="text_send_text">发送文本</string>
     <string name="text_sent">已发送</string>
+    <string name="text_send_file_null_action">无法解析分享类型</string>
     <string name="text_send_text_dialog_message">确认将分享文本发送至计算机?\n内容预览(最多显示100字符):\n
     </string>
     <string name="text_untrusted">不信任</string>
