@@ -2,10 +2,10 @@ package com.suisho.linktocomputer.responseBuilders;
 
 import android.content.Context;
 import android.os.Build;
-import android.provider.Settings;
 
-import com.suisho.linktocomputer.R;
 import com.google.gson.JsonObject;
+import com.suisho.linktocomputer.GlobalVariables;
+import com.suisho.linktocomputer.R;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +35,7 @@ public class HandshakeResponse {
         jsonObject.addProperty("oem", Build.BRAND);
         //androidId
         //可能为null
-        jsonObject.addProperty("androidId", Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID));
+        jsonObject.addProperty("androidId", GlobalVariables.androidId);
         //安卓版本
         jsonObject.addProperty("androidVersion", Build.VERSION.SDK_INT);
         logger.debug("Created handshake response packet");
