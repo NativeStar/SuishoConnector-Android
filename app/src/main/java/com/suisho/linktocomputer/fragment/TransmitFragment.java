@@ -71,12 +71,11 @@ public class TransmitFragment extends Fragment {
     private boolean isInit = false;
 
     //跨进程通信
-    private static ConnectMainService networkService;
+    private ConnectMainService networkService;
     private Activity activity;
 
     //互传内容列表适配器
-    //static不能删 否则activity重建之后pc端消息无法实时显示
-    public static TransmitMessagesListAdapter transmitMessagesListAdapter;
+    public TransmitMessagesListAdapter transmitMessagesListAdapter;
     private NotificationManager notificationManager;
     private ActivityResultLauncher<String[]> filePickerLauncher;
     private ActivityResultLauncher<PickVisualMediaRequest> imagePickerLauncher;
@@ -131,6 +130,7 @@ public class TransmitFragment extends Fragment {
 
     public void addItem(TransmitRecyclerAddItemType type, TransmitMessageAbstract pushData, boolean requestSave, boolean forceScrollToBottom) {
         logger.debug("Adding item to transmit fragment");
+        if(transmitMessagesListAdapter==null) return;
         transmitMessagesListAdapter.addItem(type, pushData, requestSave, forceScrollToBottom);
         scrollMessagesViewToBottom(false);
     }

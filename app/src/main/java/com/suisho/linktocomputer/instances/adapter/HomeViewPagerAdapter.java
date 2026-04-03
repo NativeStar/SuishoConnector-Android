@@ -10,7 +10,7 @@ import com.suisho.linktocomputer.fragment.SettingFragment;
 import com.suisho.linktocomputer.fragment.TransmitFragment;
 
 public class HomeViewPagerAdapter extends FragmentStateAdapter {
-    private static final Fragment[] mFragments = new Fragment[]{new HomeFragment(),new TransmitFragment(), new SettingFragment()};
+    private final Fragment[] mFragments = new Fragment[]{new HomeFragment(),new TransmitFragment(), new SettingFragment()};
 
     public HomeViewPagerAdapter(@NonNull FragmentActivity fragmentActivity) {
         super(fragmentActivity);

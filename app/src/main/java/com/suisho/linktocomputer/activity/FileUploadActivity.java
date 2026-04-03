@@ -15,14 +15,15 @@ import androidx.annotation.Nullable;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.gson.JsonObject;
+import com.suisho.linktocomputer.Crystal;
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.abstracts.FileUploadStateHandle;
 import com.suisho.linktocomputer.abstracts.RequestHandle;
+import com.suisho.linktocomputer.abstracts.TransmitMessageAbstract;
 import com.suisho.linktocomputer.constant.NotificationID;
 import com.suisho.linktocomputer.database.TransmitDatabaseEntity;
 import com.suisho.linktocomputer.enums.TransmitRecyclerAddItemType;
-import com.suisho.linktocomputer.fragment.TransmitFragment;
 import com.suisho.linktocomputer.instances.EncryptionKey;
 import com.suisho.linktocomputer.instances.TransmitQueueItem;
 import com.suisho.linktocomputer.instances.transmit.TransmitMessageTypeFile;
@@ -39,6 +40,8 @@ import org.slf4j.LoggerFactory;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+
+import io.objectbox.Box;
 
 public class FileUploadActivity extends Activity {
     private NotificationManager notificationManager;
@@ -239,7 +242,6 @@ public class FileUploadActivity extends Activity {
                             super.onSuccess();
                             logger.info("Upload file success");
                             notificationManager.cancel(NotificationID.NOTIFICATION_TRANSMIT_UPLOAD_FILE);
-                            if(TransmitFragment.transmitMessagesListAdapter == null) return;
                             TransmitDatabaseEntity message = new TransmitDatabaseEntity();
                             message.messageFrom = TransmitMessage.MESSAGE_FROM_PHONE;
                             message.type = TransmitMessage.MESSAGE_TYPE_FILE;
@@ -249,7 +251,7 @@ public class FileUploadActivity extends Activity {
                             message.timestamp = System.currentTimeMillis();
                             //上传文件 该属性无效
                             message.filePath = "null";
-                            TransmitFragment.transmitMessagesListAdapter.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE, new TransmitMessageTypeFile(message));
+                            addTransmitItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE, new TransmitMessageTypeFile(message));
                         }
                     }, size, encryptionKey);
                 } catch (FileNotFoundException e) {
@@ -276,8 +278,22 @@ public class FileUploadActivity extends Activity {
         jsonObject.addProperty("data", text);
         networkService.sendString(jsonObject.toString());
         Toast.makeText(this, R.string.text_sent, Toast.LENGTH_LONG).show();
-        if(TransmitFragment.transmitMessagesListAdapter == null) return;
-        TransmitFragment.transmitMessagesListAdapter.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_TEXT, new TransmitMessageTypeText(text, true));
+        addTransmitItem(TransmitRecyclerAddItemType.ITEM_TYPE_TEXT, new TransmitMessageTypeText(text, true));
         finish();
+    }
+
+    private void addTransmitItem(TransmitRecyclerAddItemType type, TransmitMessageAbstract messageAbstract) {
+        ConnectMainService service = GlobalVariables.computerConfigManager.getNetworkService();
+        if(service == null) {
+            Toast.makeText(this, R.string.text_need_connect_first, Toast.LENGTH_LONG).show();
+            return;
+        }
+        if(service.activityMethods != null) {
+            service.activityMethods.addItem(type, messageAbstract, true);
+        }else{
+            Box<TransmitDatabaseEntity> box = ((Crystal) getApplicationContext())
+                    .getDatabase().boxFor(TransmitDatabaseEntity.class);
+            box.put(messageAbstract.toDatabaseEntity());
+        }
     }
 }

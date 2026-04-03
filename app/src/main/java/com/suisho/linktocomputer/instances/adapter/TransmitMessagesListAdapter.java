@@ -93,15 +93,15 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
+                Activity act = TransmitMessagesListAdapter.this.activity;
                 //到底部消除提示图标
                 if(!messagesView.canScrollVertically(1)) {
-                    BottomNavigationView bottomNavigationView = activity.findViewById(R.id.connected_activity_navigation_bar);
+                    BottomNavigationView bottomNavigationView = act.findViewById(R.id.connected_activity_navigation_bar);
                     bottomNavigationView.removeBadge(R.id.connected_activity_navigation_bar_menu_transmit);
                     logger.debug("User scroll to bottom.Remove new message badge");
                 }
             }
         });
-        //
         this.activity = activity;
         clipboardManager = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
         data.forEach(transmitMessage -> {

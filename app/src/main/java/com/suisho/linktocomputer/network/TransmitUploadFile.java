@@ -5,6 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 
+import com.suisho.linktocomputer.Crystal;
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.Util;
@@ -13,7 +14,6 @@ import com.suisho.linktocomputer.abstracts.RequestHandle;
 import com.suisho.linktocomputer.constant.NotificationID;
 import com.suisho.linktocomputer.database.TransmitDatabaseEntity;
 import com.suisho.linktocomputer.enums.TransmitRecyclerAddItemType;
-import com.suisho.linktocomputer.fragment.TransmitFragment;
 import com.suisho.linktocomputer.instances.ComputerConfigManager;
 import com.suisho.linktocomputer.instances.EncryptionKey;
 import com.suisho.linktocomputer.instances.TransmitQueueItem;
@@ -43,6 +43,8 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import io.objectbox.Box;
 
 public class TransmitUploadFile {
     public static boolean hasUploadingFile = false;
@@ -96,7 +98,7 @@ public class TransmitUploadFile {
             logger.error("Failed to init transmit upload crypt", e);
             stateHandle.onError(e);
             closeStream(stream);
-            updateUploadQueue();
+            updateUploadQueue((Crystal) applicationContext);
             return;
         }
         start();
@@ -195,7 +197,7 @@ public class TransmitUploadFile {
                     } catch (IOException | NullPointerException e) {
                         logger.error("Transmit upload close stream error", e);
                     }
-                    updateUploadQueue();
+                    updateUploadQueue((Crystal) applicationContext);
                 }
             }
         };
@@ -233,7 +235,7 @@ public class TransmitUploadFile {
         logger.debug("Create transmit upload file notification channel");
     }
 
-    private static void updateUploadQueue() {
+    private static void updateUploadQueue(Crystal context) {
         ComputerConfigManager computerConfigManager = GlobalVariables.computerConfigManager;
         if(computerConfigManager == null) {
 //            这种情况通常是传一半掉线了 清空队列避免异常
@@ -256,7 +258,7 @@ public class TransmitUploadFile {
                 try {
                     if(jsonObj._result.equals("ERROR")) {
                         closeStream(item.fileInputStream);
-                        updateUploadQueue();
+                        updateUploadQueue(context);
                         return;
                     }
                     networkService.uploadFile(item.fileInputStream, jsonObj.port, item.fileSize <= 8192L, new FileUploadStateHandle() {
@@ -265,24 +267,29 @@ public class TransmitUploadFile {
                             super.onSuccess();
                             NotificationManager notificationService = networkService.getSystemService(NotificationManager.class);
                             notificationService.cancel(NotificationID.NOTIFICATION_TRANSMIT_UPLOAD_FILE);
-                            if(TransmitFragment.transmitMessagesListAdapter == null) return;
                             TransmitDatabaseEntity message = new TransmitDatabaseEntity();
                             message.messageFrom = TransmitMessage.MESSAGE_FROM_PHONE;
-                            message.type = TransmitMessage.MESSAGE_TYPE_TEXT;
+                            message.type = TransmitMessage.MESSAGE_TYPE_FILE;
                             message.isDeleted = false;
                             message.fileName = item.fileName;
                             message.fileSize = item.fileSize;
                             message.timestamp = System.currentTimeMillis();
                             //上传文件 该属性无效
                             message.filePath = "null";
-                            TransmitFragment.transmitMessagesListAdapter.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE, new TransmitMessageTypeFile(message));
+                            if(networkService.activityMethods != null) {
+                                networkService.activityMethods.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_FILE, new TransmitMessageTypeFile(message), true);
+                            } else {
+                                Box<TransmitDatabaseEntity> box = (context)
+                                        .getDatabase().boxFor(TransmitDatabaseEntity.class);
+                                box.put(message);
+                            }
                             logger.info("Transmit upload queue file success: {}", item.fileName);
                         }
                     }, item.fileSize, item.encryptionKey);
                 } catch (Exception e) {
                     logger.error("Transmit upload queue file error", e);
                     closeStream(item.fileInputStream);
-                    updateUploadQueue();
+                    updateUploadQueue(context);
                 }
             }
         });
