@@ -717,6 +717,10 @@ public class NewMainActivity extends AppCompatActivity {
                     .setNegativeButton(R.string.text_ok, (dialog, which) -> dialog.dismiss()).show();
             return;
         }
+        if(networkService != null && networkService.isConnected) {
+            Snackbar.make(binding.getRoot(), R.string.text_already_connected, Snackbar.LENGTH_LONG).show();
+            return;
+        }
         networkServiceIntent = new Intent(this, ConnectMainService.class);
         //传入地址
         networkServiceIntent.putExtra("url", "wss://" + url);

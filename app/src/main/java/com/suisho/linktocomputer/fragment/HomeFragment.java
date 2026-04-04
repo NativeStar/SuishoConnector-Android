@@ -147,7 +147,7 @@ public class HomeFragment extends Fragment {
             Activity activity = getActivity();
             //停止接收广播 避免一堆bug
             NewMainActivity newMainActivity = (NewMainActivity) activity;
-            if(newMainActivity.autoConnector != null) {
+            if(newMainActivity != null && newMainActivity.autoConnector != null) {
                 logger.info("Stop auto connect listener by QRCode scanner");
                 newMainActivity.autoConnector.stopListener();
                 setAutoConnecting(false);
@@ -299,7 +299,7 @@ public class HomeFragment extends Fragment {
                                 }
                             }, 80);
                         } else if(which == 5) {
-                            Intent intent=new Intent(StorageManager.ACTION_MANAGE_STORAGE);
+                            Intent intent = new Intent(StorageManager.ACTION_MANAGE_STORAGE);
                             startActivity(intent);
                         }
                     })
@@ -313,14 +313,15 @@ public class HomeFragment extends Fragment {
             if(checkConnected()) {
                 Snackbar.make(binding.getRoot(), R.string.text_need_disconnect_first, 2000)
                         .setAction(R.string.text_disconnect, action -> {
-                            ((NewMainActivity) getActivity()).showDisconnectOrCloseApplicationDialog();
+                            NewMainActivity activity = (NewMainActivity) getActivity();
+                            if(activity != null) activity.showDisconnectOrCloseApplicationDialog();
                         })
                         .show();
                 return;
             }
             //关闭广播
             NewMainActivity newMainActivity = (NewMainActivity) getActivity();
-            if(newMainActivity.autoConnector != null) {
+            if(newMainActivity != null && newMainActivity.autoConnector != null) {
                 logger.debug("Stop auto connect listener by manual connect");
                 newMainActivity.autoConnector.stopListener();
                 setAutoConnecting(false);

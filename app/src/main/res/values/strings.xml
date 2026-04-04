@@ -41,6 +41,7 @@
     <string name="text_notification_forward_desc">该选项也影响实时通知、媒体控制功能</string>
     <string name="text_address_connect_help">请点击PC端的\"切换连接方式\"按钮查看IP及端口号并在下方对应位置输入</string>
     <string name="text_need_disconnect_first">请先断开现有连接</string>
+    <string name="text_already_connected">当前已有连接</string>
     <string name="text_disconnect">断开</string>
     <string name="text_disconnect_confirm_message">确认断开连接?</string>
     <string name="text_disconnect_action_success">已关闭连接</string>
