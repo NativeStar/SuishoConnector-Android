@@ -222,11 +222,13 @@ public class HomeFragment extends Fragment {
                 logger.debug("QRCode scan view cancelled");
                 cameraManager.stopPreview();
                 cameraManager.close();
+                detectThread.interrupt();
             });
             bottomSheetDialog.setOnDismissListener(dialog -> {
                 logger.debug("QRCode scan view dismissed");
                 cameraManager.stopPreview();
                 cameraManager.close();
+                detectThread.interrupt();
             });
             overlayView.setParentSheetDialog(bottomSheetDialog);
             bottomSheetDialog.show();
@@ -295,7 +297,7 @@ public class HomeFragment extends Fragment {
                                     binding.cardConnectionStateIcon.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
                                 }
                             }, 80);
-                        }else if(which == 5){
+                        } else if(which == 5) {
                             Intent intent = new Intent("debug_shutdown");
                             intent.setPackage(getContext().getPackageName());
                             getContext().sendBroadcast(intent);
@@ -486,6 +488,7 @@ public class HomeFragment extends Fragment {
 
                     @Override
                     public void onPreviewError(Exception ignore) {
+                        detectThread.interrupt();
                         cameraManager.stopPreview();
                         cameraManager.close();
                     }
@@ -539,5 +542,23 @@ public class HomeFragment extends Fragment {
     //检查是否连接 再次包装
     private boolean checkConnected() {
         return ((NewMainActivity) getActivity()).isServerConnected();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if(detectThread != null) {
+            detectThread.interrupt();
+            detectThread = null;
+        }
+        if(cameraManager != null) {
+            try {
+                cameraManager.stopPreview();
+                cameraManager.close();
+            } catch (Exception ignore) {
+            }
+            cameraManager = null;
+        }
+        binding = null;
     }
 }
