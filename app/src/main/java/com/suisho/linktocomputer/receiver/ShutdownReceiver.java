@@ -32,7 +32,6 @@ public class ShutdownReceiver extends BroadcastReceiver implements IBroadcastRec
     public static IntentFilter createIntentFilter() {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SHUTDOWN);
-        filter.addAction("debug_shutdown");
         return filter;
     }
 }

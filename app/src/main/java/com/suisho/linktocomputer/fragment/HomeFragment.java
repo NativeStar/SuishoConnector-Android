@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.storage.StorageManager;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
@@ -248,7 +249,7 @@ public class HomeFragment extends Fragment {
                             "Throw exception",
                             "Edit state",
                             "Test haptic",
-                            "Test shutdown receiver"
+                            "Launch storage manager intent"
                     }, (dialog, which) -> {
                         dialog.dismiss();
                         if(which == 0) {
@@ -298,9 +299,8 @@ public class HomeFragment extends Fragment {
                                 }
                             }, 80);
                         } else if(which == 5) {
-                            Intent intent = new Intent("debug_shutdown");
-                            intent.setPackage(getContext().getPackageName());
-                            getContext().sendBroadcast(intent);
+                            Intent intent=new Intent(StorageManager.ACTION_MANAGE_STORAGE);
+                            startActivity(intent);
                         }
                     })
                     .setTitle("Debug Menu")
@@ -333,7 +333,7 @@ public class HomeFragment extends Fragment {
                 String userInputIP = ((TextInputEditText) bottomSheetView.findViewById(R.id.urlInput)).getText().toString();
                 String userInputPort = ((TextInputEditText) bottomSheetView.findViewById(R.id.portInput)).getText().toString();
                 String userInputPairCode = ((TextInputEditText) bottomSheetView.findViewById(R.id.pairCodeInput)).getText().toString();
-                logger.debug("User input ip: " + userInputIP + " port: " + userInputPort + " pairCode: " + userInputPairCode);
+                logger.debug("User input ip: {} port: {} pairCode: {}", userInputIP, userInputPort, userInputPairCode);
                 if(userInputIP.isEmpty()) {
                     //设置提示内容并给予输入框焦点
                     logger.debug("IP input empty");
