@@ -340,6 +340,7 @@ public class ConnectMainService extends Service implements INetworkService {
                     trustManagerFactory.init(keyStore);
                     trustManager = trustManagerFactory.getTrustManagers()[0];
                     sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
+                    certInput.close();
                 } catch (CertificateException | IOException | NoSuchAlgorithmException |
                          KeyStoreException |
                          KeyManagementException e) {
@@ -483,7 +484,6 @@ public class ConnectMainService extends Service implements INetworkService {
                                             Snackbar.make(activityMethods.getActivity().findViewById(R.id.homeViewPager2), R.string.service_connect_success, 2000).show();
                                             //旧版PC端不会上报协议版本 需要处理
                                             activityMethods.onConnected(jsonObj.sessionId, Optional.ofNullable(jsonObj.protocolVersion).orElse(1));
-                                            certInput.close();
                                             logger.info("Connection handshake success!");
                                             File p12CertFile = new File(getDataDir().getAbsolutePath() + "/files/cert/" + computerId + ".p12");
                                             logger.info("Call file manager init");
@@ -830,6 +830,7 @@ public class ConnectMainService extends Service implements INetworkService {
         if(notificationListenerService != null) notificationListenerService.setMainService(null);
         //清空队列
         TransmitUploadFile.clearQueue();
+        requestMapping.clear();
     }
 
     @Override
@@ -903,13 +904,15 @@ public class ConnectMainService extends Service implements INetworkService {
 
     public void disconnect(int code, @Nullable String reason) {
         if(webSocketClient != null) {
-            new Timer("CloseConnectionWatchdog").schedule(new TimerTask() {
+            Timer timer=new Timer("CloseConnectionWatchdog");
+            timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
                     if(webSocketClient != null) {
                         logger.debug("Disconnect timeout,Force close connection");
                         webSocketClient.cancel();
                     }
+                    timer.cancel();
                 }
             }, 1000L);
             webSocketClient.close(code, reason);
