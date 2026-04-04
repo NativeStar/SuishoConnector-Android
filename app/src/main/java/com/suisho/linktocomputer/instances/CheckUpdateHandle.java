@@ -33,7 +33,8 @@ public class CheckUpdateHandle implements MessageQueue.IdleHandler {
                     .url("https://raw.githubusercontent.com/NativeStar/SuishoConnector-Android/master/update.json")
                     .cacheControl(new CacheControl.Builder().noCache().build())
                     .build();
-            try (Response response = new OkHttpClient().newCall(request).execute()){
+            OkHttpClient client = new OkHttpClient();
+            try (Response response = client.newCall(request).execute()){
                 if(response.isSuccessful()){
                     String rawJsonString = response.body().string();
                     CheckUpdateJson jsonInstance= GlobalVariables.jsonBuilder.fromJson(rawJsonString, CheckUpdateJson.class);
@@ -49,6 +50,9 @@ public class CheckUpdateHandle implements MessageQueue.IdleHandler {
             } catch (Exception e) {
                 logger.error("Failed to check update",e);
                 /*暂时不显示给用户*/
+            }finally {
+                client.dispatcher().executorService().shutdown();
+                client.connectionPool().evictAll();
             }
         }).start();
         return false;

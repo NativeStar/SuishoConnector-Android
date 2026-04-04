@@ -125,12 +125,11 @@ public class TransmitFragment extends Fragment {
     public void onResume() {
         super.onResume();
         if(!isInit) initTransmitMessages(null);
-
     }
 
     public void addItem(TransmitRecyclerAddItemType type, TransmitMessageAbstract pushData, boolean requestSave, boolean forceScrollToBottom) {
         logger.debug("Adding item to transmit fragment");
-        if(transmitMessagesListAdapter==null) return;
+        if(transmitMessagesListAdapter == null) return;
         transmitMessagesListAdapter.addItem(type, pushData, requestSave, forceScrollToBottom);
         scrollMessagesViewToBottom(false);
     }
@@ -200,9 +199,11 @@ public class TransmitFragment extends Fragment {
                     try {
                         TransmitQueueItem queueItem = new TransmitQueueItem(getContext().getContentResolver().openInputStream(uri), uploadRequestPacket.getJsonObject(), fileSize, encryptionKey, fileName);
                         boolean addQueueResult = TransmitUploadFile.addQueueItem(queueItem);
-                        if(binding != null) Snackbar.make(binding.getRoot(), addQueueResult?"已添加至上传队列":"队列已满 添加失败", Snackbar.LENGTH_LONG).show();
+                        if(binding != null)
+                            Snackbar.make(binding.getRoot(), addQueueResult ? "已添加至上传队列" : "队列已满 添加失败", Snackbar.LENGTH_LONG).show();
                     } catch (FileNotFoundException e) {
-                        if(binding != null) Snackbar.make(binding.getRoot(), "打开文件流时发生异常", Snackbar.LENGTH_LONG).show();
+                        if(binding != null)
+                            Snackbar.make(binding.getRoot(), "打开文件流时发生异常", Snackbar.LENGTH_LONG).show();
                     }
                     return;
                 }
@@ -404,7 +405,9 @@ public class TransmitFragment extends Fragment {
                     binding.transmitMessageList.scrollToPosition(transmitMessagesListAdapter.getItemCount() - 1);
                     //重新设置adapter
                     binding.transmitMessageList.setAdapter(transmitMessagesListAdapter);
-                    Util.buildAppListCache(activity);
+                    if(networkService == null||!networkService.isConnected){
+                        Util.buildAppListCache(activity);
+                    }
                 });
             } else {
                 //正常加载

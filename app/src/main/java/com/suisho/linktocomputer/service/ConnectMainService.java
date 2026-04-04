@@ -310,6 +310,9 @@ public class ConnectMainService extends Service implements INetworkService {
                             activityMethods.closeConnectingDialog();
                             stopSelf();
                             return;
+                        }finally {
+                            downloadClient.dispatcher().executorService().shutdown();
+                            downloadClient.connectionPool().evictAll();
                         }
                     }
                     try {
@@ -844,7 +847,7 @@ public class ConnectMainService extends Service implements INetworkService {
         webSocketClient.send(object.toString());
     }
 
-    public void setActivityMethods(IConnectedActivityMethods activityMethod) {
+    public void setActivityMethods(@Nullable IConnectedActivityMethods activityMethod) {
         activityMethods = activityMethod;
     }
 

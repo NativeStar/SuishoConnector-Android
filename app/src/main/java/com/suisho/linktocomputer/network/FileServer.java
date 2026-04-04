@@ -167,6 +167,21 @@ public class FileServer extends NanoHTTPD {
         return rangeRequestPoint;
     }
 
+    @Override
+    public void stop() {
+        super.stop();
+        lastRequestVideoFilePath = "";
+        if(videoFileRandomAccess !=null) {
+            try {
+                logger.debug("Close video file random access because server close");
+                videoFileRandomAccess.close();
+                videoFileRandomAccess = null;
+            } catch (IOException e) {
+                logger.warn("Close video file random access failed with exception",e);
+            }
+        }
+    }
+
     private static final class RangeRequestPoint {
         public long start;
         public long end;

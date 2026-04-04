@@ -55,8 +55,7 @@ public class TransmitDownloadFile {
     final String fileName;
     final long fileSize;
     final String filePath;
-    SSLContext sslContext;
-    TrustManager trustManager;
+    private static OkHttpClient client=null;
     private final Logger logger = LoggerFactory.getLogger(TransmitDownloadFile.class);
 
     public TransmitDownloadFile(int port, String path, String name, long size, IConnectedActivityMethods am) {
@@ -76,6 +75,8 @@ public class TransmitDownloadFile {
             @Override
             public void run() {
                 super.run();
+                SSLContext sslContext;
+                TrustManager trustManager;
                 try {
                     fileOutputStream = new FileOutputStream(filePath);
                 } catch (IOException e) {
@@ -99,19 +100,22 @@ public class TransmitDownloadFile {
                          NoSuchAlgorithmException | KeyManagementException e) {
                     logger.error("Initialize SSLContext error", e);
                     onError(e);
+                    return;
                 }
                 logger.debug("Create file data download socket");
                 Request wsReq = new Request.Builder()
                         .url("wss://" + GlobalVariables.serverAddress + ":" + socketPort)
                         .build();
-                ws = new OkHttpClient()
-                        .newBuilder()
-                        .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustManager)
-                        .hostnameVerifier((hostname, session) -> hostname.equals(GlobalVariables.serverAddress))
-                        .writeTimeout(Duration.ofSeconds(10))
-                        .callTimeout(Duration.ofSeconds(10))
-                        .build()
-                        .newWebSocket(wsReq, new WebSocketListener() {
+                if(client == null) {
+                    client = new OkHttpClient()
+                            .newBuilder()
+                            .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) trustManager)
+                            .hostnameVerifier((hostname, session) -> hostname.equals(GlobalVariables.serverAddress))
+                            .writeTimeout(Duration.ofSeconds(10))
+                            .callTimeout(Duration.ofSeconds(10))
+                            .build();
+                }
+                ws = client.newWebSocket(wsReq, new WebSocketListener() {
                             @Override
                             public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
                                 super.onOpen(webSocket, response);
@@ -156,7 +160,7 @@ public class TransmitDownloadFile {
                                     fileOutputStream.close();
                                     //失败 删除文件
                                     if(code != 1000) {
-                                        logger.warn("Download transmit file failed with code:{}",code);
+                                        logger.warn("Download transmit file failed with code:{}", code);
                                         new File(filePath).delete();
                                         activityMethods.showAlert("接收文件失败", code == 4000 ? "连接验证失败" : "传输提早中断", "确定");
                                     }
