@@ -55,6 +55,11 @@
             android:summary="@string/setting_transmit_file_save_location_desc"
             android:title="@string/setting_transmit_file_save_location" />
         <Preference
+            android:icon="@drawable/baseline_downloading_24"
+            android:key="file_name_conflict_behavior"
+            android:summary="@string/setting_transmit_file_conflict_behavior_desc"
+            android:title="@string/setting_transmit_file_conflict_behavior" />
+        <Preference
             android:icon="@drawable/baseline_file_copy_24"
             android:key="key_export_transmit_files"
             android:summary="导出私有目录中的互传文件避免访问权限问题"

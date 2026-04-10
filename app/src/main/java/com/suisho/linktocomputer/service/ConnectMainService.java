@@ -310,7 +310,7 @@ public class ConnectMainService extends Service implements INetworkService {
                             activityMethods.closeConnectingDialog();
                             stopSelf();
                             return;
-                        }finally {
+                        } finally {
                             downloadClient.dispatcher().executorService().shutdown();
                             downloadClient.connectionPool().evictAll();
                         }
@@ -380,7 +380,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                 logger.info("Connection close with code:{}", code);
                                 onDisconnectCleanup();
                                 logger.debug("Checking activity on top");
-                                final String reasonString=reason.isEmpty()?"计算机关闭连接":reason;
+                                final String reasonString = reason.isEmpty() ? "计算机关闭连接" : reason;
                                 ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
                                 am.getRunningAppProcesses().forEach(runningAppProcessInfo -> {
                                     if(runningAppProcessInfo.processName.equals("com.suisho.linktocomputer")) {
@@ -389,7 +389,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             //软件在后台 发送掉线通知
                                             //前台一是已经有对话框 二是可能连接是用户手动点击关的
                                             //只在非自身原因关闭连接时才发送
-                                            if(code != ConnectionCloseCode.CloseFromClient){
+                                            if(code != ConnectionCloseCode.CloseFromClient) {
                                                 Notification notification = new Notification.Builder(ConnectMainService.this, "onDisconnectNotification")
                                                         .setSmallIcon(R.drawable.baseline_link_off_24)
                                                         .setContentTitle("连接断开")
@@ -497,7 +497,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 logger.debug("Create battery state receiver");
                                                 batteryStateReceiver = new BatteryStateReceiver(ConnectMainService.this);
                                             }
-                                            if(shutdownReceiver == null){
+                                            if(shutdownReceiver == null) {
                                                 logger.debug("Create shutdown receiver");
                                                 shutdownReceiver = new ShutdownReceiver(ConnectMainService.this);
                                             }
@@ -535,10 +535,19 @@ public class ConnectMainService extends Service implements INetworkService {
                                             File transmitOutputFile = new File(transmitTargetFile.getAbsolutePath() + "/" + jsonObj.fileName);
                                             logger.debug("Create transmit output file: {}", transmitOutputFile.getAbsolutePath());
                                             if(transmitOutputFile.exists()) {
+                                                String filePath;
+                                                if(GlobalVariables.preferences.getInt("file_name_conflict_behavior", 0) == 0) {
+                                                    //追加时间戳
+                                                    filePath=transmitTargetFile.getAbsolutePath() + "/" + System.currentTimeMillis() + jsonObj.fileName;
+                                                }else{
+                                                    //删除旧文件
+                                                    transmitOutputFile.delete();
+                                                    filePath=transmitTargetFile.getAbsolutePath() + "/" + jsonObj.fileName;
+                                                }
                                                 //重名 末尾加时间戳保存
                                                 //不能影响显示
                                                 logger.debug("Transmit file exists, append timestamp to new file name");
-                                                new TransmitDownloadFile(jsonObj.port, transmitTargetFile.getAbsolutePath() + "/" + System.currentTimeMillis() + jsonObj.fileName, jsonObj.fileName, jsonObj.fileSize, activityMethods);
+                                                new TransmitDownloadFile(jsonObj.port, filePath, jsonObj.fileName, jsonObj.fileSize, activityMethods);
                                             } else {
                                                 //没重名 一切正常
                                                 new TransmitDownloadFile(jsonObj.port, transmitOutputFile.getAbsolutePath(), jsonObj.fileName, jsonObj.fileSize, activityMethods);
@@ -904,7 +913,7 @@ public class ConnectMainService extends Service implements INetworkService {
 
     public void disconnect(int code, @Nullable String reason) {
         if(webSocketClient != null) {
-            Timer timer=new Timer("CloseConnectionWatchdog");
+            Timer timer = new Timer("CloseConnectionWatchdog");
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {

@@ -198,6 +198,18 @@ public class SettingFragment extends PreferenceFragmentCompat {
                     }).show();
             return true;
         });
+        findPreference("file_name_conflict_behavior").setOnPreferenceClickListener(preference -> {
+            logger.debug("Open file conflict behavior dialog");
+            new MaterialAlertDialogBuilder(getActivity())
+                    .setTitle(R.string.setting_transmit_file_conflict_behavior)
+                    .setSingleChoiceItems(R.array.array_setting_dropdown_transmit_file_conflict_behavior, GlobalVariables.preferences.getInt("file_name_conflict_behavior", 0), (dialog, which) -> {
+                        logger.info("Change file conflict behavior to {}", which);
+                        GlobalVariables.preferences.edit().putInt("file_name_conflict_behavior", which).apply();
+                        Snackbar.make(getView(), "修改成功", 2000).show();
+                        dialog.dismiss();
+                    }).show();
+            return true;
+        });
         findPreference("key_export_transmit_files").setOnPreferenceClickListener(preference -> {
             //检查私有目录互传文件夹下是否有文件
             logger.debug("User request export in private directory transmit files");

@@ -126,10 +126,15 @@
     <string-array name="array_setting_dropdown_transmit_save_file_path">
         <item>私有目录</item>
         <item>Download目录</item>
-<!--        <item>自定义位置</item>-->
+    </string-array>
+    <string-array name="array_setting_dropdown_transmit_file_conflict_behavior">
+        <item>新文件名追加时间戳</item>
+        <item>覆盖旧重名文件</item>
     </string-array>
     <string name="setting_transmit_file_save_location">接收文件存储位置</string>
     <string name="setting_transmit_file_save_location_desc">该选项同时影响\'文件同步\'的接收位置</string>
+    <string name="setting_transmit_file_conflict_behavior">文件名冲突处理</string>
+    <string name="setting_transmit_file_conflict_behavior_desc">当接收的文件名重复时如何处理</string>
     <string name="home_card_trust_mode">信任模式</string>
     <string name="home_card_media_projection">音频转发(点击授权)</string>
     <string name="dialog_close_application_confirm_message">确认关闭应用?</string>
