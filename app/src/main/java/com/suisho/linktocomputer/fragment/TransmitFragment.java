@@ -140,7 +140,13 @@ public class TransmitFragment extends Fragment {
             if(binding == null) return;
             if(force) {
                 TransmitMessagesListAdapter transmitMessagesListAdapter = (TransmitMessagesListAdapter) binding.transmitMessageList.getAdapter();
-                binding.transmitMessageList.scrollToPosition(transmitMessagesListAdapter.getDataSize() - 1);
+                if(transmitMessagesListAdapter != null){
+                    logger.debug("Got adapter,scroll to bottom.");
+                    binding.transmitMessageList.scrollToPosition(transmitMessagesListAdapter.getDataSize() - 1);
+                }else{
+                    //等待apapter初始化
+                    binding.transmitMessageList.postDelayed(()-> scrollMessagesViewToBottom(force),250);
+                }
                 return;
             }
             if(binding.transmitMessageList.computeVerticalScrollRange() - (binding.transmitMessageList.computeVerticalScrollExtent() + binding.transmitMessageList.computeVerticalScrollOffset()) <= 300) {
