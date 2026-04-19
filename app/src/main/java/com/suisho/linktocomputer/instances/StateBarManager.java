@@ -2,6 +2,7 @@ package com.suisho.linktocomputer.instances;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.suisho.linktocomputer.R;
+import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.constant.States;
 import com.suisho.linktocomputer.instances.adapter.StateListAdapter;
 
@@ -59,6 +61,7 @@ public class StateBarManager {
     public void onMenuClick() {
         //避免null
         menuView = activity.findViewById(R.id.activity_state);
+        Util.performHapticIfEnabled(menuView, HapticFeedbackConstants.VIRTUAL_KEY);
         if(delaySetIcon) setIcon();
         stateDialog.show();
     }
@@ -84,7 +87,7 @@ public class StateBarManager {
     }
 
     public void addState(@Nullable States.State state) {
-        if(state==null) return;
+        if(state == null) return;
         logger.debug("Add state:{}", state.id);
         if(!showedTip) {
             showTipPopup();
@@ -101,7 +104,7 @@ public class StateBarManager {
     }
 
     public void removeState(@Nullable States.State state) {
-        if(state==null) return;
+        if(state == null) return;
         logger.debug("Remove state by instance:{}", state.id);
         adapter.removeState(state, true);
         setIcon();

@@ -30,7 +30,6 @@ import androidx.biometric.BiometricManager;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreferenceCompat;
-import androidx.preference.TwoStatePreference;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -40,6 +39,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.suisho.linktocomputer.BuildConfig;
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
+import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.activity.NewMainActivity;
 import com.suisho.linktocomputer.activity.StorageManageActivity;
 import com.suisho.linktocomputer.constant.States;
@@ -119,7 +119,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                 ((ViewGroup) trustDeviceManagerDialogLayout.getParent()).removeAllViews();
             });
             trustDeviceManagerDialog.show();
-            return true;
+            return false;
         });
         //打开存储空间管理activity
         findPreference("key_storage_manage").setOnPreferenceClickListener(pref -> {
@@ -128,7 +128,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
             startActivity(intent);
             logger.debug("Open storage manage activity");
-            return true;
+            return false;
         });
         //通知转发开关 状态改变监听
         findPreference("function_notification_forward").setOnPreferenceChangeListener((preference, newValue) -> {
@@ -196,7 +196,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                         Snackbar.make(getView(), "修改成功", 2000).show();
                         dialog.dismiss();
                     }).show();
-            return true;
+            return false;
         });
         findPreference("file_name_conflict_behavior").setOnPreferenceClickListener(preference -> {
             logger.debug("Open file conflict behavior dialog");
@@ -208,9 +208,10 @@ public class SettingFragment extends PreferenceFragmentCompat {
                         Snackbar.make(getView(), "修改成功", 2000).show();
                         dialog.dismiss();
                     }).show();
-            return true;
+            return false;
         });
         findPreference("key_export_transmit_files").setOnPreferenceClickListener(preference -> {
+            Util.performHapticIfEnabled(getView(), HapticFeedbackConstants.VIRTUAL_KEY);
             //检查私有目录互传文件夹下是否有文件
             logger.debug("User request export in private directory transmit files");
             File transmitFilesPath = new File(getActivity().getExternalFilesDir(null).getAbsolutePath() + "/transmit/");
@@ -301,7 +302,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
             if(!keyFile.exists()) {
                 logger.debug("Bind device file not found");
                 Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), R.string.text_unbind_failed_not_bound, 2000).show();
-                return true;
+                return false;
             }
             new MaterialAlertDialogBuilder(getActivity())
                     .setTitle(R.string.dialog_clear_auto_connect_file_title)
@@ -315,12 +316,12 @@ public class SettingFragment extends PreferenceFragmentCompat {
                     })
                     .setNegativeButton(R.string.text_cancel, (dialog, which) -> dialog.dismiss())
                     .show();
-            return true;
+            return false;
         }));
         findPreference("key_export_crash_logs").setOnPreferenceClickListener((preference -> {
             logger.debug("User request export crash logs");
             saveLogResultLauncher.launch("logs-" + System.currentTimeMillis() + ".zip");
-            return true;
+            return false;
         }));
         findPreference("key_about").setOnPreferenceClickListener((v) -> {
             logger.debug("Show about sheet");
@@ -329,7 +330,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
             aboutSheetDialog.setCanceledOnTouchOutside(true);
             aboutSheetDialog.setOnDismissListener(dialog -> ((ViewGroup) aboutDialogLayout.getParent()).removeAllViews());
             aboutSheetDialog.show();
-            return true;
+            return false;
         });
         try {
             initLaunchVerifySwitch();
@@ -409,16 +410,12 @@ public class SettingFragment extends PreferenceFragmentCompat {
 
     @Override
     public boolean onPreferenceTreeClick(@NonNull Preference preference) {
-        if(preference instanceof TwoStatePreference && preference.isEnabled()) {
-            View listView = getListView();
-            if(listView != null) {
-                listView.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
-            }
-        }
+        View listView = getListView();
+        if(listView !=null) Util.performHapticIfEnabled(listView, HapticFeedbackConstants.CONTEXT_CLICK);
         return super.onPreferenceTreeClick(preference);
     }
 
-    private boolean moveTransmitFiles(File transmitFilesPath) {
+    private boolean moveTransmitFiles(@NonNull File transmitFilesPath) {
         logger.info("Start move transmit files");
         File[] transmitFiles = transmitFilesPath.listFiles();
         //防止文件名冲突

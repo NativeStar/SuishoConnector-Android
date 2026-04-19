@@ -62,8 +62,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.regex.Pattern;
 
 public class HomeFragment extends Fragment {
@@ -128,7 +126,7 @@ public class HomeFragment extends Fragment {
     private void init() {
         //卡片内连接按钮
         binding.buttonConnectMethodQrcode.setOnClickListener(v -> {
-            binding.buttonConnectMethodQrcode.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+            Util.performHapticIfEnabled(v, HapticFeedbackConstants.VIRTUAL_KEY);
             if(!(getActivity().checkSelfPermission("android.permission.CAMERA") == PackageManager.PERMISSION_GRANTED)) {
                 logger.info("Not camera permission,Show request dialog");
                 new MaterialAlertDialogBuilder(getActivity()).setMessage(R.string.permission_scanCode_camera_message).setTitle(R.string.permission_request_alert_title).setPositiveButton(R.string.text_ok, (dialog, which) -> {
@@ -184,7 +182,7 @@ public class HomeFragment extends Fragment {
                             public void onSuccess(Result result) {
                                 cameraManager.stopPreview();
                                 cameraManager.close();
-                                overlayView.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                                Util.performHapticIfEnabled(overlayView, HapticFeedbackConstants.CLOCK_TICK);
                                 bottomSheetDialog.cancel();
                             }
 
@@ -249,7 +247,6 @@ public class HomeFragment extends Fragment {
                             "Finish activity",
                             "Throw exception",
                             "Edit state",
-                            "Test haptic",
                             "Launch storage manager intent"
                     }, (dialog, which) -> {
                         dialog.dismiss();
@@ -292,14 +289,6 @@ public class HomeFragment extends Fragment {
                                     })
                                     .show();
                         } else if(which == 4) {
-                            binding.cardConnectionStateIcon.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
-                            new Timer().schedule(new TimerTask() {
-                                @Override
-                                public void run() {
-                                    binding.cardConnectionStateIcon.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
-                                }
-                            }, 80);
-                        } else if(which == 5) {
                             Intent intent = new Intent(StorageManager.ACTION_MANAGE_STORAGE);
                             startActivity(intent);
                         }
@@ -309,7 +298,7 @@ public class HomeFragment extends Fragment {
                     .show();
         });
         binding.buttonConnectMethodAddressInput.setOnClickListener(v -> {
-            binding.buttonConnectMethodAddressInput.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+            Util.performHapticIfEnabled(binding.buttonConnectMethodAddressInput, HapticFeedbackConstants.VIRTUAL_KEY);
             //防止重复调用连接
             if(checkConnected()) {
                 Snackbar.make(binding.getRoot(), R.string.text_need_disconnect_first, 2000)
@@ -331,7 +320,7 @@ public class HomeFragment extends Fragment {
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(getActivity());
             View bottomSheetView = getLayoutInflater().inflate(R.layout.connect_input_address_bottom_sheet, getActivity().findViewById(R.id.coordinatorLayout3), false);
             bottomSheetView.findViewById(R.id.bottom_sheet_address_connect_button).setOnClickListener(callback -> {
-                callback.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                Util.performHapticIfEnabled((View) callback, HapticFeedbackConstants.VIRTUAL_KEY);
                 String userInputIP = ((TextInputEditText) bottomSheetView.findViewById(R.id.urlInput)).getText().toString();
                 String userInputPort = ((TextInputEditText) bottomSheetView.findViewById(R.id.portInput)).getText().toString();
                 String userInputPairCode = ((TextInputEditText) bottomSheetView.findViewById(R.id.pairCodeInput)).getText().toString();
@@ -383,7 +372,7 @@ public class HomeFragment extends Fragment {
         });
         //关闭连接
         binding.homeDisconnectActionButton.setOnClickListener(v -> {
-            v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+            Util.performHapticIfEnabled(v, HapticFeedbackConstants.VIRTUAL_KEY);
             ((NewMainActivity) getActivity()).showDisconnectOrCloseApplicationDialog();
         });
         //信任模式
@@ -391,7 +380,7 @@ public class HomeFragment extends Fragment {
             Util.performHapticIfEnabled(v, HapticFeedbackConstants.VIRTUAL_KEY);
             NewMainActivity activity = (NewMainActivity) getActivity();
             if(activity == null || !activity.isServerConnected()) {
-                if(activity!= null) {
+                if(activity != null) {
                     logger.debug("User request change trust mode but not connected to computer");
                     Snackbar.make(activity.getBinding().getRoot(), R.string.home_change_trust_mode_not_connected_tip, Snackbar.LENGTH_SHORT).show();
                 }

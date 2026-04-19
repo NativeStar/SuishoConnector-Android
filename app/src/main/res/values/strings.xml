@@ -110,7 +110,7 @@
     <string name="text_manage">管理</string>
     <string name="setting_trust_device_manager">信任设备管理</string>
     <string name="setting_clear_auto_connect_file">解除自动连接绑定</string>
-    <string name="setting_group_functions">功能开关</string>
+    <string name="setting_group_functions">功能</string>
     <string name="setting_function_notification_forward">通知转发</string>
     <string name="trusted_device_manager_not_device">无已信任的设备</string>
     <string name="text_connected_device_remove_trust_button">当前连接</string>

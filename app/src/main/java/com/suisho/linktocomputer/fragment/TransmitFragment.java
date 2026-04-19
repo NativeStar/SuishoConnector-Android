@@ -340,7 +340,7 @@ public class TransmitFragment extends Fragment {
                 }
                 logger.info("Send transmit text message");
                 logger.debug("Transmit text message data: {}", inputMessage);
-                binding.sendMessageButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                Util.performHapticIfEnabled(binding.sendMessageButton, HapticFeedbackConstants.VIRTUAL_KEY);
                 if(networkService == null || !networkService.isConnected) {
                     /*掉线了*/
                     Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_text_save_local_failed_not_exists, 1200).show();
@@ -350,7 +350,7 @@ public class TransmitFragment extends Fragment {
                     binding.sendMessageInput.setText("");
                     return;
                 }
-                binding.sendMessageButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                Util.performHapticIfEnabled(binding.sendMessageButton, HapticFeedbackConstants.VIRTUAL_KEY);
                 JsonObject jsonObject = new JsonObject();
                 jsonObject.addProperty("packetType", "action_transmit");
                 jsonObject.addProperty("messageType", "planeText");
@@ -389,7 +389,7 @@ public class TransmitFragment extends Fragment {
 
                 });
                 popupWindow.showAsDropDown(binding.sendMoreButton, -(binding.sendMoreButton.getWidth() + 50), -(binding.sendMoreButton.getHeight() * 2));
-                binding.sendMoreButton.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                Util.performHapticIfEnabled(binding.sendMoreButton, HapticFeedbackConstants.VIRTUAL_KEY);
             });
             //设置列表
             RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(activity);

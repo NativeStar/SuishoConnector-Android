@@ -8,6 +8,8 @@ import android.view.MotionEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.suisho.linktocomputer.Util;
+
 public class ConfirmSeekBar extends androidx.appcompat.widget.AppCompatSeekBar {
     private boolean allowTracking;
     public ConfirmSeekBar(Context context) {
@@ -30,7 +32,7 @@ public class ConfirmSeekBar extends androidx.appcompat.widget.AppCompatSeekBar {
             }
             case MotionEvent.ACTION_MOVE: {
                 if(!allowTracking) return true;
-                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                Util.performHapticIfEnabled(this, HapticFeedbackConstants.VIRTUAL_KEY);
                 return super.onTouchEvent(event);
             }
             case MotionEvent.ACTION_UP:

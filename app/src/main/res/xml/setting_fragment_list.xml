@@ -47,6 +47,12 @@
             android:summary="在软件启动时要求验证身份"
             android:enabled="false"
             android:title="启动时验证"/>
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:icon="@drawable/baseline_vibration_24"
+            android:key="enable_haptic"
+            android:summary="关闭后点击等交互将不再有振动反馈(长按等系统振动不受影响)"
+            android:title="启用振动效果" />
     </PreferenceCategory>
     <PreferenceCategory android:title="互传">
         <Preference
