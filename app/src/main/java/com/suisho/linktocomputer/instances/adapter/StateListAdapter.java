@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.provider.Settings;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.suisho.linktocomputer.R;
+import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.constant.States;
 import com.suisho.linktocomputer.enums.StateLevel;
 
@@ -69,6 +71,7 @@ public class StateListAdapter extends RecyclerView.Adapter {
             logger.debug("State '{}' clickable",state.id);
             holder.itemView.findViewById(R.id.state_dialog_card_clickable_icon).setVisibility(View.VISIBLE);
             holder.itemView.setOnClickListener((view)->{
+                Util.performHapticIfEnabled(view, HapticFeedbackConstants.CONTEXT_CLICK);
                 onCardClick(state);
             });
         }else{

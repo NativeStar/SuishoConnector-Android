@@ -380,7 +380,7 @@ public class TransmitFragment extends Fragment {
                 menuLayout.findViewById(R.id.uploadImageButtton).setOnClickListener(buttonView -> {
                     popupWindow.dismiss();
                     if(networkService == null || !networkService.isConnected) {
-                        logger.debug("Blocked image picker because net connected");
+                        logger.debug("Blocked image picker because not connected");
                         Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_failed_network, 2000).show();
                         return;
                     }

@@ -3,6 +3,7 @@ package com.suisho.linktocomputer.instances.adapter;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
+import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.activity.NewMainActivity;
 
 import java.text.SimpleDateFormat;
@@ -52,6 +54,7 @@ public class TrustedDeviceListAdapter extends RecyclerView.Adapter<TrustedDevice
             return;
         }
         removeTrustButton.setOnClickListener(view -> {
+            Util.performHapticIfEnabled(view, HapticFeedbackConstants.VIRTUAL_KEY);
             String targetId = deviceList.get(position).id;
             SharedPreferences targetDeviceConfig = context.getSharedPreferences(targetId, Context.MODE_PRIVATE);
             targetDeviceConfig.edit().putBoolean("trustedDevice", false).apply();
