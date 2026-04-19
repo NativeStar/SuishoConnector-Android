@@ -5,7 +5,6 @@ import android.app.ActivityManager;
 import android.app.usage.StorageStats;
 import android.app.usage.StorageStatsManager;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.os.storage.StorageManager;
@@ -15,8 +14,8 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.window.OnBackInvokedDispatcher;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -65,35 +64,21 @@ public class StorageManageActivity extends AppCompatActivity {
         init();
     }
 
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        if(requestSuicide) {
-            logger.debug("User pressed back and application request suicide");
-            moveTaskToBack(true);
-            finishAffinity();
-            System.exit(0);
-        } else {
-            logger.debug("User pressed back.Only common finish activity");
-            finish();
-        }
-    }
-
     private void init() {
-        //Android13适配
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, () -> {
+        getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
                 if(requestSuicide) {
-                    logger.debug("User pressed Invoke(Tiramisu) and application request suicide");
+                    logger.debug("User pressed Invoke and application request suicide");
                     moveTaskToBack(true);
                     finishAffinity();
                     System.exit(0);
                 } else {
-                    logger.debug("User pressed Invoke(Tiramisu).Only common finish activity");
+                    logger.debug("User pressed Invoke.Only common finish activity");
                     finish();
                 }
-            });
-        }
+            }
+        });
         new Thread(() -> {
             //文本显示
             if(initTextShow()) return;
