@@ -4,6 +4,9 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Rect;
 import android.net.Uri;
@@ -80,6 +83,7 @@ public class TransmitFragment extends Fragment {
     private ActivityResultLauncher<String[]> filePickerLauncher;
     private ActivityResultLauncher<PickVisualMediaRequest> imagePickerLauncher;
     private final Logger logger = LoggerFactory.getLogger(TransmitFragment.class);
+    private ClipboardManager clipboardManager;
 
 
     public TransmitFragment() {
@@ -98,6 +102,7 @@ public class TransmitFragment extends Fragment {
         if(transmitMessagesListAdapter != null) transmitMessagesListAdapter.setActivity(activity);
         filePickerLauncher = registerForActivityResult(new ActivityResultContracts.OpenDocument(), this::onPickFile);
         imagePickerLauncher = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), this::onPickFile);
+        clipboardManager = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
     }
 
     @Override
@@ -140,12 +145,12 @@ public class TransmitFragment extends Fragment {
             if(binding == null) return;
             if(force) {
                 TransmitMessagesListAdapter transmitMessagesListAdapter = (TransmitMessagesListAdapter) binding.transmitMessageList.getAdapter();
-                if(transmitMessagesListAdapter != null){
+                if(transmitMessagesListAdapter != null) {
                     logger.debug("Got adapter,scroll to bottom.");
                     binding.transmitMessageList.scrollToPosition(transmitMessagesListAdapter.getDataSize() - 1);
-                }else{
+                } else {
                     //等待apapter初始化
-                    binding.transmitMessageList.postDelayed(()-> scrollMessagesViewToBottom(force),250);
+                    binding.transmitMessageList.postDelayed(() -> scrollMessagesViewToBottom(force), 250);
                 }
                 return;
             }
@@ -388,7 +393,40 @@ public class TransmitFragment extends Fragment {
                     imagePickerLauncher.launch(new PickVisualMediaRequest());
 
                 });
-                popupWindow.showAsDropDown(binding.sendMoreButton, -(binding.sendMoreButton.getWidth() + 50), -(binding.sendMoreButton.getHeight() * 2));
+                menuLayout.findViewById(R.id.uploadClipboardButton).setOnClickListener(buttonView -> {
+                    popupWindow.dismiss();
+                    logger.debug("Transmit send clipboard data");
+                    ClipData primaryClip = clipboardManager.getPrimaryClip();
+                    if(primaryClip == null || primaryClip.getItemCount() == 0) {
+                        logger.info("No data in clipboard!");
+                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_clipboard_invalid_data, 1500).show();
+                        return;
+                    }
+                    String clipboardText = primaryClip.getItemAt(0).getText().toString();
+                    if(clipboardText.isEmpty()) {
+                        logger.info("Clipboard text is empty!");
+                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_clipboard_invalid_data, 1500).show();
+                        return;
+                    }
+                    logger.debug("Clipboard text: {}", clipboardText);
+                    if(networkService == null || !networkService.isConnected) {
+                        /*掉线了*/
+                        Snackbar.make(activity.findViewById(R.id.transmit_message_list), R.string.transmit_send_text_save_local_failed_not_exists, 1200).show();
+                        logger.debug("Request send clipboard text but not connected computer.Save to local");
+                        transmitMessagesListAdapter.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_TEXT, new TransmitMessageTypeText(clipboardText), true, true);
+                        scrollMessagesViewToBottom(false);
+                        binding.sendMessageInput.setText("");
+                        return;
+                    }
+                    JsonObject jsonObject = new JsonObject();
+                    jsonObject.addProperty("packetType", "action_transmit");
+                    jsonObject.addProperty("messageType", "planeText");
+                    jsonObject.addProperty("data", clipboardText);
+                    networkService.sendString(jsonObject.toString());
+                    transmitMessagesListAdapter.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_TEXT, new TransmitMessageTypeText(clipboardText), true, true);
+                    scrollMessagesViewToBottom(false);
+                });
+                popupWindow.showAsDropDown(binding.sendMoreButton, -(binding.sendMoreButton.getWidth() + 80), -(binding.sendMoreButton.getHeight() * 3));
                 Util.performHapticIfEnabled(binding.sendMoreButton, HapticFeedbackConstants.VIRTUAL_KEY);
             });
             //设置列表
@@ -411,7 +449,7 @@ public class TransmitFragment extends Fragment {
                     binding.transmitMessageList.scrollToPosition(transmitMessagesListAdapter.getItemCount() - 1);
                     //重新设置adapter
                     binding.transmitMessageList.setAdapter(transmitMessagesListAdapter);
-                    if(networkService == null||!networkService.isConnected){
+                    if(networkService == null || !networkService.isConnected) {
                         Util.buildAppListCache(activity);
                     }
                 });
