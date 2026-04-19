@@ -143,7 +143,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     View menuLayout = LayoutInflater.from(activity).inflate(R.layout.transmit_message_action_menu_text, null, false);
                     PopupWindow popupWindow = new PopupWindow(menuLayout, ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
                     setUniversalLongClickMenuAction(menuLayout, messagesView, popupWindow, holder);
-                    menuLayout.findViewById(R.id.long_click_menu_action_open_url).setVisibility(isUrl? View.VISIBLE : View.GONE);
+                    menuLayout.findViewById(R.id.long_click_menu_action_open_url).setVisibility(isUrl ? View.VISIBLE : View.GONE);
                     menuLayout.findViewById(R.id.long_click_menu_action_open_url).setOnClickListener(v -> {
                         Intent urlIntent = new Intent(Intent.ACTION_VIEW);
                         urlIntent.setData(Uri.parse(text));
@@ -257,9 +257,10 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     PopupWindow popupWindow = new PopupWindow(menuLayout, ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
                     //通用功能
                     setUniversalLongClickMenuAction(menuLayout, messagesView, popupWindow, holder);
-                    //长按自己发送的文件时屏蔽分享键
+                    //长按自己发送的文件时屏蔽分享和删除文件功能
                     if(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE) {
                         menuLayout.findViewById(R.id.long_click_menu_action_share).setVisibility(View.GONE);
+                        menuLayout.findViewById(R.id.long_click_menu_action_delete_file).setVisibility(View.GONE);
                     }
                     //分享 文件专属
                     menuLayout.findViewById(R.id.long_click_menu_action_share).setOnClickListener(v -> activity.runOnUiThread(() -> {
@@ -312,6 +313,24 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         }
                         popupWindow.dismiss();
                     }));
+                    menuLayout.findViewById(R.id.long_click_menu_action_delete_file).setOnClickListener(v -> {
+                        popupWindow.dismiss();
+                        new MaterialAlertDialogBuilder(activity)
+                                .setMessage("确认删除该消息及其对应的文件?")
+                                .setPositiveButton("确认", (dialog, which) -> {
+                                    dialog.dismiss();
+                                    File file = new File(messageInstance.filePath);
+                                    //检测文件是否存在
+                                    if(file.exists()) {
+                                        file.delete();
+                                    }
+                                    TransmitMessageAbstract transmitMessageAbstract = dataList.get(holder.getLayoutPosition());
+                                    database.remove(transmitMessageAbstract.timestamp);
+                                    dataList.remove(holder.getLayoutPosition());
+                                    //通知移除和保存
+                                    notifyItemRemoved(holder.getLayoutPosition());
+                                }).setNegativeButton("取消", (dialog, which) -> dialog.cancel()).show();
+                    });
                     showPopupMenu(popupWindow, view, menuLayout);
                     return true;
                 });

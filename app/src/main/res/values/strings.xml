@@ -140,6 +140,7 @@
     <string name="dialog_close_application_confirm_message">确认关闭应用?</string>
     <string name="text_connect_failed">连接失败</string>
     <string name="text_invalid_qrcode">无效二维码</string>
+    <string name="text_delete_file">删除文件</string>
     <string name="dialog_scanned_wrong_qrcode">二维码错误 这是用于在局域网内下载安装包的二维码\n你应该扫描用于连接的二维码(软件启动后主页显示的)\n如果你是需要更新客户端 请点击下方按钮选择直接或通过浏览器下载</string>
     <string name="text_direct_download">直接下载</string>
     <string name="text_open_in_browser">浏览器打开</string>

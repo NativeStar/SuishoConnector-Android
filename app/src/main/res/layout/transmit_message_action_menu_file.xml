@@ -17,12 +17,12 @@
         <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:id="@+id/long_click_menu_action_delete_file"
+            android:text="@string/text_delete_file"/>
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:id="@+id/long_click_menu_action_delete"
             android:text="@string/text_delete"/>
-<!--        <Button-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text="@string/text_multiple_choice"-->
-<!--            android:id="@+id/long_click_menu_action_multiple_choice"/>-->
     </LinearLayout>
 </androidx.cardview.widget.CardView>
