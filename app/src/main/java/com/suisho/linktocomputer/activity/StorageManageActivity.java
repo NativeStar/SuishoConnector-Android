@@ -5,7 +5,6 @@ import android.app.ActivityManager;
 import android.app.usage.StorageStats;
 import android.app.usage.StorageStatsManager;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
@@ -13,6 +12,7 @@ import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
 import android.view.HapticFeedbackConstants;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.window.OnBackInvokedDispatcher;
@@ -52,7 +52,12 @@ public class StorageManageActivity extends AppCompatActivity {
         logger.debug("onCreate called");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_storage_manage);
-        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        setSupportActionBar(findViewById(R.id.toolbar));
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        //通知栏图标文字深色
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         //只能再onCreate或其之后初始化
         storageStatsManager = (StorageStatsManager) getSystemService(STORAGE_STATS_SERVICE);
         StorageManager storageManager = (StorageManager) getSystemService(STORAGE_SERVICE);
