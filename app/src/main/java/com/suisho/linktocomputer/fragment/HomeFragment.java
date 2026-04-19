@@ -414,7 +414,8 @@ public class HomeFragment extends Fragment {
                     }).show();
         });
         //音频转发授权
-        binding.cardMediaProjectionClickable.setOnClickListener(v -> {
+        binding.mediaProjectionRequestButton.setOnClickListener(v -> {
+            Util.performHapticIfEnabled(v, HapticFeedbackConstants.VIRTUAL_KEY);
             if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
                 Snackbar.make(binding.getRoot(), R.string.text_android_version_not_support, Snackbar.LENGTH_LONG).show();
                 return;
