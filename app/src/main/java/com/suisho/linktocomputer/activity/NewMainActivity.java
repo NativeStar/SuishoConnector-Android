@@ -207,11 +207,13 @@ public class NewMainActivity extends AppCompatActivity {
         binding.getRoot().post(() -> {
             //点击导航栏更改fragment显示
             binding.connectedActivityNavigationBar.setOnItemSelectedListener(item -> {
+                int currentItem = binding.homeViewPager2.getCurrentItem();
                 int selectedId = item.getItemId();
+                Util.performHapticIfEnabled(binding.connectedActivityNavigationBar, HapticFeedbackConstants.KEYBOARD_TAP);
                 if(selectedId == R.id.connected_activity_navigation_bar_menu_home) {
                     binding.homeViewPager2.setCurrentItem(0);
                 } else if(selectedId == R.id.connected_activity_navigation_bar_menu_transmit) {
-                    if(binding.homeViewPager2.getCurrentItem() == 1) {
+                    if(currentItem == 1) {
                         //到底部
                         viewPagerAdapter.getTransmitFragment().scrollMessagesViewToBottom(true);
                         logger.debug("Transmit page scroll to bottom by navigation double click");
@@ -432,11 +434,11 @@ public class NewMainActivity extends AppCompatActivity {
                             logger.info("Show pc protocol version too low state");
                             stateBarManager.addState(States.getStateList().get("warn_pc_protocol_version_low"));
                         }
-                        Util.performHapticIfEnabled(binding.toolbar,HapticFeedbackConstants.CLOCK_TICK);
+                        Util.performHapticIfEnabled(binding.toolbar,HapticFeedbackConstants.KEYBOARD_TAP);
                         new Timer().schedule(new TimerTask() {
                             @Override
                             public void run() {
-                                Util.performHapticIfEnabled(binding.toolbar, HapticFeedbackConstants.CLOCK_TICK);
+                                Util.performHapticIfEnabled(binding.toolbar, HapticFeedbackConstants.KEYBOARD_TAP);
                             }
                         }, 80);
                     }

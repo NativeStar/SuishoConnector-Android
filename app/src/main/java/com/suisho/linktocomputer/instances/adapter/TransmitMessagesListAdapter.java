@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.util.Patterns;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -221,6 +222,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                 holder.messageView.setOnClickListener(v -> {
                     if(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE) return;
                     //检查内容为"null"的字符串及真的null
+                    Util.performHapticIfEnabled(v, HapticFeedbackConstants.KEYBOARD_TAP);
                     if(messageInstance.filePath == null || messageInstance.filePath.equals("null")) {
                         //文件路径为空
                         logger.warn("File message path is null!");

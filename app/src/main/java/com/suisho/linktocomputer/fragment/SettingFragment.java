@@ -30,6 +30,7 @@ import androidx.biometric.BiometricManager;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreferenceCompat;
+import androidx.preference.TwoStatePreference;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -76,6 +77,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
         View trustDeviceManagerDialogLayout = getLayoutInflater().inflate(R.layout.bottom_trust_device_manager, null);
         View aboutDialogLayout = getLayoutInflater().inflate(R.layout.bottom_about_layout, null);
         aboutDialogLayout.findViewById(R.id.project_url_button).setOnClickListener(v -> {
+            Util.performHapticIfEnabled(v, HapticFeedbackConstants.VIRTUAL_KEY);
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setData(Uri.parse("https://github.com/NativeStar/SuishoConnector-Android"));
             startActivity(intent);
@@ -201,14 +203,13 @@ public class SettingFragment extends PreferenceFragmentCompat {
             return false;
         });
         findPreference("key_export_transmit_files").setOnPreferenceClickListener(preference -> {
-            Util.performHapticIfEnabled(getView(), HapticFeedbackConstants.VIRTUAL_KEY);
             //检查私有目录互传文件夹下是否有文件
             logger.debug("User request export in private directory transmit files");
             File transmitFilesPath = new File(getActivity().getExternalFilesDir(null).getAbsolutePath() + "/transmit/");
             if(!transmitFilesPath.exists() || transmitFilesPath.list().length == 0) {
                 logger.debug("No transmit files in private directory.Don't export");
                 Snackbar.make(((NewMainActivity) getActivity()).getBinding().getRoot(), "私有目录中不存在互传文件 无需导出", 2500).show();
-                return true;
+                return false;
             }
             if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
                 logger.info("Export in private directory transmit files request storage permission because android version lower 10");
@@ -225,7 +226,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                                 getActivity().requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1000);
                             })
                             .show();
-                    return true;
+                    return false;
                 }
             }
             String path = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/Transmit").getAbsolutePath();
@@ -250,7 +251,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
                             }
                         }).start();
                     }).show();
-            return true;
+            return false;
         });
         findPreference("function_file_manager").setOnPreferenceChangeListener((preference, newValue) -> {
             logger.debug("User request change remote file manager function");
@@ -402,7 +403,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
     public boolean onPreferenceTreeClick(@NonNull Preference preference) {
         View listView = getListView();
         if(listView != null)
-            Util.performHapticIfEnabled(listView, HapticFeedbackConstants.CONTEXT_CLICK);
+            Util.performHapticIfEnabled(listView, preference instanceof TwoStatePreference ? HapticFeedbackConstants.VIRTUAL_KEY : HapticFeedbackConstants.CONTEXT_CLICK);
         return super.onPreferenceTreeClick(preference);
     }
 

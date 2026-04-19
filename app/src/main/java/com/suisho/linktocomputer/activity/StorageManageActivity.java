@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Process;
 import android.os.storage.StorageManager;
 import android.os.storage.StorageVolume;
+import android.view.HapticFeedbackConstants;
 import android.view.View;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -18,6 +19,9 @@ import android.window.OnBackInvokedDispatcher;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
 import com.suisho.linktocomputer.Crystal;
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
@@ -25,9 +29,6 @@ import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.database.TransmitDatabaseEntity;
 import com.suisho.linktocomputer.service.ConnectMainService;
 import com.suisho.linktocomputer.view.ConfirmSeekBar;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.snackbar.Snackbar;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,6 +95,7 @@ public class StorageManageActivity extends AppCompatActivity {
             //按钮功能
             //清理缓存
             findViewById(R.id.button_storage_manage_clear_cache).setOnClickListener((view) -> {
+                Util.performHapticIfEnabled(view, HapticFeedbackConstants.VIRTUAL_KEY);
                 if(isConnected()) {
                     closeConnectionDialog();
                     return;
@@ -112,6 +114,7 @@ public class StorageManageActivity extends AppCompatActivity {
             });
             //互传清理
             findViewById(R.id.button_storage_manage_clear_transmit_data).setOnClickListener((view) -> {
+                Util.performHapticIfEnabled(view, HapticFeedbackConstants.VIRTUAL_KEY);
                 //不终止的的话 互传记录可能会在过后再次被写入
                 if(isConnected()) {
                     closeConnectionDialog();
@@ -140,6 +143,7 @@ public class StorageManageActivity extends AppCompatActivity {
                         }).show();
             });
             findViewById(R.id.button_storage_manage_clear_chaos_data).setOnClickListener(v -> {
+                Util.performHapticIfEnabled(v, HapticFeedbackConstants.VIRTUAL_KEY);
                 if(isConnected()) {
                     closeConnectionDialog();
                     return;
@@ -166,6 +170,7 @@ public class StorageManageActivity extends AppCompatActivity {
                         }).show();
             });
             findViewById(R.id.button_storage_manage_wipe_data).setOnClickListener(v -> {
+                Util.performHapticIfEnabled(v, HapticFeedbackConstants.VIRTUAL_KEY);
                 BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
                 View wipeDataLayout = getLayoutInflater().inflate(R.layout.bottom_wipe_data_confirm, null, false);
                 ConfirmSeekBar wipeDataSeekBar = wipeDataLayout.findViewById(R.id.wipe_data_confirm_seek_bar);
