@@ -155,6 +155,8 @@
     <string name="setting_function_file_manager_desc">允许信任的计算机浏览和下载设备文件</string>
     <string name="setting_function_text_send_shortcut">文本快捷发送</string>
     <string name="setting_function_text_send_shortcut_desc">在系统文本选择菜单中添加发送选项</string>
+    <string name="setting_function_file_upload_shortcut">文件快捷发送</string>
+    <string name="setting_function_file_upload_shortcut_desc">在文件打开方式或分享菜单中添加发送选项</string>
     <string name="error_change_file_manager">应用变更时发生异常 请尝试重启软件</string>
     <string name="setting_storage_permission_dialog_message">使用该功能需要存储权限 点击\"确定\"发起授权</string>
     <string name="text_crash_dialog_title">应用程序崩溃</string>

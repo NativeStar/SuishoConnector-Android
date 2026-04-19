@@ -83,10 +83,8 @@ public class SettingFragment extends PreferenceFragmentCompat {
         });
         //文本快捷发送 组件状态
         Activity activity = getActivity();
-        ComponentName sendTextAliasComponent = new ComponentName(activity, activity.getPackageName() + ".TextUploadEntry");
-        int componentState = activity.getPackageManager().getComponentEnabledSetting(sendTextAliasComponent);
-        logger.debug("Text selection shortcut component state:{}", componentState);
-        ((SwitchPreferenceCompat) findPreference("function_text_selection_shortcut")).setChecked(componentState == PackageManager.COMPONENT_ENABLED_STATE_ENABLED || componentState == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT);
+        initComponentSettingSwitch(activity, ".TextUploadEntry", "function_text_selection_shortcut");
+        initComponentSettingSwitch(activity, ".FileUploadEntry", "function_enable_file_upload_intent_filter");
         //版本名称
         String finalDisplayName = String.format("%s(%s)", BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE);
         ((TextView) aboutDialogLayout.findViewById(R.id.versionNameText)).setText(finalDisplayName);
@@ -153,14 +151,6 @@ public class SettingFragment extends PreferenceFragmentCompat {
                     stateBarManager.removeState("info_notification_listener_permission");
                 }
             }
-            return true;
-        });
-        findPreference("function_text_selection_shortcut").setOnPreferenceChangeListener((preference, newValue) -> {
-            boolean value = (boolean) newValue;
-            Activity activityNew = getActivity();
-            ComponentName component = new ComponentName(activityNew, activityNew.getPackageName() + ".TextUploadEntry");
-            activityNew.getPackageManager().setComponentEnabledSetting(component, value ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
-            logger.debug("Text selection shortcut switch change to {}", value);
             return true;
         });
         findPreference("file_save_location").setOnPreferenceClickListener(preference -> {
@@ -411,7 +401,8 @@ public class SettingFragment extends PreferenceFragmentCompat {
     @Override
     public boolean onPreferenceTreeClick(@NonNull Preference preference) {
         View listView = getListView();
-        if(listView !=null) Util.performHapticIfEnabled(listView, HapticFeedbackConstants.CONTEXT_CLICK);
+        if(listView != null)
+            Util.performHapticIfEnabled(listView, HapticFeedbackConstants.CONTEXT_CLICK);
         return super.onPreferenceTreeClick(preference);
     }
 
@@ -515,6 +506,24 @@ public class SettingFragment extends PreferenceFragmentCompat {
                 });
             }
         }).start();
+    }
+
+    private void initComponentSettingSwitch(Activity activity, String componentName, String preferenceName) {
+        ComponentName componentNameObject = new ComponentName(activity, activity.getPackageName() + componentName);
+        int componentState = activity.getPackageManager().getComponentEnabledSetting(componentNameObject);
+        logger.debug("Component '{}' state:{}", componentName, componentState);
+        SwitchPreferenceCompat switchPreferenceCompat = findPreference(preferenceName);
+        if(switchPreferenceCompat != null) {
+            switchPreferenceCompat.setChecked(componentState == PackageManager.COMPONENT_ENABLED_STATE_ENABLED || componentState == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT);
+            switchPreferenceCompat.setOnPreferenceChangeListener((preference, newValue) -> {
+                boolean value = (boolean) newValue;
+                ComponentName component = new ComponentName(activity, activity.getPackageName() + componentName);
+                activity.getPackageManager().setComponentEnabledSetting(component, value ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
+                logger.debug("Component '{}' state change to {}", componentName, value);
+                return true;
+            });
+        }
+
     }
 
     private void initReportLightDozeModeSwitch() {

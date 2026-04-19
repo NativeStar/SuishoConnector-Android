@@ -51,11 +51,28 @@
         <activity
             android:name=".activity.FileUploadActivity"
             android:excludeFromRecents="true"
-            android:exported="true"
+            android:exported="false"
             android:hardwareAccelerated="true"
             android:label="@string/title_activity_file_upload"
             android:launchMode="singleInstance"
-            android:theme="@style/Theme.Material3.DayNight.Dialog">
+            android:theme="@style/Theme.Material3.DayNight.Dialog" />
+
+        <activity-alias
+            android:name=".TextUploadEntry"
+            android:exported="true"
+            android:label="@string/label_send_text"
+            android:targetActivity=".activity.FileUploadActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".FileUploadEntry"
+            android:exported="true"
+            android:label="@string/label_send_text"
+            android:targetActivity=".activity.FileUploadActivity">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -72,18 +89,8 @@
 
                 <data android:mimeType="*/*" />
             </intent-filter>
-        </activity>
-        <activity-alias
-            android:name=".TextUploadEntry"
-            android:exported="true"
-            android:label="@string/label_send_text"
-            android:targetActivity=".activity.FileUploadActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.PROCESS_TEXT" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
         </activity-alias>
+
         <activity
             android:name=".activity.CrashDialogActivity"
             android:excludeFromRecents="true"
