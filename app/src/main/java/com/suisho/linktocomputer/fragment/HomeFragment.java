@@ -46,6 +46,7 @@ import com.journeyapps.barcodescanner.camera.CameraSettings;
 import com.journeyapps.barcodescanner.camera.PreviewCallback;
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
+import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.activity.NewMainActivity;
 import com.suisho.linktocomputer.constant.States;
 import com.suisho.linktocomputer.databinding.FragmentHomeBinding;
@@ -291,11 +292,11 @@ public class HomeFragment extends Fragment {
                                     })
                                     .show();
                         } else if(which == 4) {
-                            binding.cardConnectionStateIcon.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                            binding.cardConnectionStateIcon.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
                             new Timer().schedule(new TimerTask() {
                                 @Override
                                 public void run() {
-                                    binding.cardConnectionStateIcon.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                                    binding.cardConnectionStateIcon.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
                                 }
                             }, 80);
                         } else if(which == 5) {
@@ -386,27 +387,27 @@ public class HomeFragment extends Fragment {
             ((NewMainActivity) getActivity()).showDisconnectOrCloseApplicationDialog();
         });
         //信任模式
-        binding.cardTrustModeClickable.setOnClickListener(v -> {
+        binding.changeTrustModeButton.setOnClickListener(v -> {
+            Util.performHapticIfEnabled(v, HapticFeedbackConstants.VIRTUAL_KEY);
             NewMainActivity activity = (NewMainActivity) getActivity();
             if(activity == null || !activity.isServerConnected()) {
+                if(activity!= null) {
+                    logger.debug("User request change trust mode but not connected to computer");
+                    Snackbar.make(activity.getBinding().getRoot(), R.string.home_change_trust_mode_not_connected_tip, Snackbar.LENGTH_SHORT).show();
+                }
                 return;
             }
             logger.info("Show change trust mode dialog");
             boolean trusted = GlobalVariables.computerConfigManager.isTrustedComputer();
             logger.debug("Computer current is trusted: {}", trusted);
-            //构建对话框消息
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append(activity.getResources().getString(R.string.dialog_change_trust_mode_message));
-            stringBuilder.append(trusted ? activity.getResources().getString(R.string.text_untrusted) : activity.getResources().getString(R.string.text_trust));
-            stringBuilder.append("?\n");
-            stringBuilder.append(activity.getResources().getString(R.string.dialog_change_trust_mode_message2));
             //询问
             new MaterialAlertDialogBuilder(activity)
-                    .setTitle(R.string.dialog_change_trust_mode_title)
-                    .setMessage(stringBuilder)
+                    .setTitle(trusted ? R.string.dialog_distrust_computer_title : R.string.dialog_trust_computer_title)
+                    .setMessage(activity.getResources().getString(R.string.dialog_trust_computer_message))
                     .setNegativeButton(R.string.text_cancel, (dialog, which) -> {
                     })
                     .setPositiveButton(R.string.text_ok, (dialog, which) -> {
+                        Util.performHapticIfEnabled(v, HapticFeedbackConstants.CONTEXT_CLICK);
                         GlobalVariables.computerConfigManager.changeTrustMode();
                         logger.debug("Change trust mode to {}", !trusted);
                         activity.updateConnectionStateDisplay();

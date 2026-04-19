@@ -47,6 +47,7 @@
     <string name="text_disconnect_action_success">已关闭连接</string>
     <string name="text_need_connect_first">请先连接计算机</string>
     <string name="text_connected">已连接(%d)</string>
+    <string name="text_change">切换</string>
     <string name="text_connection_state_subtitle_not_connect">扫码或输入地址连接</string>
     <string name="nav_home">主页</string>
     <string name="nav_transmit">互传</string>
@@ -87,21 +88,19 @@
     <string name="text_send_file_null_action">无法解析分享类型</string>
     <string name="text_send_text_dialog_message">确认将分享文本发送至计算机?\n内容预览(最多显示100字符):\n
     </string>
-    <string name="text_untrusted">不信任</string>
-    <string name="text_trusted">已信任</string>
+    <string name="text_distrusted">不信任</string>
+<!--    <string name="text_trusted">已信任</string>-->
     <string name="text_cancel_trust">取消信任</string>
     <string name="dialog_trust_computer_title">信任此设备?</string>
-    <string name="dialog_trust_computer_message">此计算机将可以访问设备的通知、文件等数据
-        这可能包含隐私信息 建议仅对私人设备授予信任</string>
+    <string name="dialog_distrust_computer_title">不再信任此设备?</string>
+    <string name="dialog_trust_computer_message">信任的计算机可以访问手机的通知、文件等数据并可能保存在本地
+        其中可能包含隐私信息 请谨慎操作</string>
     <string name="dialog_write_external_storage_permission_message">
         在此Android版本上 使用该功能需要\"写入外部存储\"权限 您尚未授予软件该权限\n点击"确定"将发起授权请求
     </string>
     <string name="text_trust">信任</string>
     <string name="state_title_auto_connect_pause">自动连接暂停</string>
     <string name="state_desc_auto_connect_pause_not_wifi">未连接到WLAN网络</string>
-    <string name="dialog_change_trust_mode_title">切换信任模式</string>
-    <string name="dialog_change_trust_mode_message">将此计算机调整为:</string>
-    <string name="dialog_change_trust_mode_message2">将影响使用通知转发 文件管理等</string>
     <string name="dialog_query_all_packages_permission_desc">\"获取应用列表\"属特殊权限 系统限制严重 无法直接发起申请 不支持直接跳转具体设置页\n且各厂商对其修改均有不同\n点击\"确定\"将跳转至应用详情页 部分厂商会将其和其他权限放在一起方便用户修改\n如实在找不到该设置项 只能自行搜索设备品牌和系统如何开启该权限了\n(授予权限后需要重启应用以重新触发缓存创建)</string>
     <string name="service_mediaProjection_notification_title">音频转发服务</string>
     <string name="service_mediaProjection_notification_content">音频转发正在运行</string>
@@ -118,7 +117,6 @@
     <string name="storage_manage_cache_desc">打包的应用图标、系统优化的代码等 会在需要时重新生成</string>
     <string name="text_clear">清理</string>
     <string name="text_wipe_data">清除数据</string>
-    <string name="home_card_trust_mode_connected">信任模式(点击切换)</string>
     <string name="text_file_manage">文件浏览</string>
     <string name="dialog_wipe_data_title">正在抹除数据</string>
     <string name="dialog_wipe_data_message">完成后程序将自动退出</string>
@@ -137,6 +135,9 @@
     <string name="setting_transmit_file_conflict_behavior_desc">当接收的文件名重复时如何处理</string>
     <string name="home_card_trust_mode">信任模式</string>
     <string name="home_card_media_projection">音频转发(点击授权)</string>
+    <string name="home_change_trust_mode_not_connected_tip">需要连接计算机才能修改该设置
+如有需要可前往设置页\'信任设备管理\'进行操作
+    </string>
     <string name="dialog_close_application_confirm_message">确认关闭应用?</string>
     <string name="text_connect_failed">连接失败</string>
     <string name="text_invalid_qrcode">无效二维码</string>

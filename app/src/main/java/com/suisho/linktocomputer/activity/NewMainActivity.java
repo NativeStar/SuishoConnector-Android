@@ -451,7 +451,6 @@ public class NewMainActivity extends AppCompatActivity {
                                 ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_not_connect);
                                 ((TextView) findViewById(R.id.card_text_trust_mode)).setText(R.string.text_not_connect);
                                 ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_not_connect);
-                                ((TextView) findViewById(R.id.card_title_trust_mode)).setText(R.string.home_card_trust_mode);
                                 ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_close_24);
                                 ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(R.string.text_unauthorized);
                                 stateBarManager.removeState("warn_pc_protocol_version_low");
@@ -611,7 +610,6 @@ public class NewMainActivity extends AppCompatActivity {
             ((TextView) findViewById(R.id.card_text_computer_id)).setText(GlobalVariables.computerId);
             ((TextView) findViewById(R.id.card_text_connection_state)).setText(getString(R.string.text_connected, GlobalVariables.computerConfigManager.getProtocolVersion()));
             ((TextView) findViewById(R.id.card_text_connection_state_subtitle)).setText(GlobalVariables.computerName);
-            ((TextView) findViewById(R.id.card_title_trust_mode)).setText(R.string.home_card_trust_mode_connected);
             ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(networkService.getMediaProjectionServiceIntent() == null ? R.string.text_unauthorized : R.string.text_authorized);
             //图标
             ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_link_off_24);
@@ -639,9 +637,9 @@ public class NewMainActivity extends AppCompatActivity {
                 }
             } else {
                 //不信任的设备
-                ((TextView) findViewById(R.id.card_text_trust_mode)).setText(R.string.text_untrusted);
-                ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_untrusted);
-                ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_untrusted);
+                ((TextView) findViewById(R.id.card_text_trust_mode)).setText(R.string.text_distrusted);
+                ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_distrusted);
+                ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_distrusted);
             }
         });
     }
@@ -654,8 +652,8 @@ public class NewMainActivity extends AppCompatActivity {
             return;
         }
         if(!GlobalVariables.computerConfigManager.isTrustedComputer()) {
-            ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_untrusted);
-            ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_untrusted);
+            ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_distrusted);
+            ((TextView) findViewById(R.id.card_text_notification_forward)).setText(R.string.text_distrusted);
             return;
         }
         if(!GlobalVariables.preferences.getBoolean("function_notification_forward", false)) {

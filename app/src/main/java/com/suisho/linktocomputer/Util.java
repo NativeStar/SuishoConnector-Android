@@ -14,6 +14,7 @@ import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.TypedValue;
+import android.view.View;
 
 import androidx.annotation.Nullable;
 
@@ -294,5 +295,9 @@ public class Util {
             src=src.replace("+","%2b");
         }
         return src;
+    }
+    public static void performHapticIfEnabled(View view, int feedbackConstant){
+        //TODO 设置项判定
+        view.performHapticFeedback(feedbackConstant);
     }
 }
