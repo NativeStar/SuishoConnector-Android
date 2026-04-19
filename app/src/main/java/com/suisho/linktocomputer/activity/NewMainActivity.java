@@ -136,6 +136,11 @@ public class NewMainActivity extends AppCompatActivity {
         getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
+                //默认回主页
+                if(binding.homeViewPager2.getCurrentItem() != 0){
+                    binding.homeViewPager2.setCurrentItem(0);
+                    return;
+                }
                 if(networkService == null || !networkService.isConnected) {
                     logger.debug("onBackInvokedCallback called.Show exit confirm dialog");
                     new MaterialAlertDialogBuilder(NewMainActivity.this)
