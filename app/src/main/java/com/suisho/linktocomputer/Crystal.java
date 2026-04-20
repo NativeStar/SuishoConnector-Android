@@ -6,11 +6,13 @@ import android.os.Build;
 import android.os.Process;
 import android.os.RemoteException;
 
+import androidx.core.app.NotificationManagerCompat;
+
+import com.google.android.material.color.DynamicColors;
 import com.suisho.linktocomputer.activity.CrashDialogActivity;
 import com.suisho.linktocomputer.activity.NewMainActivity;
 import com.suisho.linktocomputer.database.MyObjectBox;
 import com.suisho.linktocomputer.enums.ConnectionCloseCode;
-import com.google.android.material.color.DynamicColors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +39,8 @@ public class Crystal extends Application {
         initLogger();
         applyDynamicColorsIfAvailable();
         initDatabase();
+        //移除可能遗留的掉线通知
+        NotificationManagerCompat.from(this).cancelAll();
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> new Thread(() -> {
             logger.error("Fatal error!!!", e);
             if(NewMainActivity.networkService != null && NewMainActivity.networkService.isConnected) {
