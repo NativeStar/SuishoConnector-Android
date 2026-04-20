@@ -78,6 +78,12 @@
             android:title="导出互传文件" />
         <SwitchPreferenceCompat
             android:defaultValue="true"
+            android:icon="@drawable/baseline_playlist_remove_24"
+            android:key="transmit_delete_message_confirm"
+            android:summary="删除互传消息时弹出二次确认对话框"
+            android:title="删除消息确认" />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
             android:icon="@drawable/baseline_data_saver_off_24"
             android:key="transmit_save_history"
             android:summary="关闭后传输记录将不会保存"

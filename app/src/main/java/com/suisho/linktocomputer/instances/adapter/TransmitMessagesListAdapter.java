@@ -315,23 +315,24 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         }
                         popupWindow.dismiss();
                     }));
+                    //删除对应文件
                     menuLayout.findViewById(R.id.long_click_menu_action_delete_file).setOnClickListener(v -> {
                         popupWindow.dismiss();
-                        new MaterialAlertDialogBuilder(activity)
-                                .setMessage("确认删除该消息及其对应的文件?")
-                                .setPositiveButton("确认", (dialog, which) -> {
-                                    dialog.dismiss();
-                                    File file = new File(messageInstance.filePath);
-                                    //检测文件是否存在
-                                    if(file.exists()) {
-                                        file.delete();
-                                    }
-                                    TransmitMessageAbstract transmitMessageAbstract = dataList.get(holder.getLayoutPosition());
-                                    database.remove(transmitMessageAbstract.timestamp);
-                                    dataList.remove(holder.getLayoutPosition());
-                                    //通知移除和保存
-                                    notifyItemRemoved(holder.getLayoutPosition());
-                                }).setNegativeButton("取消", (dialog, which) -> dialog.cancel()).show();
+                        if(GlobalVariables.preferences.getBoolean("transmit_delete_message_confirm", true)) {
+                            new MaterialAlertDialogBuilder(activity)
+                                    .setMessage("确认删除该消息及其对应的文件?")
+                                    .setPositiveButton("确认", (dialog, which) -> {
+                                        dialog.dismiss();
+                                        File file = new File(messageInstance.filePath);
+                                        //检测文件是否存在
+                                        if(file.exists()) {
+                                            file.delete();
+                                        }
+                                        removeItem(holder.getLayoutPosition());
+                                    }).setNegativeButton("取消", (dialog, which) -> dialog.cancel()).show();
+                        } else {
+                            removeItem(holder.getLayoutPosition());
+                        }
                     });
                     showPopupMenu(popupWindow, view, menuLayout);
                     return true;
@@ -351,17 +352,17 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
         //删除
         menu.findViewById(R.id.long_click_menu_action_delete).setOnClickListener(v -> activity.runOnUiThread(() -> {
             popup.dismiss();
-            new MaterialAlertDialogBuilder(activity)
-                    .setMessage("确认删除该消息?")
-                    .setPositiveButton("确定", (dialog, which) -> {
-                        //删除
-                        dialog.dismiss();
-                        TransmitMessageAbstract transmitMessageAbstract = dataList.get(holder.getLayoutPosition());
-                        database.remove(transmitMessageAbstract.timestamp);
-                        dataList.remove(holder.getLayoutPosition());
-                        //通知移除和保存
-                        notifyItemRemoved(holder.getLayoutPosition());
-                    }).setNegativeButton("取消", (dialog, which) -> dialog.cancel())/*啥事没有*/.show();
+            if(GlobalVariables.preferences.getBoolean("transmit_delete_message_confirm", true)) {
+                new MaterialAlertDialogBuilder(activity)
+                        .setMessage("确认删除该消息?")
+                        .setPositiveButton("确定", (dialog, which) -> {
+                            //删除
+                            dialog.dismiss();
+                            removeItem(holder.getLayoutPosition());
+                        }).setNegativeButton("取消", (dialog, which) -> dialog.cancel()).show();
+            } else {
+                removeItem(holder.getLayoutPosition());
+            }
         }));
     }
 
@@ -450,6 +451,14 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
 
     private boolean enableSaveHistory() {
         return GlobalVariables.preferences.getBoolean("transmit_save_history", true);
+    }
+
+    private void removeItem(int position) {
+        TransmitMessageAbstract transmitMessageAbstract = dataList.get(position);
+        database.remove(transmitMessageAbstract.timestamp);
+        dataList.remove(position);
+        //通知移除和保存
+        notifyItemRemoved(position);
     }
 
     private void showPopupMenu(PopupWindow popupWindow, View parent, View menuLayout) {
