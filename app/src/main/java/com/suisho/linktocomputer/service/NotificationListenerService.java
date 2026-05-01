@@ -33,6 +33,7 @@ public class NotificationListenerService extends android.service.notification.No
     private MediaSessionManager mediaSessionManager;
     private final Logger logger = LoggerFactory.getLogger(NotificationListenerService.class);
     private KeyguardManager keyguardManager;
+
     public NotificationListenerService() {
     }
 
@@ -66,10 +67,14 @@ public class NotificationListenerService extends android.service.notification.No
 
     public void setMainService(@Nullable ConnectMainService service) {
         //在这初始化避免 NPE
-        if(keyguardManager==null){
-            keyguardManager=(KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+        if(keyguardManager == null) {
+            keyguardManager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
         }
         networkService = service;
+        if(mediaSessionManager != null) {
+            mediaSessionManager.cancelReportTimer();
+            mediaSessionManager = null;
+        }
     }
 
     public void setEnable(boolean enable) {
@@ -170,6 +175,12 @@ public class NotificationListenerService extends android.service.notification.No
     @Override
     public void onListenerConnected() {
         super.onListenerConnected();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mediaSessionManager.cancelReportTimer();
     }
 
     @Nullable

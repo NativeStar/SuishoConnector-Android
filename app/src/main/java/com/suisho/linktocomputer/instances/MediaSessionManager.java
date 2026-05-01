@@ -12,9 +12,9 @@ import android.util.Base64;
 
 import androidx.annotation.Nullable;
 
+import com.google.gson.JsonObject;
 import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.service.ConnectMainService;
-import com.google.gson.JsonObject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MediaSessionManager extends MediaController.Callback {
     private final ConnectMainService networkService;
@@ -30,6 +32,7 @@ public class MediaSessionManager extends MediaController.Callback {
     private MediaController mediaController;
     private MediaMetadata currentMetadata;
     private volatile String lastBitmapSha256 = "";
+    private final Timer timer;
     private final Logger logger = LoggerFactory.getLogger(MediaSessionManager.class);
 
     private static class CalcBitmapResult {
@@ -37,6 +40,7 @@ public class MediaSessionManager extends MediaController.Callback {
             this.bytes = bytes;
             this.sha256 = sha256;
         }
+
         public byte[] bytes;
         public String sha256;
     }
@@ -44,6 +48,22 @@ public class MediaSessionManager extends MediaController.Callback {
     public MediaSessionManager(ConnectMainService networkService, StatusBarNotification sbn, MediaSession.Token token) {
         this.networkService = networkService;
         setNewMediaSession(sbn, token);
+        timer = new Timer("PlaybackStateReport", true);
+        //每30s重新上报播放状态 降低误差
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                refreshPlaybackState();
+                logger.debug("Refresh playback state");
+            }
+        }, 0, 30 * 1000);
+    }
+
+    public void refreshPlaybackState() {
+        if(currentMetadata != null && mediaController != null) {
+            PlaybackState state = mediaController.getPlaybackState();
+            if(state != null) updatePlaybackState(state);
+        }
     }
 
     public void setNewMediaSession(StatusBarNotification sbn, MediaSession.Token token) {
@@ -89,7 +109,7 @@ public class MediaSessionManager extends MediaController.Callback {
         }
         logger.debug("Create new media controller");
         mediaController = new MediaController(this.networkService, token);
-        new Handler(Looper.getMainLooper()).post(()->mediaController.registerCallback(this));
+        new Handler(Looper.getMainLooper()).post(() -> mediaController.registerCallback(this));
         this.onMetadataChanged(mediaController.getMetadata());
         PlaybackState state = mediaController.getPlaybackState();
         if(state != null)
@@ -158,6 +178,11 @@ public class MediaSessionManager extends MediaController.Callback {
             }
             networkService.sendObject(jsonObject);
         }).start();
+    }
+
+    public void cancelReportTimer() {
+        logger.debug("Cancel report timer");
+        timer.cancel();
     }
 
     private void updatePlaybackState(PlaybackState state) {
