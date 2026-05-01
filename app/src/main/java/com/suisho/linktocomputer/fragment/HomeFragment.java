@@ -456,11 +456,11 @@ public class HomeFragment extends Fragment {
                         int dataWidth = sourceData.getDataWidth();
                         int dataHeight = sourceData.getDataHeight();
                         /*缩减探测大小
-                        尽管强行把预览方向扭了过来 但实际数据还是横着的
+                        强行把预览方向扭了过来 但实际数据好像还是横着的?
                         裁切的时候要注意
                         */
                         //由于通常扫码BottomSheet都是半开 对上方的裁切要更宽松
-                        sourceData.setCropRect(new Rect((int) (dataWidth * 0.1), (int) (dataHeight * 0.05), (int) (dataWidth * 0.8), (int) (dataHeight * 0.95)));
+                        sourceData.setCropRect(new Rect((int) (dataWidth * 0.1), (int) (dataHeight * 0.05), (int) (dataWidth * 0.7), (int) (dataHeight * 0.95)));
                         BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(sourceData.createSource()));
                         try {
                             Result result = reader.decode(bitmap);
