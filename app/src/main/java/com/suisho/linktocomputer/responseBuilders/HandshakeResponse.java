@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Build;
 
 import com.google.gson.JsonObject;
+import com.suisho.linktocomputer.BuildConfig;
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
 
@@ -38,6 +39,8 @@ public class HandshakeResponse {
         jsonObject.addProperty("androidId", GlobalVariables.androidId);
         //安卓版本
         jsonObject.addProperty("androidVersion", Build.VERSION.SDK_INT);
+        //客户端版本
+        jsonObject.addProperty("clientVersionCode", BuildConfig.VERSION_CODE);
         logger.debug("Created handshake response packet");
         return jsonObject;
     }
