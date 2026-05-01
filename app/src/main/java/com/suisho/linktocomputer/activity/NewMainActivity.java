@@ -137,7 +137,7 @@ public class NewMainActivity extends AppCompatActivity {
             @Override
             public void handleOnBackPressed() {
                 //默认回主页
-                if(binding.homeViewPager2.getCurrentItem() != 0){
+                if(binding.homeViewPager2.getCurrentItem() != 0) {
                     binding.homeViewPager2.setCurrentItem(0);
                     return;
                 }
@@ -207,23 +207,23 @@ public class NewMainActivity extends AppCompatActivity {
         binding.getRoot().post(() -> {
             //点击导航栏更改fragment显示
             binding.connectedActivityNavigationBar.setOnItemSelectedListener(item -> {
-                int currentItem = binding.homeViewPager2.getCurrentItem();
                 int selectedId = item.getItemId();
                 Util.performHapticIfEnabled(binding.connectedActivityNavigationBar, HapticFeedbackConstants.KEYBOARD_TAP);
                 if(selectedId == R.id.connected_activity_navigation_bar_menu_home) {
                     binding.homeViewPager2.setCurrentItem(0);
                 } else if(selectedId == R.id.connected_activity_navigation_bar_menu_transmit) {
-                    if(currentItem == 1) {
-                        //到底部
-                        viewPagerAdapter.getTransmitFragment().scrollMessagesViewToBottom(true);
-                        logger.debug("Transmit page scroll to bottom by navigation double click");
-                    } else {
-                        binding.homeViewPager2.setCurrentItem(1);
-                    }
+                    binding.homeViewPager2.setCurrentItem(1);
                 } else {
                     binding.homeViewPager2.setCurrentItem(2);
                 }
                 return true;
+            });
+            binding.connectedActivityNavigationBar.setOnItemReselectedListener(item -> {
+                Util.performHapticIfEnabled(binding.connectedActivityNavigationBar, HapticFeedbackConstants.KEYBOARD_TAP);
+                if(item.getItemId() == R.id.connected_activity_navigation_bar_menu_transmit) {
+                    viewPagerAdapter.getTransmitFragment().scrollMessagesViewToBottom(true);
+                    logger.debug("Transmit page scroll to bottom by navigation double click");
+                }
             });
             //禁止左右滑动
             binding.homeViewPager2.setUserInputEnabled(false);
@@ -232,7 +232,6 @@ public class NewMainActivity extends AppCompatActivity {
                 @Override
                 public void onPageSelected(int position) {
                     super.onPageSelected(position);
-                    binding.connectedActivityNavigationBar.setSelectedItemId(navigationIds[position]);
                     if(position == 0) {
                         Handler handler = new Handler(Looper.getMainLooper());
                         handler.post(() -> updateChangeableFunctionStateDisplay());
@@ -434,7 +433,7 @@ public class NewMainActivity extends AppCompatActivity {
                             logger.info("Show pc protocol version too low state");
                             stateBarManager.addState(States.getStateList().get("warn_pc_protocol_version_low"));
                         }
-                        Util.performHapticIfEnabled(binding.toolbar,HapticFeedbackConstants.KEYBOARD_TAP);
+                        Util.performHapticIfEnabled(binding.toolbar, HapticFeedbackConstants.KEYBOARD_TAP);
                         new Timer().schedule(new TimerTask() {
                             @Override
                             public void run() {
