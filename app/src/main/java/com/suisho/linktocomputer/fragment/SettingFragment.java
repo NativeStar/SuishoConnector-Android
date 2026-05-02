@@ -20,6 +20,7 @@ import android.provider.Settings;
 import android.view.HapticFeedbackConstants;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -153,6 +154,17 @@ public class SettingFragment extends PreferenceFragmentCompat {
                     stateBarManager.removeState("info_notification_listener_permission");
                 }
             }
+            return true;
+        });
+        //阻止截屏开关
+        findPreference("function_enable_flag_secure").setOnPreferenceChangeListener((preference, newValue)->{
+            boolean value = (boolean) newValue;
+            if(value) {
+                getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+            }else{
+                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+            }
+            logger.info("Change flag secure to {}",value);
             return true;
         });
         findPreference("file_save_location").setOnPreferenceClickListener(preference -> {
@@ -331,6 +343,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
         }
         saveLogResultLauncher = registerForActivityResult(new ActivityResultContracts.CreateDocument("application/zip"), this::exportAllLogs);
         initReportLightDozeModeSwitch();
+        initSettings();
     }
 
     private void initLaunchVerifySwitch() {
@@ -376,7 +389,13 @@ public class SettingFragment extends PreferenceFragmentCompat {
             return false;
         });
     }
-
+    private void initSettings(){
+        //flag secure
+        if(GlobalVariables.preferences.getBoolean("function_enable_flag_secure",false)){
+            getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+            logger.info("Init flag secure");
+        }
+    }
     private void showStoragePermissionDialog() {
         logger.debug("Show storage permission dialog");
         new MaterialAlertDialogBuilder(getActivity())
@@ -524,7 +543,6 @@ public class SettingFragment extends PreferenceFragmentCompat {
                 return true;
             });
         }
-
     }
 
     private void initReportLightDozeModeSwitch() {
