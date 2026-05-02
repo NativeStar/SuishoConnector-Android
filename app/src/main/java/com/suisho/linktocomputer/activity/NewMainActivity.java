@@ -138,7 +138,7 @@ public class NewMainActivity extends AppCompatActivity {
             public void handleOnBackPressed() {
                 //默认回主页
                 if(binding.homeViewPager2.getCurrentItem() != 0) {
-                    binding.homeViewPager2.setCurrentItem(0);
+                    binding.connectedActivityNavigationBar.setSelectedItemId(navigationIds[0]);
                     return;
                 }
                 if(networkService == null || !networkService.isConnected) {
