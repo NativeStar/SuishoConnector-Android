@@ -41,6 +41,7 @@ public class CheckUpdateHandle implements MessageQueue.IdleHandler {
                     if(BuildConfig.VERSION_CODE < jsonInstance.versionCode){
                         logger.info("Update available:{}", jsonInstance.versionName);
                         activity.stateBarManager.addState(States.getStateList().get("info_update_available"));
+                        GlobalVariables.checkUpdateJson = jsonInstance;
                         return;
                     }
                     logger.info("Current is latest version:{}", jsonInstance.versionName);

@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import com.suisho.linktocomputer.instances.ComputerConfigManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.suisho.linktocomputer.jsonClass.CheckUpdateJson;
 
 import java.util.HashMap;
 
@@ -20,4 +21,5 @@ public class GlobalVariables {
     public static HashMap<String,String> appPackageNameMapper= new HashMap<>();
     public static ComputerConfigManager computerConfigManager;
     public static String currentBootLogFilePath ="null";
+    public static CheckUpdateJson checkUpdateJson;
 }

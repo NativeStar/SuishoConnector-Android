@@ -2,9 +2,12 @@ package com.suisho.linktocomputer.instances.adapter;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.DownloadManager;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Environment;
 import android.provider.Settings;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
@@ -17,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.constant.States;
@@ -28,13 +32,14 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 
 public class StateListAdapter extends RecyclerView.Adapter {
     private final Activity activity;
-    private final HashMap<String, States.State> newStates=new HashMap<>();
+    private final HashMap<String, States.State> newStates = new HashMap<>();
     //recyclerview喂不了hashmap
-    private final List<States.State> renderList=new ArrayList<>();
-    public StateLevel highestLevel=StateLevel.CHECKED;
+    private final List<States.State> renderList = new ArrayList<>();
+    public StateLevel highestLevel = StateLevel.CHECKED;
     private final Logger logger = LoggerFactory.getLogger(StateListAdapter.class);
 
     @NonNull
@@ -42,14 +47,15 @@ public class StateListAdapter extends RecyclerView.Adapter {
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         return new Holder(LayoutInflater.from(parent.getContext()).inflate(R.layout.state_card, parent, false));
     }
+
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         holder.itemView.setBackgroundColor(Color.TRANSPARENT);
-        States.State state=renderList.get(position);
+        States.State state = renderList.get(position);
         //根据等级设置图标
-        ImageView imageView=holder.itemView.findViewById(R.id.state_dialog_card_icon);
-        logger.debug("Init new state:{}",state.id);
-        switch (state.level){
+        ImageView imageView = holder.itemView.findViewById(R.id.state_dialog_card_icon);
+        logger.debug("Init new state:{}", state.id);
+        switch (state.level) {
             case BUSY:
                 imageView.setImageResource(R.drawable.baseline_hourglass_top_24);
                 break;
@@ -67,30 +73,31 @@ public class StateListAdapter extends RecyclerView.Adapter {
                 break;
         }
         //可点击
-        if(state.clickable){
-            logger.debug("State '{}' clickable",state.id);
+        if(state.clickable) {
+            logger.debug("State '{}' clickable", state.id);
             holder.itemView.findViewById(R.id.state_dialog_card_clickable_icon).setVisibility(View.VISIBLE);
-            holder.itemView.setOnClickListener((view)->{
+            holder.itemView.setOnClickListener((view) -> {
                 Util.performHapticIfEnabled(view, HapticFeedbackConstants.CONTEXT_CLICK);
                 onCardClick(state);
             });
-        }else{
+        } else {
             //避免操作错乱
             holder.itemView.findViewById(R.id.state_dialog_card_clickable_icon).setVisibility(View.GONE);
             holder.itemView.setClickable(false);
         }
         //描述文本
-        ((TextView)holder.itemView.findViewById(R.id.state_dialog_card_name)).setText(activity.getText(state.name));
-        ((TextView)holder.itemView.findViewById(R.id.state_dialog_card_description)).setText(activity.getText(state.description));
+        ((TextView) holder.itemView.findViewById(R.id.state_dialog_card_name)).setText(activity.getText(state.name));
+        ((TextView) holder.itemView.findViewById(R.id.state_dialog_card_description)).setText(activity.getText(state.description));
     }
 
     /**
      * 根据状态卡片类型执行点击事件
+     *
      * @param state 状态实例
      */
-    private void onCardClick(States.State state){
-        logger.debug("Clicked state card:{}",state.id);
-        switch (state.id){
+    private void onCardClick(States.State state) {
+        logger.debug("Clicked state card:{}", state.id);
+        switch (state.id) {
             case "info_battery_opt":
                 @SuppressLint("BatteryLife")
                 Intent batteryOptIntent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
@@ -108,8 +115,8 @@ public class StateListAdapter extends RecyclerView.Adapter {
                 Intent intent = new Intent();
                 intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
                 intent.putExtra("app_package", activity.getPackageName());
-                intent.putExtra("app_uid",activity.getApplicationInfo().uid);
-                intent.putExtra("android.provider.extra.APP_PACKAGE",activity.getPackageName());
+                intent.putExtra("app_uid", activity.getApplicationInfo().uid);
+                intent.putExtra("android.provider.extra.APP_PACKAGE", activity.getPackageName());
                 activity.startActivity(intent);
                 logger.debug("Open notification permission activity");
                 break;
@@ -117,7 +124,7 @@ public class StateListAdapter extends RecyclerView.Adapter {
                 new MaterialAlertDialogBuilder(activity)
                         .setTitle(R.string.permission_request_alert_title)
                         .setMessage(R.string.dialog_query_all_packages_permission_desc)
-                        .setNegativeButton(R.string.text_cancel,null)
+                        .setNegativeButton(R.string.text_cancel, null)
                         .setPositiveButton(R.string.text_ok, (dialog, which) -> {
                             Intent appDetailPageIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
                             appDetailPageIntent.setData(Uri.parse("package:" + activity.getPackageName()));
@@ -127,54 +134,87 @@ public class StateListAdapter extends RecyclerView.Adapter {
                 break;
             case "info_update_available":
                 //打开Github release
+                MaterialAlertDialogBuilder updateDialog = new MaterialAlertDialogBuilder(activity);
                 Intent githubUrlIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/NativeStar/SuishoConnector-Android/releases"));
-                activity.startActivity(githubUrlIntent);
-                logger.debug("Open github release page");
+                if(GlobalVariables.checkUpdateJson == null) {
+                    updateDialog.setTitle("发现新版本")
+                            .setMessage("获取更新数据失败 但您仍可以手动前往Github Release页面手动检查更新")
+                            .setPositiveButton("前往", (dialog, which) -> {
+                                activity.startActivity(githubUrlIntent);
+                                logger.debug("Open github release page with update json object not found");
+                            }).setNegativeButton("取消", null);
+                } else {
+                    updateDialog.setTitle(String.format(Locale.getDefault(), "发现新版本:%s", GlobalVariables.checkUpdateJson.versionName))
+                            .setMessage(GlobalVariables.checkUpdateJson.description)
+                            .setPositiveButton("下载", (dialog, which) -> {
+                                DownloadManager downloadManager = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
+                                //下载地址和访问地址不一样 替换
+                                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(GlobalVariables.checkUpdateJson.downloadUrl));
+                                request.setTitle(activity.getString(R.string.app_name));
+                                request.setDescription(activity.getString(R.string.direct_download_desc));
+                                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "SuishoConnectorUpdate.apk");
+                                request.setMimeType("application/vnd.android.package-archive");
+                                downloadManager.enqueue(request);
+                            })
+                            .setNegativeButton("取消", null)
+                            .setNeutralButton("查看Release", (dialog, which) -> {
+                                activity.startActivity(githubUrlIntent);
+                                logger.debug("Open github release page");
+                            });
+                }
+                updateDialog.show();
                 break;
             default:
-                logger.warn("Unknown state card type:{}",state.id);
+                logger.warn("Unknown state card type:{}", state.id);
         }
     }
+
     @Override
     public int getItemCount() {
         return renderList.size();
     }
 
     public StateListAdapter(Activity activity) {
-        this.activity=activity;
+        this.activity = activity;
     }
-    public void addState(States.State state, boolean refresh){
-        logger.debug("Request add state:{}",state.id);
+
+    public void addState(States.State state, boolean refresh) {
+        logger.debug("Request add state:{}", state.id);
         if(newStates.containsKey(state.id)) return;
-        newStates.put(state.id,state);
+        newStates.put(state.id, state);
         if(refresh) refreshRenderList();
     }
-    public void removeState(States.State state,boolean refresh){
-        logger.debug("Request remove state by instance:{}",state.id);
+
+    public void removeState(States.State state, boolean refresh) {
+        logger.debug("Request remove state by instance:{}", state.id);
         if(!newStates.containsKey(state.id)) return;
         newStates.remove(state.id);
         if(refresh) refreshRenderList();
     }
-    public void removeState(String id,boolean refresh){
-        logger.debug("Request remove state by id:{}",id);
+
+    public void removeState(String id, boolean refresh) {
+        logger.debug("Request remove state by id:{}", id);
         if(!newStates.containsKey(id)) return;
         newStates.remove(id);
         if(refresh) refreshRenderList();
     }
-    private void refreshRenderList(){
+
+    private void refreshRenderList() {
         logger.debug("Refresh render list");
         //计算前重置状态
-        highestLevel=StateLevel.CHECKED;
+        highestLevel = StateLevel.CHECKED;
         renderList.clear();
         newStates.forEach((s, state) -> {
-            if(state.level.compareTo(highestLevel) > 0){
-                highestLevel=state.level;
+            if(state.level.compareTo(highestLevel) > 0) {
+                highestLevel = state.level;
             }
             renderList.add(state);
         });
-        activity.runOnUiThread(()->notifyDataSetChanged());
+        activity.runOnUiThread(() -> notifyDataSetChanged());
     }
-    private static class Holder extends RecyclerView.ViewHolder{
+
+    private static class Holder extends RecyclerView.ViewHolder {
         public Holder(@NonNull View itemView) {
             super(itemView);
         }
