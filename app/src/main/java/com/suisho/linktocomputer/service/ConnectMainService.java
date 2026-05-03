@@ -387,7 +387,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                         logger.debug("Found self process");
                                         if(runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND && runningAppProcessInfo.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING) {
                                             //软件在后台 发送掉线通知
-                                            //前台一是已经有对话框 二是可能连接是用户手动点击关的
+                                            //在前台时已经有对话框 而且可能连接是用户手动点击关的
                                             //只在非自身原因关闭连接时才发送
                                             if(code != ConnectionCloseCode.CloseFromClient) {
                                                 Notification notification = new Notification.Builder(ConnectMainService.this, "onDisconnectNotification")

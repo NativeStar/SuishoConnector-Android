@@ -72,6 +72,7 @@ public class AutoConnector extends Thread {
             //去掉连接中提示
             activity.runOnUiThread(() -> {
                 activity.viewPagerAdapter.getHomeFragment().setAutoConnecting(false);
+                if(this.lock.isHeld()) lock.release();
             });
         } finally {
             if(socket != null && !socket.isClosed()) {

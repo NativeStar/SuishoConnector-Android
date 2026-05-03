@@ -148,7 +148,6 @@ public class StateListAdapter extends RecyclerView.Adapter {
                             .setMessage(GlobalVariables.checkUpdateJson.description)
                             .setPositiveButton("下载", (dialog, which) -> {
                                 DownloadManager downloadManager = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
-                                //下载地址和访问地址不一样 替换
                                 DownloadManager.Request request = new DownloadManager.Request(Uri.parse(GlobalVariables.checkUpdateJson.downloadUrl));
                                 request.setTitle(activity.getString(R.string.app_name));
                                 request.setDescription(activity.getString(R.string.direct_download_desc));

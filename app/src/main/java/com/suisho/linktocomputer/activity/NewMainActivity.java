@@ -316,11 +316,11 @@ public class NewMainActivity extends AppCompatActivity {
             //更改view
             viewPagerAdapter.getHomeFragment().setAutoConnecting(true);
             //接收udp广播
-            WifiManager manager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
-            WifiManager.MulticastLock lock = manager.createMulticastLock("udp");
-            lock.acquire();
             if(autoConnector == null) {
                 //刚启动
+                WifiManager manager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
+                WifiManager.MulticastLock lock = manager.createMulticastLock("udp");
+                lock.acquire();
                 autoConnector = new AutoConnector(getFilesDir() + "/bind.key", this, lock);
                 autoConnector.start();
                 logger.info("Receiving auto connect broadcast");
