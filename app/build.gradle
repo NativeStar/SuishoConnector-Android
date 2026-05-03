@@ -18,8 +18,8 @@ android {
         minSdk 29
         targetSdk 33
         //noinspection ExpiredTargetSdkVersion,ExpiredTargetSdkVersion
-        versionCode 10
-        versionName "1.1.4"
+        versionCode 11
+        versionName "1.1.5"
         ndk {
             abiFilters "arm64-v8a"
         }
