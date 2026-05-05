@@ -4,6 +4,10 @@ import android.app.KeyguardManager;
 import android.app.Notification;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.Icon;
 import android.media.session.MediaSession;
 import android.os.Binder;
 import android.os.IBinder;
@@ -11,15 +15,20 @@ import android.service.notification.StatusBarNotification;
 
 import androidx.annotation.Nullable;
 
+import com.google.gson.JsonObject;
 import com.suisho.linktocomputer.GlobalVariables;
+import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.instances.MediaSessionManager;
 import com.suisho.linktocomputer.responseBuilders.NotificationPacket;
-import com.google.gson.JsonObject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
 
 
 public class NotificationListenerService extends android.service.notification.NotificationListenerService {
@@ -33,6 +42,7 @@ public class NotificationListenerService extends android.service.notification.No
     private MediaSessionManager mediaSessionManager;
     private final Logger logger = LoggerFactory.getLogger(NotificationListenerService.class);
     private KeyguardManager keyguardManager;
+    private final HashSet<String> notificationIconHash = new HashSet<>();
 
     public NotificationListenerService() {
     }
@@ -75,6 +85,8 @@ public class NotificationListenerService extends android.service.notification.No
             mediaSessionManager.cancelReportTimer();
             mediaSessionManager = null;
         }
+        //重新连接后清空缓存记录
+        notificationIconHash.clear();
     }
 
     public void setEnable(boolean enable) {
@@ -125,6 +137,8 @@ public class NotificationListenerService extends android.service.notification.No
             //拒绝转发电子垃圾
             if(isRubbishNotification(notificationInstance.extras.getString(Notification.EXTRA_TITLE, ""), notificationInstance.extras.getString(Notification.EXTRA_TEXT, ""), notificationInstance.extras.getInt(Notification.EXTRA_PROGRESS, -1)))
                 return;
+            //TODO 加设置 作为实验性选项默认关闭该功能
+            NotificationIconData iconData = parseNotificationIcon(notificationInstance);
             NotificationPacket packet;
             logger.debug("Ready forward notification {}:{}", sbn.getPackageName(), notificationInstance.extras.getString(Notification.EXTRA_TITLE, ""));
             try {
@@ -142,7 +156,9 @@ public class NotificationListenerService extends android.service.notification.No
                         sbn.getKey(),
                         (notificationInstance.flags & Notification.FLAG_ONGOING_EVENT) != 0,
                         notificationInstance.extras.getInt(Notification.EXTRA_PROGRESS, -1),
-                        keyguardManager != null && keyguardManager.isKeyguardLocked()
+                        keyguardManager != null && keyguardManager.isKeyguardLocked(),
+                        iconData == null ? null : iconData.hash,
+                        iconData == null ? null : iconData.iconBase64
                 );
             } catch (PackageManager.NameNotFoundException e) {
                 logger.error("Error on create notification packet", e);
@@ -156,7 +172,9 @@ public class NotificationListenerService extends android.service.notification.No
                         sbn.getKey(),
                         (notificationInstance.flags & Notification.FLAG_ONGOING_EVENT) != 0,
                         notificationInstance.extras.getInt(Notification.EXTRA_PROGRESS, -1),
-                        keyguardManager != null && keyguardManager.isKeyguardLocked()
+                        keyguardManager != null && keyguardManager.isKeyguardLocked(),
+                        null,
+                        null
                 );
             }
             networkService.sendObject(packet.getJsonObject());
@@ -208,6 +226,46 @@ public class NotificationListenerService extends android.service.notification.No
             mediaSessionManager = new MediaSessionManager(networkService, sbn, token);
         } else {
             mediaSessionManager.setNewMediaSession(sbn, token);
+        }
+    }
+
+    @Nullable
+    private NotificationIconData parseNotificationIcon(Notification notification) {
+        Icon notificationIcon = notification.getLargeIcon();
+        if(notificationIcon != null && (notificationIcon.getType() == Icon.TYPE_BITMAP)) {
+            Drawable iconDrawable = notificationIcon.loadDrawable(this);
+            if(iconDrawable instanceof BitmapDrawable) {
+                Bitmap iconBitmap = ((BitmapDrawable) iconDrawable).getBitmap();
+                if(iconBitmap != null) {
+                    try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+                        boolean compressResult = iconBitmap.compress(Bitmap.CompressFormat.PNG, 75, stream);
+                        if(!compressResult) return null;
+                        byte[] bytes = stream.toByteArray();
+                        String iconHash = Util.calculateSHA256(bytes);
+                        if(notificationIconHash.contains(iconHash)) {
+                            //默认计算机那边有缓存了 跳过base64生成
+                            return new NotificationIconData(null, iconHash);
+                        }
+                        //最多32个hash
+                        if(notificationIconHash.size() > 32) notificationIconHash.clear();
+                        notificationIconHash.add(iconHash);
+                        return new NotificationIconData(Base64.getEncoder().encodeToString(bytes),iconHash);
+                    } catch (IOException e) {
+                        logger.error("Error on calc icon bitmap sha256", e);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static class NotificationIconData {
+        public final String iconBase64;
+        public final String hash;
+
+        public NotificationIconData(@Nullable String iconBase64, String hash) {
+            this.iconBase64 = iconBase64;
+            this.hash = hash;
         }
     }
 
