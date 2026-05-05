@@ -2,10 +2,11 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id("io.objectbox")
+    id 'org.jetbrains.kotlin.plugin.compose'
 }
 android {
     namespace 'com.suisho.linktocomputer'
-    compileSdk 34
+    compileSdk 36
     signingConfigs {
         release {
             v1SigningEnabled false
@@ -54,9 +55,6 @@ android {
     kotlinOptions {
         jvmTarget = '11'
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.1'
-    }
     packaging {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
@@ -64,11 +62,11 @@ android {
     }
 }
 dependencies {
-    implementation 'com.google.android.material:material:1.10.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.activity:activity:1.8.0'
+    implementation 'com.google.android.material:material:1.13.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+    implementation 'androidx.activity:activity:1.13.0'
     implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
-    implementation 'com.google.code.gson:gson:2.13.2'
+    implementation 'com.google.code.gson:gson:2.14.0'
     implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'com.squareup.okhttp3:okhttp:5.3.2'
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
