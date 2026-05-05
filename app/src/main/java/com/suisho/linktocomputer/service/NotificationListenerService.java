@@ -137,8 +137,10 @@ public class NotificationListenerService extends android.service.notification.No
             //拒绝转发电子垃圾
             if(isRubbishNotification(notificationInstance.extras.getString(Notification.EXTRA_TITLE, ""), notificationInstance.extras.getString(Notification.EXTRA_TEXT, ""), notificationInstance.extras.getInt(Notification.EXTRA_PROGRESS, -1)))
                 return;
-            //TODO 加设置 作为实验性选项默认关闭该功能
-            NotificationIconData iconData = parseNotificationIcon(notificationInstance);
+            NotificationIconData iconData = null;
+            if(GlobalVariables.preferences.getBoolean("enable_notification_large_icon_report",false)){
+                iconData = parseNotificationIcon(notificationInstance);
+            }
             NotificationPacket packet;
             logger.debug("Ready forward notification {}:{}", sbn.getPackageName(), notificationInstance.extras.getString(Notification.EXTRA_TITLE, ""));
             try {

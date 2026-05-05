@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <PreferenceCategory android:title="@string/text_manage">
+    <PreferenceCategory android:title="@string/text_manage" >
         <Preference
             android:icon="@drawable/baseline_computer_24"
             android:key="key_open_trust_device_manager"
@@ -118,12 +118,18 @@
             android:key="key_about"
             android:title="关于" />
     </PreferenceCategory>
-    <PreferenceCategory android:title="实验性">
+    <PreferenceCategory android:title="实验性" android:summary="可能存在异常或不稳定 请按需谨慎使用">
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:icon="@drawable/baseline_highlight_24"
             android:key="report_light_doze"
-            android:summary="该状态可能并不影响数据传输及时性 根据情况选择是否执行提醒"
+            android:summary="该状态可能并不影响数据传输及时性 根据情况选择是否执行上报"
             android:title="向计算机上报LightDoze状态" />
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:icon="@drawable/baseline_picture_in_picture_alt_24"
+            android:key="enable_notification_large_icon_report"
+            android:summary="当通知携带大图时将其上传至计算机显示(在弹出通知中代替应用图标)"
+            android:title="携带通知图片" />
     </PreferenceCategory>
 </androidx.preference.PreferenceScreen>
