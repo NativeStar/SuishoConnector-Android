@@ -35,6 +35,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -61,16 +62,16 @@ public class Util {
         //kb
         double sizeKb = (double) size / 1024;
         if(sizeKb < 1024) {
-            return String.format("%.2f", sizeKb) + "KB";
+            return String.format(Locale.getDefault(),"%.2f", sizeKb) + "KB";
         }
         //mb
         double sizeMb = sizeKb / 1024;
         if(sizeMb < 1024) {
-            return String.format("%.2f", sizeMb) + "MB";
+            return String.format(Locale.getDefault(),"%.2f", sizeMb) + "MB";
         }
         //gb
         double sizeGb = sizeMb / 1024;
-        return String.format("%.2f", sizeGb) + "GB";
+        return String.format(Locale.getDefault(),"%.2f", sizeGb) + "GB";
     }
 
     ;
