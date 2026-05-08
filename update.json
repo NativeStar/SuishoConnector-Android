@@ -1,6 +1,6 @@
 {
-  "versionCode":11,
-  "versionName":"1.1.5",
-  "downloadUrl":"https://github.com/NativeStar/SuishoConnector-Android/releases/download/1.1.5/app-release.apk",
-  "description": "反正旧版本还不支持预览更新内容\n懒得写了\n只是测试一下\n嗯"
+  "versionCode":12,
+  "versionName":"1.2.0",
+  "downloadUrl":"https://github.com/NativeStar/SuishoConnector-Android/releases/download/1.2.0/app-release.apk",
+  "description": "更改图标\n支持添加获取通知图片功能并上报至计算机 需配套最新PC端使用(实验性质功能 当通知存在图片时上传至计算机代替通知弹出时的软件图标)"
 }
