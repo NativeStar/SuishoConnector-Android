@@ -20,7 +20,7 @@ android {
         targetSdk 33
         //noinspection ExpiredTargetSdkVersion,ExpiredTargetSdkVersion
         versionCode 12
-        versionName "1.1.6"
+        versionName "1.2.0"
         ndk {
             abiFilters "arm64-v8a"
         }
