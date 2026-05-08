@@ -245,11 +245,16 @@ public class NotificationListenerService extends android.service.notification.No
                         byte[] bytes = stream.toByteArray();
                         String iconHash = Util.calculateSHA256(bytes);
                         if(notificationIconHash.contains(iconHash)) {
+                            logger.debug("Icon hash already exist:{}", iconHash);
                             //默认计算机那边有缓存了 跳过base64生成
                             return new NotificationIconData(null, iconHash);
                         }
                         //最多32个hash
-                        if(notificationIconHash.size() > 32) notificationIconHash.clear();
+                        if(notificationIconHash.size() > 32) {
+                            logger.debug("Clear icon hash");
+                            notificationIconHash.clear();
+                        }
+                        logger.debug("Add icon hash:{}", iconHash);
                         notificationIconHash.add(iconHash);
                         return new NotificationIconData(Base64.getEncoder().encodeToString(bytes),iconHash);
                     } catch (IOException e) {
