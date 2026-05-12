@@ -961,7 +961,7 @@ public class ConnectMainService extends Service implements INetworkService {
                     pm.setComponentEnabledSetting(name, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
                     NotificationListenerService.requestRebind(name);
                 }
-                //把自己传进去 免得啰里啰唆一大堆
+                //把自己传进去
                 notificationListenerService.setMainService(ConnectMainService.this);
                 notificationListenerService.setEnable(GlobalVariables.preferences.getBoolean("function_notification_forward", false));
                 notificationListenerServiceWorking = true;

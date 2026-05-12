@@ -123,7 +123,6 @@
 
         <activity
             android:name=".activity.NewMainActivity"
-            android:excludeFromRecents="true"
             android:exported="true"
             android:launchMode="singleInstance"
             android:screenOrientation="portrait"

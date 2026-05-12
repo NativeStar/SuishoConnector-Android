@@ -1,5 +1,7 @@
 package com.suisho.linktocomputer.activity;
 
+import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -148,6 +150,7 @@ public class NewMainActivity extends AppCompatActivity {
                             .setPositiveButton("后台运行", (dialog, which) -> {
                                 logger.debug("onBackInvokedCallback called.Move task to back");
                                 dialog.dismiss();
+                                setInRecentTaskHidden(NewMainActivity.this,true);
                                 moveTaskToBack(true);
                             })
                             .setNegativeButton("退出", (dialog, which) -> {
@@ -158,6 +161,7 @@ public class NewMainActivity extends AppCompatActivity {
                             .show();
                 } else {
                     logger.debug("onBackInvokedCallback called.Move task to back by has connection");
+                    setInRecentTaskHidden(NewMainActivity.this,true);
                     moveTaskToBack(true);
                 }
             }
@@ -596,6 +600,7 @@ public class NewMainActivity extends AppCompatActivity {
         super.onResume();
         logger.debug("Main activity resume");
         checkSomePermissionAndShowTips();
+        setInRecentTaskHidden(this,false);
     }
 
     /**
@@ -848,6 +853,17 @@ public class NewMainActivity extends AppCompatActivity {
             } catch (IllegalArgumentException ignore) {
             } finally {
                 networkStateCallback = null;
+            }
+        }
+    }
+    private void setInRecentTaskHidden(Activity activity, boolean hidden){
+        ActivityManager activityManager = (ActivityManager) activity.getSystemService(ACTIVITY_SERVICE);
+        var tasks = activityManager.getAppTasks();
+        final int currentTaskId = activity.getTaskId();
+        for (ActivityManager.AppTask task : tasks) {
+            if (task.getTaskInfo().taskId == currentTaskId) {
+                task.setExcludeFromRecents(hidden);
+                break;
             }
         }
     }
