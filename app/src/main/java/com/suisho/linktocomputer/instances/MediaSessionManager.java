@@ -108,6 +108,10 @@ public class MediaSessionManager extends MediaController.Callback {
             mediaController.unregisterCallback(this);
         }
         logger.debug("Create new media controller");
+        if(networkService == null) {
+            logger.warn("Network service is null!");
+            return;
+        }
         mediaController = new MediaController(this.networkService, token);
         new Handler(Looper.getMainLooper()).post(() -> mediaController.registerCallback(this));
         this.onMetadataChanged(mediaController.getMetadata());
