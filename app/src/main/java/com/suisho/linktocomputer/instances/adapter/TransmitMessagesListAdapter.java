@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.graphics.Rect;
 import android.net.Uri;
 import android.util.Patterns;
+import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -178,18 +179,8 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     return true;
                 });
                 //来自手机的消息额外处理
-                if(((TransmitMessageTypeText) dataList.get(position)).messageFrom == MessageConf.MESSAGE_FROM_PHONE) {
-                    RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) holder.messageView.getLayoutParams();
-                    params.setMarginStart(Util.dp2px(110));
-                    holder.messageView.setLayoutParams(params);
-                    holder.messageView.requestLayout();
-                } else {
-                    //修复手机端发消息后接收pc消息位置异常
-                    RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) holder.messageView.getLayoutParams();
-                    params.setMarginStart(Util.dp2px(10));
-                    holder.messageView.setLayoutParams(params);
-                    holder.messageView.requestLayout();
-                }
+                boolean isFromPhone = ((TransmitMessageTypeText) dataList.get(position)).messageFrom == MessageConf.MESSAGE_FROM_PHONE;
+                applyMessageFormGravity(holder.messageView,isFromPhone);
                 //清除焦点
                 holder.messageView.setOnClickListener(View::clearFocus);
                 break;
@@ -204,20 +195,8 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                 ((TextView) holder.messageView.findViewById(R.id.transmit_file_time)).setText(simpleDateFormat.format(messageInstance.timestamp));
                 //是本地上传的文件 无法打开 不显示图标
                 logger.debug("File message name:{},size:{}", messageInstance.fileName, messageInstance.fileSize);
-                if(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE) {
-                    (holder.messageView.findViewById(R.id.transmit_file_openable_icon)).setVisibility(View.GONE);
-                    RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) holder.messageView.getLayoutParams();
-                    params.setMarginStart(Util.dp2px(143));
-                    holder.messageView.setLayoutParams(params);
-                    holder.messageView.requestLayout();
-                } else {
-                    (holder.messageView.findViewById(R.id.transmit_file_openable_icon)).setVisibility(View.GONE);
-                    RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) holder.messageView.getLayoutParams();
-                    params.setMarginStart(Util.dp2px(10));
-                    holder.messageView.setLayoutParams(params);
-                    (holder.messageView.findViewById(R.id.transmit_file_openable_icon)).setVisibility(View.VISIBLE);
-                    holder.messageView.requestLayout();
-                }
+                (holder.messageView.findViewById(R.id.transmit_file_openable_icon)).setVisibility(messageInstance.messageFrom==MessageConf.MESSAGE_FROM_PHONE?View.GONE:View.VISIBLE);
+                applyMessageFormGravity(holder.messageView, messageInstance.messageFrom==MessageConf.MESSAGE_FROM_PHONE);
                 //注册点击事件 只有接收的文件才能打开
                 holder.messageView.setOnClickListener(v -> {
                     if(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE) return;
@@ -483,5 +462,10 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
 
     public void setActivity(Activity act) {
         this.activity = act;
+    }
+    private void applyMessageFormGravity(View rootView,boolean fromPhone){
+        LinearLayout messageLayout = (LinearLayout) rootView;
+        messageLayout.setGravity(fromPhone ? Gravity.END : Gravity.START);
+        messageLayout.requestLayout();
     }
 }
