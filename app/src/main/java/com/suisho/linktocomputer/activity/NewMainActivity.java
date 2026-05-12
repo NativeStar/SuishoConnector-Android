@@ -26,7 +26,6 @@ import android.provider.Settings;
 import android.view.HapticFeedbackConstants;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -37,6 +36,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.view.WindowCompat;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -118,11 +118,10 @@ public class NewMainActivity extends AppCompatActivity {
         //状态提示
         setSupportActionBar(binding.toolbar);
         //通知栏色彩
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        WindowCompat.enableEdgeToEdge(getWindow());
+        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView()).setAppearanceLightStatusBars(true);
         //通知栏图标文字深色
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         //设置
         GlobalVariables.settings = getSharedPreferences("settings", MODE_PRIVATE);
         //将id设为全局变量
@@ -150,7 +149,7 @@ public class NewMainActivity extends AppCompatActivity {
                             .setPositiveButton("后台运行", (dialog, which) -> {
                                 logger.debug("onBackInvokedCallback called.Move task to back");
                                 dialog.dismiss();
-                                setInRecentTaskHidden(NewMainActivity.this,true);
+                                setInRecentTaskHidden(NewMainActivity.this, true);
                                 moveTaskToBack(true);
                             })
                             .setNegativeButton("退出", (dialog, which) -> {
@@ -161,7 +160,7 @@ public class NewMainActivity extends AppCompatActivity {
                             .show();
                 } else {
                     logger.debug("onBackInvokedCallback called.Move task to back by has connection");
-                    setInRecentTaskHidden(NewMainActivity.this,true);
+                    setInRecentTaskHidden(NewMainActivity.this, true);
                     moveTaskToBack(true);
                 }
             }
@@ -600,7 +599,7 @@ public class NewMainActivity extends AppCompatActivity {
         super.onResume();
         logger.debug("Main activity resume");
         checkSomePermissionAndShowTips();
-        setInRecentTaskHidden(this,false);
+        setInRecentTaskHidden(this, false);
     }
 
     /**
@@ -856,12 +855,13 @@ public class NewMainActivity extends AppCompatActivity {
             }
         }
     }
-    private void setInRecentTaskHidden(Activity activity, boolean hidden){
+
+    private void setInRecentTaskHidden(Activity activity, boolean hidden) {
         ActivityManager activityManager = (ActivityManager) activity.getSystemService(ACTIVITY_SERVICE);
         var tasks = activityManager.getAppTasks();
         final int currentTaskId = activity.getTaskId();
-        for (ActivityManager.AppTask task : tasks) {
-            if (task.getTaskInfo().taskId == currentTaskId) {
+        for(ActivityManager.AppTask task : tasks) {
+            if(task.getTaskInfo().taskId == currentTaskId) {
                 task.setExcludeFromRecents(hidden);
                 break;
             }

@@ -47,7 +47,6 @@ public class FileUploadActivity extends Activity {
     private NotificationManager notificationManager;
     private final Logger logger = LoggerFactory.getLogger(FileUploadActivity.class);
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -302,7 +301,7 @@ public class FileUploadActivity extends Activity {
         }
         if(service.activityMethods != null) {
             service.activityMethods.addItem(type, messageAbstract, true);
-        }else{
+        } else {
             Box<TransmitDatabaseEntity> box = ((Crystal) getApplicationContext())
                     .getDatabase().boxFor(TransmitDatabaseEntity.class);
             box.put(messageAbstract.toDatabaseEntity());

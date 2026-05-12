@@ -17,6 +17,7 @@ import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowCompat;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -52,11 +53,11 @@ public class StorageManageActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_storage_manage);
         setSupportActionBar(findViewById(R.id.toolbar));
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        //通知栏色彩
+        WindowCompat.enableEdgeToEdge(getWindow());
+        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView()).setAppearanceLightStatusBars(true);
         //通知栏图标文字深色
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         //只能再onCreate或其之后初始化
         storageStatsManager = (StorageStatsManager) getSystemService(STORAGE_STATS_SERVICE);
         StorageManager storageManager = (StorageManager) getSystemService(STORAGE_SERVICE);
