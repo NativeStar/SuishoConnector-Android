@@ -19,6 +19,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.os.RemoteException;
 
 import androidx.annotation.NonNull;
@@ -127,6 +128,7 @@ public class ConnectMainService extends Service implements INetworkService {
     //投屏服务ipc通道
     public IMediaProjectionServiceIPC projectionServiceIPC;
     private final Logger logger = LoggerFactory.getLogger(ConnectMainService.class);
+    private PowerManager.WakeLock wakeLock;
 
 
     public void setMediaProjectionIntent(Intent mediaProjectionIntent) {
@@ -505,6 +507,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             ContextCompat.registerReceiver(ConnectMainService.this, batteryStateReceiver, batteryBroadcastFilter, ContextCompat.RECEIVER_EXPORTED);
                                             ContextCompat.registerReceiver(ConnectMainService.this, shutdownReceiver, ShutdownReceiver.createIntentFilter(), ContextCompat.RECEIVER_EXPORTED);
                                             setupNotificationListenerService();
+                                            initWakeLock();
                                             break;
                                         case "main_getDeviceDetailInfo":
                                             //获取详细信息
@@ -538,11 +541,11 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 String filePath;
                                                 if(GlobalVariables.preferences.getInt("file_name_conflict_behavior", 0) == 0) {
                                                     //追加时间戳
-                                                    filePath=transmitTargetFile.getAbsolutePath() + "/" + System.currentTimeMillis() + jsonObj.fileName;
-                                                }else{
+                                                    filePath = transmitTargetFile.getAbsolutePath() + "/" + System.currentTimeMillis() + jsonObj.fileName;
+                                                } else {
                                                     //删除旧文件
                                                     transmitOutputFile.delete();
-                                                    filePath=transmitTargetFile.getAbsolutePath() + "/" + jsonObj.fileName;
+                                                    filePath = transmitTargetFile.getAbsolutePath() + "/" + jsonObj.fileName;
                                                 }
                                                 //重名 末尾加时间戳保存
                                                 //不能影响显示
@@ -840,6 +843,9 @@ public class ConnectMainService extends Service implements INetworkService {
         //清空队列
         TransmitUploadFile.clearQueue();
         requestMapping.clear();
+        if(wakeLock != null&&wakeLock.isHeld()) {
+            wakeLock.release();
+        }
     }
 
     @Override
@@ -975,6 +981,18 @@ public class ConnectMainService extends Service implements INetworkService {
             }
         };
         bindService(listenerServiceIntent, bingNotificationListenerServiceConnection, BIND_AUTO_CREATE);
+    }
+
+    private void initWakeLock() {
+        if(GlobalVariables.preferences.getBoolean("enable_wake_lock_after_connected",false)&&wakeLock==null){
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SuishoConnector:ManualLock");
+            if(!wakeLock.isHeld()){
+                wakeLock.setReferenceCounted(false);
+                wakeLock.acquire();
+                logger.info("Acquire wake lock");
+            }
+        }
     }
 
     private Notification buildForegroundNotification(Activity activity) {

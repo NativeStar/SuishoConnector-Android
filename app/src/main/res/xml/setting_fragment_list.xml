@@ -127,6 +127,12 @@
             android:title="上报LightDoze状态" />
         <SwitchPreferenceCompat
             android:defaultValue="false"
+            android:icon="@drawable/baseline_wifi_lock_24"
+            android:key="enable_wake_lock_after_connected"
+            android:summary="尝试缓解部分OEM系统杀后台问题 可能导致耗电增加 修改后重新连接生效"
+            android:title="连接后触发唤醒锁" />
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
             android:icon="@drawable/baseline_picture_in_picture_alt_24"
             android:key="enable_notification_large_icon_report"
             android:summary="当通知携带大图时将其上传至计算机显示(在弹出通知中代替应用图标)"
