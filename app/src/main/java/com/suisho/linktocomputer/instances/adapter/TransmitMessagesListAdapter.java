@@ -198,7 +198,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                 (holder.messageView.findViewById(R.id.transmit_file_openable_icon)).setVisibility(messageInstance.messageFrom==MessageConf.MESSAGE_FROM_PHONE?View.GONE:View.VISIBLE);
                 applyMessageFormGravity(holder.messageView, messageInstance.messageFrom==MessageConf.MESSAGE_FROM_PHONE);
                 //注册点击事件 只有接收的文件才能打开
-                holder.messageView.setOnClickListener(v -> {
+                holder.messageView.findViewById(R.id.transmit_file_background_card_view).setOnClickListener(v -> {
                     if(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE) return;
                     //检查内容为"null"的字符串及真的null
                     Util.performHapticIfEnabled(v, HapticFeedbackConstants.KEYBOARD_TAP);
@@ -233,7 +233,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getResources().getText(R.string.transmit_open_file_failed_not_resolve_application), 2000).show();
                     }
                 });
-                holder.messageView.setOnLongClickListener(view -> {
+                holder.messageView.findViewById(R.id.transmit_file_background_card_view).setOnLongClickListener(view -> {
                     View menuLayout = LayoutInflater.from(activity).inflate(R.layout.transmit_message_action_menu_file, null, false);
                     PopupWindow popupWindow = new PopupWindow(menuLayout, ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
                     //通用功能
