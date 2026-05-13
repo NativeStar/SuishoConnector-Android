@@ -276,7 +276,7 @@ public class HomeFragment extends Fragment {
                         } else if(which == 1) {
                             getActivity().finish();
                         } else if(which == 2) {
-                            throw new RuntimeException("Test exception");
+                            throw new RuntimeException("Test exception.Do not feedback this!");
                         } else if(which == 3) {
                             EditText editText = new EditText(getActivity());
                             editText.setHint("State id");

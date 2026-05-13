@@ -70,7 +70,7 @@ public class FileServer extends NanoHTTPD {
             logger.debug("Access by untrusted computer");
             return newFixedLengthResponse(Response.Status.FORBIDDEN, "text/plain", "Untrusted");
         }
-        //收到任何请求都会报"Could not send response to the client" 但似乎啥实际异常都没有 不理了
+        //收到任何请求都会报 "Could not send response to the client" 但似乎啥实际异常都没有 不理了
         String requestCookieSessionId = session.getCookies().read("sessionId");
         //验证sessionId和ip地址
         if(requestCookieSessionId == null || !requestCookieSessionId.equals(this.sessionId) || !session.getRemoteIpAddress().equals(GlobalVariables.serverAddress)) {
@@ -163,6 +163,8 @@ public class FileServer extends NanoHTTPD {
         } else {
             rangeRequestPoint.end = fileSize - 1;
         }
+        //最多返回6MB数据
+        rangeRequestPoint.end=Math.min(rangeRequestPoint.end,rangeRequestPoint.start+6*1024*1024);
         rangeRequestPoint.size = rangeRequestPoint.end - rangeRequestPoint.start + 1;
         return rangeRequestPoint;
     }
