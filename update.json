@@ -1,6 +1,6 @@
 {
-  "versionCode":12,
-  "versionName":"1.2.0",
-  "downloadUrl":"https://github.com/NativeStar/SuishoConnector-Android/releases/download/1.2.0/app-release.apk",
-  "description": "更改图标\n支持添加获取通知图片功能并上报至计算机 需配套最新PC端使用(实验性质功能 当通知存在图片时上传至计算机代替通知弹出时的软件图标)"
+  "versionCode":13,
+  "versionName":"1.2.1",
+  "downloadUrl":"https://github.com/NativeStar/SuishoConnector-Android/releases/download/1.2.1/app-release.apk",
+  "description": "新增连接后触发唤醒锁功能(可能缓解杀后台问题)\n主页返回不再询问弹出询问(默认后台运行)\n修复预测性返回手势\n修复特定情况下的显示异常\n修复已知崩溃问题"
 }
