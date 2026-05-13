@@ -157,7 +157,7 @@ public class StateListAdapter extends RecyclerView.Adapter {
                                 downloadManager.enqueue(request);
                             })
                             .setNegativeButton("取消", null)
-                            .setNeutralButton("查看Release", (dialog, which) -> {
+                            .setNeutralButton("查看详情", (dialog, which) -> {
                                 activity.startActivity(githubUrlIntent);
                                 logger.debug("Open github release page");
                             });
