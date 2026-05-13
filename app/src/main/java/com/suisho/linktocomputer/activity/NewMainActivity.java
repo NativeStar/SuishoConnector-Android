@@ -108,6 +108,13 @@ public class NewMainActivity extends AppCompatActivity {
     private boolean autoConnectorWorked = false;
     public static boolean hasDebuggableArg;
     private final Logger logger = LoggerFactory.getLogger(NewMainActivity.class);
+    private final OnBackPressedCallback onBackPressedCallback = new OnBackPressedCallback(false) {
+        @Override
+        public void handleOnBackPressed() {
+            if(binding != null)
+                binding.connectedActivityNavigationBar.setSelectedItemId(navigationIds[0]);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,38 +141,38 @@ public class NewMainActivity extends AppCompatActivity {
             bindNetworkService();
             updateConnectionStateDisplay();
         }
-        getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                //默认回主页
-                if(binding.homeViewPager2.getCurrentItem() != 0) {
-                    binding.connectedActivityNavigationBar.setSelectedItemId(navigationIds[0]);
-                    return;
-                }
-                if(networkService == null || !networkService.isConnected) {
-                    logger.debug("onBackInvokedCallback called.Show exit confirm dialog");
-                    new MaterialAlertDialogBuilder(NewMainActivity.this)
-                            .setMessage("当前未连接任何设备\n你是希望退出程序还是希望其继续后台运行?")
-                            .setPositiveButton("后台运行", (dialog, which) -> {
-                                logger.debug("onBackInvokedCallback called.Move task to back");
-                                dialog.dismiss();
-                                setInRecentTaskHidden(NewMainActivity.this, true);
-                                moveTaskToBack(true);
-                            })
-                            .setNegativeButton("退出", (dialog, which) -> {
-                                logger.debug("onBackInvokedCallback called.Exit");
-                                finishAffinity();
-                                System.exit(0);
-                            })
-                            .show();
-                } else {
-                    logger.debug("onBackInvokedCallback called.Move task to back by has connection");
-                    setInRecentTaskHidden(NewMainActivity.this, true);
-                    moveTaskToBack(true);
-                }
-            }
-
-        });
+        getOnBackPressedDispatcher().addCallback(onBackPressedCallback);
+//        getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
+//            @Override
+//            public void handleOnBackPressed() {
+//                //默认回主页
+//                if(binding.homeViewPager2.getCurrentItem() != 0) {
+//                    binding.connectedActivityNavigationBar.setSelectedItemId(navigationIds[0]);
+//                    return;
+//                }
+//                if(networkService == null || !networkService.isConnected) {
+//                    logger.debug("onBackInvokedCallback called.Show exit confirm dialog");
+//                    new MaterialAlertDialogBuilder(NewMainActivity.this)
+//                            .setMessage("当前未连接任何设备\n你是希望退出程序还是希望其继续后台运行?")
+//                            .setPositiveButton("后台运行", (dialog, which) -> {
+//                                logger.debug("onBackInvokedCallback called.Move task to back");
+//                                dialog.dismiss();
+//                                setInRecentTaskHidden(NewMainActivity.this, true);
+//                                moveTaskToBack(true);
+//                            })
+//                            .setNegativeButton("退出", (dialog, which) -> {
+//                                logger.debug("onBackInvokedCallback called.Exit");
+//                                finishAffinity();
+//                                System.exit(0);
+//                            })
+//                            .show();
+//                } else {
+//                    logger.debug("onBackInvokedCallback called.Move task to back by has connection");
+//                    setInRecentTaskHidden(NewMainActivity.this, true);
+//                    moveTaskToBack(true);
+//                }
+//            }
+//        });
         //debug参数
         hasDebuggableArg = getIntent().getBooleanExtra("enableDebugMenu", false);
         if(hasDebuggableArg) logger.info("Launch with debug menu");
@@ -175,6 +182,12 @@ public class NewMainActivity extends AppCompatActivity {
             CheckUpdateHandle handle = new CheckUpdateHandle(this);
             Looper.myQueue().addIdleHandler(handle);
         }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        setInRecentTaskHidden(this, true);
     }
 
     @Override
@@ -219,6 +232,7 @@ public class NewMainActivity extends AppCompatActivity {
                 } else {
                     binding.homeViewPager2.setCurrentItem(2);
                 }
+                onBackPressedCallback.setEnabled(selectedId != R.id.connected_activity_navigation_bar_menu_home);
                 return true;
             });
             binding.connectedActivityNavigationBar.setOnItemReselectedListener(item -> {

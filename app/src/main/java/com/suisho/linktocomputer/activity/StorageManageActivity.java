@@ -15,7 +15,6 @@ import android.view.WindowManager;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
 
@@ -44,7 +43,7 @@ public class StorageManageActivity extends AppCompatActivity {
     private StorageStatsManager storageStatsManager;
     private List<StorageVolume> storageVolumes;
     //退出时终止进程标志
-    private boolean requestSuicide = false;
+//    private boolean requestSuicide = false;
     private final Logger logger = LoggerFactory.getLogger(StorageManageActivity.class);
 
     @Override
@@ -64,22 +63,7 @@ public class StorageManageActivity extends AppCompatActivity {
         storageVolumes = storageManager.getStorageVolumes();
         init();
     }
-
     private void init() {
-        getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if(requestSuicide) {
-                    logger.debug("User pressed Invoke and application request suicide");
-                    moveTaskToBack(true);
-                    finishAffinity();
-                    System.exit(0);
-                } else {
-                    logger.debug("User pressed Invoke.Only common finish activity");
-                    finish();
-                }
-            }
-        });
         new Thread(() -> {
             //文本显示
             if(initTextShow()) return;
@@ -114,7 +98,7 @@ public class StorageManageActivity extends AppCompatActivity {
                 logger.debug("Open transmit data clear confirm");
                 new MaterialAlertDialogBuilder(this)
                         .setTitle("清理确认")
-                        .setMessage("将清空私有目录内的互传接收的文件和传输记录\n确认继续?")
+                        .setMessage("将清空私有目录内的互传接收的文件和传输记录\n确认继续?\n清理完成后应用将关闭")
                         .setNegativeButton("取消", (dialog, which) -> {
                         })
                         .setPositiveButton("确认", (dialog, which) -> {
@@ -128,9 +112,10 @@ public class StorageManageActivity extends AppCompatActivity {
                             clearFolder(transmitDataPath);
                             Snackbar.make(findViewById(R.id.storage_manage_activity_root), getString(R.string.text_cleared), 2000).show();
                             //确保显示内容刷新 否则可能误以为清理失败
-                            requestSuicide = true;
                             finishActivity();
-                            initTextShow();
+                            Process.killProcess(Process.myPid());
+//                            finishAffinity();
+//                            System.exit(0);
                         }).show();
             });
             findViewById(R.id.button_storage_manage_clear_chaos_data).setOnClickListener(v -> {
@@ -362,7 +347,7 @@ public class StorageManageActivity extends AppCompatActivity {
         logger.debug("Finishing main activity");
         ActivityManager activityManager = getSystemService(ActivityManager.class);
         activityManager.getAppTasks().forEach(appTask -> {
-            if(appTask.getTaskInfo().baseIntent.getComponent().getShortClassName().equals(NewMainActivity.class.getName())) {
+            if(appTask.getTaskInfo().baseIntent.getComponent().getClassName().equals(NewMainActivity.class.getName())) {
                 appTask.finishAndRemoveTask();
             }
         });
