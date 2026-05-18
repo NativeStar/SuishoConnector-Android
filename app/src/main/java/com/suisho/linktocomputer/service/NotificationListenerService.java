@@ -138,7 +138,7 @@ public class NotificationListenerService extends android.service.notification.No
             if(isRubbishNotification(notificationInstance.extras.getString(Notification.EXTRA_TITLE, ""), notificationInstance.extras.getString(Notification.EXTRA_TEXT, ""), notificationInstance.extras.getInt(Notification.EXTRA_PROGRESS, -1)))
                 return;
             NotificationIconData iconData = null;
-            if(GlobalVariables.preferences.getBoolean("enable_notification_large_icon_report",false)){
+            if(GlobalVariables.preferences.getBoolean("enable_notification_large_icon_report", false)) {
                 iconData = parseNotificationIcon(notificationInstance);
             }
             NotificationPacket packet;
@@ -179,7 +179,7 @@ public class NotificationListenerService extends android.service.notification.No
                         null
                 );
             }
-            networkService.sendObject(packet.getJsonObject());
+            if(networkService != null) networkService.sendObject(packet.getJsonObject());
         }
     }
 
@@ -256,7 +256,7 @@ public class NotificationListenerService extends android.service.notification.No
                         }
                         logger.debug("Add icon hash:{}", iconHash);
                         notificationIconHash.add(iconHash);
-                        return new NotificationIconData(Base64.getEncoder().encodeToString(bytes),iconHash);
+                        return new NotificationIconData(Base64.getEncoder().encodeToString(bytes), iconHash);
                     } catch (IOException e) {
                         logger.error("Error on calc icon bitmap sha256", e);
                     }
