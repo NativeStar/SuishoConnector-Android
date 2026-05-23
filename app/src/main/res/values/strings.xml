@@ -185,4 +185,7 @@
     <string name="state_title_update_available">发现版本更新</string>
     <string name="state_desc_update_available">点击查看更新详情</string>
     <string name="setting_last_connect_time_text_head">上次连接:%s</string>
+    <string name="text_current_is_latest_version">当前已是最新版本</string>
+    <string name="text_manual_check_update_failed">检查更新失败 请检查网络环境能否连接Github</string>
+    <string name="text_manual_checking_update">正在检查更新...</string>
 </resources>

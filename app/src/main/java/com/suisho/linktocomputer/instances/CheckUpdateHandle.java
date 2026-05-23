@@ -1,9 +1,11 @@
 package com.suisho.linktocomputer.instances;
 
 import android.os.MessageQueue;
+import android.widget.Toast;
 
 import com.suisho.linktocomputer.BuildConfig;
 import com.suisho.linktocomputer.GlobalVariables;
+import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.activity.NewMainActivity;
 import com.suisho.linktocomputer.constant.States;
@@ -32,37 +34,45 @@ public class CheckUpdateHandle implements MessageQueue.IdleHandler {
 
     public boolean queueIdle(boolean isManual) {
         logger.debug("Handle called.Checking update");
-        new Thread(()->{
+        new Thread(() -> {
             Request request = new Request.Builder()
-                    .method("GET",null)
+                    .method("GET", null)
                     .url("https://raw.githubusercontent.com/NativeStar/SuishoConnector-Android/master/update.json")
                     .cacheControl(new CacheControl.Builder().noCache().build())
                     .build();
             OkHttpClient client = new OkHttpClient();
-            try (Response response = client.newCall(request).execute()){
-                if(response.isSuccessful()){
+            try (Response response = client.newCall(request).execute()) {
+                if(response.isSuccessful()) {
                     String rawJsonString = response.body().string();
-                    CheckUpdateJson jsonInstance= GlobalVariables.jsonBuilder.fromJson(rawJsonString, CheckUpdateJson.class);
-                    if(BuildConfig.VERSION_CODE < jsonInstance.versionCode){
+                    CheckUpdateJson jsonInstance = GlobalVariables.jsonBuilder.fromJson(rawJsonString, CheckUpdateJson.class);
+                    if(BuildConfig.VERSION_CODE < jsonInstance.versionCode) {
                         GlobalVariables.checkUpdateJson = jsonInstance;
                         logger.info("Update available:{}", jsonInstance.versionName);
-                        if(isManual){
-                            activity.runOnUiThread(()->{
+                        if(isManual) {
+                            activity.runOnUiThread(() -> {
                                 Util.showUpdateDialog(activity);
                             });
-                        }else{
+                        } else {
                             activity.stateBarManager.addState(States.getStateList().get("info_update_available"));
                         }
                         return;
+                    } else if(isManual) {
+                        activity.runOnUiThread(() -> {
+                            Toast.makeText(activity, R.string.text_current_is_latest_version, Toast.LENGTH_LONG).show();
+                        });
                     }
                     logger.info("Current is latest version:{}", jsonInstance.versionName);
-                }else{
+                } else {
                     logger.warn("Check update failed with response code {}", response.code());
                 }
             } catch (Exception e) {
-                logger.error("Failed to check update",e);
-                /*暂时不显示给用户*/
-            }finally {
+                logger.error("Failed to check update", e);
+                if(isManual) {
+                    activity.runOnUiThread(() -> {
+                        Toast.makeText(activity, R.string.text_manual_check_update_failed, Toast.LENGTH_LONG).show();
+                    });
+                }
+            } finally {
                 client.dispatcher().executorService().shutdown();
                 client.connectionPool().evictAll();
             }

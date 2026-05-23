@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -88,6 +89,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
         });
         aboutDialogLayout.findViewById(R.id.manual_check_update_button).setOnClickListener(v -> {
             logger.debug("Clicked manual check update button");
+            Toast.makeText(activity, R.string.text_manual_checking_update, Toast.LENGTH_LONG).show();
             new CheckUpdateHandle(activity).queueIdle(true);
         });
         //文本快捷发送 组件状态
