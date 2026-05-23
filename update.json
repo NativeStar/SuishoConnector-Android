@@ -1,6 +1,6 @@
 {
-  "versionCode":13,
-  "versionName":"1.2.1",
-  "downloadUrl":"https://github.com/NativeStar/SuishoConnector-Android/releases/download/1.2.1/app-release.apk",
-  "description": "新增连接后触发唤醒锁功能(可能缓解杀后台问题)\n主页返回不再询问弹出询问(默认后台运行)\n修复预测性返回手势\n修复特定情况下的显示异常\n修复已知崩溃问题"
+  "versionCode":14,
+  "versionName":"1.2.2",
+  "downloadUrl":"https://github.com/NativeStar/SuishoConnector-Android/releases/download/1.2.2/app-release.apk",
+  "description": "支持在关于弹窗中手动检查更新\n在连接后才在最近任务列表隐藏自身\n连接状态卡片添加计算机IP显示\n修复一些UI布局和崩溃问题"
 }
