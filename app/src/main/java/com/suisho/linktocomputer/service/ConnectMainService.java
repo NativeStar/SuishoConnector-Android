@@ -843,7 +843,7 @@ public class ConnectMainService extends Service implements INetworkService {
         //清空队列
         TransmitUploadFile.clearQueue();
         requestMapping.clear();
-        if(wakeLock != null&&wakeLock.isHeld()) {
+        if(wakeLock != null && wakeLock.isHeld()) {
             wakeLock.release();
         }
     }
@@ -984,10 +984,10 @@ public class ConnectMainService extends Service implements INetworkService {
     }
 
     private void initWakeLock() {
-        if(GlobalVariables.preferences.getBoolean("enable_wake_lock_after_connected",false)&&wakeLock==null){
+        if(GlobalVariables.preferences.getBoolean("enable_wake_lock_after_connected", false) && wakeLock == null) {
             PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
             wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SuishoConnector:ManualLock");
-            if(!wakeLock.isHeld()){
+            if(!wakeLock.isHeld()) {
                 wakeLock.setReferenceCounted(false);
                 wakeLock.acquire();
                 logger.info("Acquire wake lock");
@@ -1030,6 +1030,10 @@ public class ConnectMainService extends Service implements INetworkService {
 
     public NotificationListenerService getNotificationListenerService() {
         return notificationListenerService;
+    }
+
+    public String getComputerAddress() {
+        return computerAddress;
     }
 
     public boolean getNotificationListenerWorking() {

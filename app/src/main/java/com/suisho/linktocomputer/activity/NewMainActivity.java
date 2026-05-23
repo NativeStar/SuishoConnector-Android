@@ -479,6 +479,7 @@ public class NewMainActivity extends AppCompatActivity {
                                 ((TextView) findViewById(R.id.card_text_file_manager)).setText(R.string.text_not_connect);
                                 ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_close_24);
                                 ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(R.string.text_unauthorized);
+                                ((TextView)findViewById(R.id.card_text_connection_state_address)).setText("");
                                 stateBarManager.removeState("warn_pc_protocol_version_low");
                             } catch (NullPointerException e) {
                                 logger.error("Error when init views", e);
@@ -638,6 +639,7 @@ public class NewMainActivity extends AppCompatActivity {
             ((TextView) findViewById(R.id.card_text_connection_state)).setText(getString(R.string.text_connected, GlobalVariables.computerConfigManager.getProtocolVersion()));
             ((TextView) findViewById(R.id.card_text_connection_state_subtitle)).setText(GlobalVariables.computerName);
             ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(networkService.getMediaProjectionServiceIntent() == null ? R.string.text_unauthorized : R.string.text_authorized);
+            ((TextView) findViewById(R.id.card_text_connection_state_address)).setText(networkService.getComputerAddress());
             //图标
             ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_link_off_24);
             ((ImageView) findViewById(R.id.card_connection_state_icon)).setImageResource(R.drawable.baseline_signal_cellular_4_bar_24);
