@@ -43,7 +43,7 @@ public class CheckUpdateHandle implements MessageQueue.IdleHandler {
                 if(response.isSuccessful()){
                     String rawJsonString = response.body().string();
                     CheckUpdateJson jsonInstance= GlobalVariables.jsonBuilder.fromJson(rawJsonString, CheckUpdateJson.class);
-                    if(BuildConfig.VERSION_CODE <= jsonInstance.versionCode){
+                    if(BuildConfig.VERSION_CODE < jsonInstance.versionCode){
                         GlobalVariables.checkUpdateJson = jsonInstance;
                         logger.info("Update available:{}", jsonInstance.versionName);
                         if(isManual){
