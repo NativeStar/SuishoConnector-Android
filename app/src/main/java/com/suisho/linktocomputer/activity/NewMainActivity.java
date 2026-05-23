@@ -187,7 +187,10 @@ public class NewMainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        setInRecentTaskHidden(this, true);
+        //只在连接后隐藏后台
+        if(networkService != null && networkService.isConnected) {
+            setInRecentTaskHidden(this, true);
+        }
     }
 
     @Override
