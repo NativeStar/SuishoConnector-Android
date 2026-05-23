@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="54dp"
+    android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@android:color/transparent"
     app:cardCornerRadius="8dp"
     android:paddingTop="2dp">
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="52dp"
+        android:layout_height="wrap_content"
+        android:minHeight="52dp"
         android:orientation="horizontal">
         <ImageView
             android:paddingTop="12dp"
@@ -17,7 +18,7 @@
             android:layout_height="48dp"
             android:id="@+id/state_dialog_card_icon"
             android:importantForAccessibility="no"
-            android:src="@drawable/baseline_arrow_drop_down_circle_24"/>
+            android:src="@drawable/baseline_archive_24"/>
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

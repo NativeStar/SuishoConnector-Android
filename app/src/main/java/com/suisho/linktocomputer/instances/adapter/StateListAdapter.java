@@ -50,22 +50,26 @@ public class StateListAdapter extends RecyclerView.Adapter {
         //根据等级设置图标
         ImageView imageView = holder.itemView.findViewById(R.id.state_dialog_card_icon);
         logger.debug("Init new state:{}", state.id);
-        switch (state.level) {
-            case BUSY:
-                imageView.setImageResource(R.drawable.baseline_hourglass_top_24);
-                break;
-            case CHECKED:
-                imageView.setImageResource(R.drawable.baseline_check_24);
-                break;
-            case INFO:
-                imageView.setImageResource(R.drawable.outline_info_24);
-                break;
-            case WARN:
-                imageView.setImageResource(R.drawable.baseline_warning_amber_24);
-                break;
-            case ERROR:
-                imageView.setImageResource(R.drawable.baseline_error_outline_24);
-                break;
+        if(state.icon !=-1) {
+            imageView.setImageResource(state.icon);
+        }else{
+            switch (state.level) {
+                case BUSY:
+                    imageView.setImageResource(R.drawable.baseline_hourglass_top_24);
+                    break;
+                case CHECKED:
+                    imageView.setImageResource(R.drawable.baseline_check_24);
+                    break;
+                case INFO:
+                    imageView.setImageResource(R.drawable.outline_info_24);
+                    break;
+                case WARN:
+                    imageView.setImageResource(R.drawable.baseline_warning_amber_24);
+                    break;
+                case ERROR:
+                    imageView.setImageResource(R.drawable.baseline_error_outline_24);
+                    break;
+            }
         }
         //可点击
         if(state.clickable) {
