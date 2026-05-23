@@ -1,9 +1,11 @@
 package com.suisho.linktocomputer;
 
 import android.app.Activity;
+import android.app.DownloadManager;
 import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -11,11 +13,14 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.view.View;
 
 import androidx.annotation.Nullable;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.suisho.linktocomputer.activity.NewMainActivity;
 import com.suisho.linktocomputer.constant.States;
 import com.suisho.linktocomputer.instances.ComputerConfigManager;
@@ -60,16 +65,16 @@ public class Util {
         //kb
         double sizeKb = (double) size / 1024;
         if(sizeKb < 1024) {
-            return String.format(Locale.getDefault(),"%.2f", sizeKb) + "KB";
+            return String.format(Locale.getDefault(), "%.2f", sizeKb) + "KB";
         }
         //mb
         double sizeMb = sizeKb / 1024;
         if(sizeMb < 1024) {
-            return String.format(Locale.getDefault(),"%.2f", sizeMb) + "MB";
+            return String.format(Locale.getDefault(), "%.2f", sizeMb) + "MB";
         }
         //gb
         double sizeGb = sizeMb / 1024;
-        return String.format(Locale.getDefault(),"%.2f", sizeGb) + "GB";
+        return String.format(Locale.getDefault(), "%.2f", sizeGb) + "GB";
     }
 
     ;
@@ -300,5 +305,38 @@ public class Util {
     public static void performHapticIfEnabled(View view, int feedbackConstant) {
         if(GlobalVariables.preferences.getBoolean("enable_haptic", true))
             view.performHapticFeedback(feedbackConstant);
+    }
+
+    public static void showUpdateDialog(Activity activity) {
+        //打开Github release
+        MaterialAlertDialogBuilder updateDialog = new MaterialAlertDialogBuilder(activity);
+        Intent githubUrlIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/NativeStar/SuishoConnector-Android/releases"));
+        if(GlobalVariables.checkUpdateJson == null) {
+            updateDialog.setTitle("发现新版本")
+                    .setMessage("获取更新数据失败 但您仍可以手动前往Github Release页面手动检查更新")
+                    .setPositiveButton("前往", (dialog, which) -> {
+                        activity.startActivity(githubUrlIntent);
+                        logger.debug("Open github release page with update json object not found");
+                    }).setNegativeButton("取消", null);
+        } else {
+            updateDialog.setTitle(String.format(Locale.getDefault(), "发现新版本:%s", GlobalVariables.checkUpdateJson.versionName))
+                    .setMessage(GlobalVariables.checkUpdateJson.description)
+                    .setPositiveButton("下载", (dialog, which) -> {
+                        DownloadManager downloadManager = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
+                        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(GlobalVariables.checkUpdateJson.downloadUrl));
+                        request.setTitle(activity.getString(R.string.app_name));
+                        request.setDescription(activity.getString(R.string.direct_download_desc));
+                        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "SuishoConnectorUpdate.apk");
+                        request.setMimeType("application/vnd.android.package-archive");
+                        downloadManager.enqueue(request);
+                    })
+                    .setNegativeButton("取消", null)
+                    .setNeutralButton("查看详情", (dialog, which) -> {
+                        activity.startActivity(githubUrlIntent);
+                        logger.debug("Open github release page");
+                    });
+        }
+        updateDialog.show();
     }
 }

@@ -45,6 +45,7 @@ import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.activity.NewMainActivity;
 import com.suisho.linktocomputer.activity.StorageManageActivity;
 import com.suisho.linktocomputer.constant.States;
+import com.suisho.linktocomputer.instances.CheckUpdateHandle;
 import com.suisho.linktocomputer.instances.ComputerConfigManager;
 import com.suisho.linktocomputer.instances.StateBarManager;
 import com.suisho.linktocomputer.instances.adapter.TrustedDeviceListAdapter;
@@ -77,6 +78,7 @@ public class SettingFragment extends PreferenceFragmentCompat {
         //底部弹窗布局
         View trustDeviceManagerDialogLayout = getLayoutInflater().inflate(R.layout.bottom_trust_device_manager, null);
         View aboutDialogLayout = getLayoutInflater().inflate(R.layout.bottom_about_layout, null);
+        NewMainActivity activity = (NewMainActivity) getActivity();
         aboutDialogLayout.findViewById(R.id.project_url_button).setOnClickListener(v -> {
             Util.performHapticIfEnabled(v, HapticFeedbackConstants.VIRTUAL_KEY);
             Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -84,8 +86,11 @@ public class SettingFragment extends PreferenceFragmentCompat {
             startActivity(intent);
             logger.debug("Open project github url");
         });
+        aboutDialogLayout.findViewById(R.id.manual_check_update_button).setOnClickListener(v -> {
+            logger.debug("Clicked manual check update button");
+            new CheckUpdateHandle(activity).queueIdle(true);
+        });
         //文本快捷发送 组件状态
-        Activity activity = getActivity();
         initComponentSettingSwitch(activity, ".TextUploadEntry", "function_text_selection_shortcut");
         initComponentSettingSwitch(activity, ".FileUploadEntry", "function_enable_file_upload_intent_filter");
         //版本名称
@@ -157,14 +162,14 @@ public class SettingFragment extends PreferenceFragmentCompat {
             return true;
         });
         //阻止截屏开关
-        findPreference("function_enable_flag_secure").setOnPreferenceChangeListener((preference, newValue)->{
+        findPreference("function_enable_flag_secure").setOnPreferenceChangeListener((preference, newValue) -> {
             boolean value = (boolean) newValue;
             if(value) {
                 getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
-            }else{
+            } else {
                 getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
             }
-            logger.info("Change flag secure to {}",value);
+            logger.info("Change flag secure to {}", value);
             return true;
         });
         findPreference("file_save_location").setOnPreferenceClickListener(preference -> {
@@ -389,13 +394,15 @@ public class SettingFragment extends PreferenceFragmentCompat {
             return false;
         });
     }
-    private void initSettings(){
+
+    private void initSettings() {
         //flag secure
-        if(GlobalVariables.preferences.getBoolean("function_enable_flag_secure",false)){
+        if(GlobalVariables.preferences.getBoolean("function_enable_flag_secure", false)) {
             getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
             logger.info("Init flag secure");
         }
     }
+
     private void showStoragePermissionDialog() {
         logger.debug("Show storage permission dialog");
         new MaterialAlertDialogBuilder(getActivity())

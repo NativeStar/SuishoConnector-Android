@@ -4,6 +4,7 @@ import android.os.MessageQueue;
 
 import com.suisho.linktocomputer.BuildConfig;
 import com.suisho.linktocomputer.GlobalVariables;
+import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.activity.NewMainActivity;
 import com.suisho.linktocomputer.constant.States;
 import com.suisho.linktocomputer.jsonClass.CheckUpdateJson;
@@ -26,6 +27,10 @@ public class CheckUpdateHandle implements MessageQueue.IdleHandler {
 
     @Override
     public boolean queueIdle() {
+        return queueIdle(false);
+    }
+
+    public boolean queueIdle(boolean isManual) {
         logger.debug("Handle called.Checking update");
         new Thread(()->{
             Request request = new Request.Builder()
@@ -38,10 +43,16 @@ public class CheckUpdateHandle implements MessageQueue.IdleHandler {
                 if(response.isSuccessful()){
                     String rawJsonString = response.body().string();
                     CheckUpdateJson jsonInstance= GlobalVariables.jsonBuilder.fromJson(rawJsonString, CheckUpdateJson.class);
-                    if(BuildConfig.VERSION_CODE < jsonInstance.versionCode){
-                        logger.info("Update available:{}", jsonInstance.versionName);
-                        activity.stateBarManager.addState(States.getStateList().get("info_update_available"));
+                    if(BuildConfig.VERSION_CODE <= jsonInstance.versionCode){
                         GlobalVariables.checkUpdateJson = jsonInstance;
+                        logger.info("Update available:{}", jsonInstance.versionName);
+                        if(isManual){
+                            activity.runOnUiThread(()->{
+                                Util.showUpdateDialog(activity);
+                            });
+                        }else{
+                            activity.stateBarManager.addState(States.getStateList().get("info_update_available"));
+                        }
                         return;
                     }
                     logger.info("Current is latest version:{}", jsonInstance.versionName);

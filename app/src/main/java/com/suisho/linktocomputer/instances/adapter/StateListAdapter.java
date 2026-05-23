@@ -2,12 +2,9 @@ package com.suisho.linktocomputer.instances.adapter;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.DownloadManager;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Environment;
 import android.provider.Settings;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
@@ -20,7 +17,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.constant.States;
@@ -32,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 
 public class StateListAdapter extends RecyclerView.Adapter {
     private final Activity activity;
@@ -133,36 +128,7 @@ public class StateListAdapter extends RecyclerView.Adapter {
                         }).show();
                 break;
             case "info_update_available":
-                //打开Github release
-                MaterialAlertDialogBuilder updateDialog = new MaterialAlertDialogBuilder(activity);
-                Intent githubUrlIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/NativeStar/SuishoConnector-Android/releases"));
-                if(GlobalVariables.checkUpdateJson == null) {
-                    updateDialog.setTitle("发现新版本")
-                            .setMessage("获取更新数据失败 但您仍可以手动前往Github Release页面手动检查更新")
-                            .setPositiveButton("前往", (dialog, which) -> {
-                                activity.startActivity(githubUrlIntent);
-                                logger.debug("Open github release page with update json object not found");
-                            }).setNegativeButton("取消", null);
-                } else {
-                    updateDialog.setTitle(String.format(Locale.getDefault(), "发现新版本:%s", GlobalVariables.checkUpdateJson.versionName))
-                            .setMessage(GlobalVariables.checkUpdateJson.description)
-                            .setPositiveButton("下载", (dialog, which) -> {
-                                DownloadManager downloadManager = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
-                                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(GlobalVariables.checkUpdateJson.downloadUrl));
-                                request.setTitle(activity.getString(R.string.app_name));
-                                request.setDescription(activity.getString(R.string.direct_download_desc));
-                                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "SuishoConnectorUpdate.apk");
-                                request.setMimeType("application/vnd.android.package-archive");
-                                downloadManager.enqueue(request);
-                            })
-                            .setNegativeButton("取消", null)
-                            .setNeutralButton("查看详情", (dialog, which) -> {
-                                activity.startActivity(githubUrlIntent);
-                                logger.debug("Open github release page");
-                            });
-                }
-                updateDialog.show();
+                Util.showUpdateDialog(activity);
                 break;
             default:
                 logger.warn("Unknown state card type:{}", state.id);
