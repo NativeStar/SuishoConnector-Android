@@ -126,7 +126,6 @@
             android:name=".activity.NewMainActivity"
             android:exported="true"
             android:launchMode="singleInstance"
-            android:screenOrientation="portrait"
             android:theme="@style/Theme.LinkToComputer"
             android:windowSoftInputMode="adjustPan">
             <intent-filter>
