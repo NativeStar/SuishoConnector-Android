@@ -5,7 +5,6 @@ import android.app.DownloadManager;
 import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -19,6 +18,7 @@ import android.os.Environment;
 import android.view.View;
 
 import androidx.annotation.Nullable;
+import androidx.browser.customtabs.CustomTabsIntent;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.suisho.linktocomputer.activity.NewMainActivity;
@@ -310,12 +310,12 @@ public class Util {
     public static void showUpdateDialog(Activity activity) {
         //打开Github release
         MaterialAlertDialogBuilder updateDialog = new MaterialAlertDialogBuilder(activity);
-        Intent githubUrlIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/NativeStar/SuishoConnector-Android/releases"));
+        Uri githubUrlIntent = Uri.parse("https://github.com/NativeStar/SuishoConnector-Android/releases");
         if(GlobalVariables.checkUpdateJson == null) {
             updateDialog.setTitle("发现新版本")
                     .setMessage("获取更新数据失败 但您仍可以手动前往Github Release页面手动检查更新")
                     .setPositiveButton("前往", (dialog, which) -> {
-                        activity.startActivity(githubUrlIntent);
+                        createCustomTabsIntent().launchUrl(activity, githubUrlIntent);
                         logger.debug("Open github release page with update json object not found");
                     }).setNegativeButton("取消", null);
         } else {
@@ -333,10 +333,22 @@ public class Util {
                     })
                     .setNegativeButton("取消", null)
                     .setNeutralButton("查看详情", (dialog, which) -> {
-                        activity.startActivity(githubUrlIntent);
+                        createCustomTabsIntent().launchUrl(activity, githubUrlIntent);
                         logger.debug("Open github release page");
                     });
         }
         updateDialog.show();
+    }
+
+    public static CustomTabsIntent createCustomTabsIntent() {
+        CustomTabsIntent.Builder customTabsIntentBuilder = new CustomTabsIntent.Builder();
+        customTabsIntentBuilder.setShowTitle(true);
+        customTabsIntentBuilder.setShareState(CustomTabsIntent.SHARE_STATE_ON);
+        customTabsIntentBuilder.setEphemeralBrowsingEnabled(true);
+        customTabsIntentBuilder.setBookmarksButtonEnabled(true);
+        customTabsIntentBuilder.setInstantAppsEnabled(true);
+        customTabsIntentBuilder.setDownloadButtonEnabled(true);
+        customTabsIntentBuilder.setCloseButtonEnabled(true);
+        return customTabsIntentBuilder.build();
     }
 }

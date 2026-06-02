@@ -19,6 +19,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -147,9 +148,10 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     setUniversalLongClickMenuAction(menuLayout, messagesView, popupWindow, holder);
                     menuLayout.findViewById(R.id.long_click_menu_action_open_url).setVisibility(isUrl ? View.VISIBLE : View.GONE);
                     menuLayout.findViewById(R.id.long_click_menu_action_open_url).setOnClickListener(v -> {
-                        Intent urlIntent = new Intent(Intent.ACTION_VIEW);
-                        urlIntent.setData(Uri.parse(text));
-                        activity.startActivity(urlIntent);
+                        Uri urlUri = Uri.parse(text.startsWith("http://") || text.startsWith("https://") ? text : "https://" + text);
+                        CustomTabsIntent customTabsIntent = Util.createCustomTabsIntent();
+                        popupWindow.dismiss();
+                        customTabsIntent.launchUrl(activity, urlUri);
                     });
                     menuLayout.findViewById(R.id.long_click_menu_action_copy_full).setOnClickListener(v -> {
                         logger.info("Copy text message full");
@@ -180,7 +182,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                 });
                 //来自手机的消息额外处理
                 boolean isFromPhone = ((TransmitMessageTypeText) dataList.get(position)).messageFrom == MessageConf.MESSAGE_FROM_PHONE;
-                applyMessageFormGravity(holder.messageView,isFromPhone);
+                applyMessageFormGravity(holder.messageView, isFromPhone);
                 //清除焦点
                 holder.messageView.setOnClickListener(View::clearFocus);
                 break;
@@ -195,8 +197,8 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                 ((TextView) holder.messageView.findViewById(R.id.transmit_file_time)).setText(simpleDateFormat.format(messageInstance.timestamp));
                 //是本地上传的文件 无法打开 不显示图标
                 logger.debug("File message name:{},size:{}", messageInstance.fileName, messageInstance.fileSize);
-                (holder.messageView.findViewById(R.id.transmit_file_openable_icon)).setVisibility(messageInstance.messageFrom==MessageConf.MESSAGE_FROM_PHONE?View.GONE:View.VISIBLE);
-                applyMessageFormGravity(holder.messageView, messageInstance.messageFrom==MessageConf.MESSAGE_FROM_PHONE);
+                (holder.messageView.findViewById(R.id.transmit_file_openable_icon)).setVisibility(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE ? View.GONE : View.VISIBLE);
+                applyMessageFormGravity(holder.messageView, messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE);
                 //注册点击事件 只有接收的文件才能打开
                 holder.messageView.findViewById(R.id.transmit_file_background_card_view).setOnClickListener(v -> {
                     if(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_PHONE) return;
@@ -463,7 +465,8 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
     public void setActivity(Activity act) {
         this.activity = act;
     }
-    private void applyMessageFormGravity(View rootView,boolean fromPhone){
+
+    private void applyMessageFormGravity(View rootView, boolean fromPhone) {
         LinearLayout messageLayout = (LinearLayout) rootView;
         messageLayout.setGravity(fromPhone ? Gravity.END : Gravity.START);
         messageLayout.requestLayout();

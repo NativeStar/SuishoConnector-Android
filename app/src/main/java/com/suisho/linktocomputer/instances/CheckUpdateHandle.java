@@ -49,9 +49,7 @@ public class CheckUpdateHandle implements MessageQueue.IdleHandler {
                         GlobalVariables.checkUpdateJson = jsonInstance;
                         logger.info("Update available:{}", jsonInstance.versionName);
                         if(isManual) {
-                            activity.runOnUiThread(() -> {
-                                Util.showUpdateDialog(activity);
-                            });
+                            activity.runOnUiThread(() -> Util.showUpdateDialog(activity));
                         } else {
                             activity.stateBarManager.addState(States.getStateList().get("info_update_available"));
                         }

@@ -29,6 +29,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.biometric.BiometricManager;
+import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreferenceCompat;
@@ -82,9 +83,9 @@ public class SettingFragment extends PreferenceFragmentCompat {
         NewMainActivity activity = (NewMainActivity) getActivity();
         aboutDialogLayout.findViewById(R.id.project_url_button).setOnClickListener(v -> {
             Util.performHapticIfEnabled(v, HapticFeedbackConstants.VIRTUAL_KEY);
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setData(Uri.parse("https://github.com/NativeStar/SuishoConnector-Android"));
-            startActivity(intent);
+            Uri uri = Uri.parse("https://github.com/NativeStar/SuishoConnector-Android");
+            CustomTabsIntent customTabsIntent = Util.createCustomTabsIntent();
+            customTabsIntent.launchUrl(activity, uri);
             logger.debug("Open project github url");
         });
         aboutDialogLayout.findViewById(R.id.manual_check_update_button).setOnClickListener(v -> {
