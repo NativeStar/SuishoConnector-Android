@@ -179,7 +179,7 @@
     <string name="dialog_clear_auto_connect_file_title">解绑设备</string>
     <string name="dialog_clear_auto_connect_file_desc">确认解绑设备?将不再进行自动连接</string>
     <string name="text_unbind_success">解绑完成 重启生效</string>
-    <string name="text_unbind_failed_not_bound">当前未绑定任何设备</string>
+    <string name="text_unbind_failed_not_bound">当前未绑定任何设备 请在PC端执行设备绑定</string>
     <string name="text_android_version_not_support">当前Android版本过低 不支持此功能</string>
     <string name="error_media_projection_manager_null">授权失败:无法获取MediaProjectionManager</string>
     <string name="state_title_update_available">发现版本更新</string>
