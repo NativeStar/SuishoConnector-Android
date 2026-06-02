@@ -16,8 +16,6 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Icon;
 import android.os.Binder;
-import android.os.Build;
-import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.RemoteException;
@@ -28,7 +26,6 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.material.snackbar.Snackbar;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.suisho.linktocomputer.GlobalVariables;
@@ -37,7 +34,6 @@ import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.abstracts.FileUploadStateHandle;
 import com.suisho.linktocomputer.abstracts.RequestHandle;
 import com.suisho.linktocomputer.activity.NewMainActivity;
-import com.suisho.linktocomputer.constant.FileManagerResultCode;
 import com.suisho.linktocomputer.constant.States;
 import com.suisho.linktocomputer.enums.ComputerTrustMode;
 import com.suisho.linktocomputer.enums.ConnectionCloseCode;
@@ -48,15 +44,12 @@ import com.suisho.linktocomputer.interfaces.IConnectedActivityMethods;
 import com.suisho.linktocomputer.interfaces.INetworkService;
 import com.suisho.linktocomputer.jsonClass.MainServiceJson;
 import com.suisho.linktocomputer.network.FileServer;
-import com.suisho.linktocomputer.network.TransmitDownloadFile;
 import com.suisho.linktocomputer.network.TransmitUploadFile;
-import com.suisho.linktocomputer.network.udp.FileSyncDownloader;
 import com.suisho.linktocomputer.receiver.BatteryStateReceiver;
 import com.suisho.linktocomputer.receiver.ShutdownReceiver;
 import com.suisho.linktocomputer.responseBuilders.AllPackageResponse;
 import com.suisho.linktocomputer.responseBuilders.CurrentNotificationsListPacket;
 import com.suisho.linktocomputer.responseBuilders.DetailBuilder;
-import com.suisho.linktocomputer.responseBuilders.EmptyResponsePacketBuilder;
 import com.suisho.linktocomputer.responseBuilders.HandshakeResponse;
 
 import org.slf4j.Logger;
@@ -522,65 +515,10 @@ public class ConnectMainService extends Service implements INetworkService {
                                             activityMethods.addItem(TransmitRecyclerAddItemType.ITEM_TYPE_TEXT, new TransmitMessageTypeText(jsonObj.msg, false), true);
                                             break;
                                         case "transmit_uploadFile":
-                                            //互传文件
-                                            File transmitTargetFile;
-                                            logger.debug("Transmit request download file");
-                                            //Download目录下
-                                            if(GlobalVariables.preferences.getInt("file_save_location", 0) == 1) {
-                                                logger.debug("Save to public transmit file path");
-                                                transmitTargetFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/Transmit");
-                                            } else {
-                                                //私有目录
-                                                logger.debug("Save to private transmit file path");
-                                                transmitTargetFile = new File(ConnectMainService.this.getExternalFilesDir(null).getAbsolutePath() + "/transmit");
-                                            }
-                                            transmitTargetFile.mkdirs();
-                                            File transmitOutputFile = new File(transmitTargetFile.getAbsolutePath() + "/" + jsonObj.fileName);
-                                            logger.debug("Create transmit output file: {}", transmitOutputFile.getAbsolutePath());
-                                            if(transmitOutputFile.exists()) {
-                                                String filePath;
-                                                if(GlobalVariables.preferences.getInt("file_name_conflict_behavior", 0) == 0) {
-                                                    //追加时间戳
-                                                    filePath = transmitTargetFile.getAbsolutePath() + "/" + System.currentTimeMillis() + jsonObj.fileName;
-                                                } else {
-                                                    //删除旧文件
-                                                    transmitOutputFile.delete();
-                                                    filePath = transmitTargetFile.getAbsolutePath() + "/" + jsonObj.fileName;
-                                                }
-                                                //重名 末尾加时间戳保存
-                                                //不能影响显示
-                                                logger.debug("Transmit file exists, append timestamp to new file name");
-                                                new TransmitDownloadFile(jsonObj.port, filePath, jsonObj.fileName, jsonObj.fileSize, activityMethods);
-                                            } else {
-                                                //没重名 一切正常
-                                                new TransmitDownloadFile(jsonObj.port, transmitOutputFile.getAbsolutePath(), jsonObj.fileName, jsonObj.fileSize, activityMethods);
-                                            }
-                                            webSocketClient.send(EmptyResponsePacketBuilder.buildEmptyResponsePacket(jsonObj).toString());
+                                            ConnectionPacketHandle.onTransmitUploadFilePacket(ConnectMainService.this, webSocketClient, jsonObj, logger, activityMethods);
                                             break;
                                         case "main_fileSyncDownload":
-                                            logger.debug("Request download sync file");
-                                            File syncTargetFile;
-                                            if(GlobalVariables.preferences.getInt("file_save_location", 0) == 1) {
-                                                logger.debug("Save to public file sync path");
-                                                syncTargetFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + Environment.DIRECTORY_DOWNLOADS + "/SuishoConnector/FileSync");
-                                            } else {
-                                                //私有目录
-                                                logger.debug("Save to private file sync path");
-                                                syncTargetFile = new File(ConnectMainService.this.getExternalFilesDir(null).getAbsolutePath() + "/FileSync");
-                                            }
-                                            syncTargetFile.mkdirs();
-                                            File fileSyncOutputFile = new File(syncTargetFile.getAbsolutePath() + "/" + jsonObj.fileName);
-                                            logger.debug("Create file sync output file: {}", fileSyncOutputFile.getAbsolutePath());
-                                            if(fileSyncOutputFile.exists()) {
-                                                //重名 末尾加时间戳保存
-                                                //不能影响显示
-                                                logger.debug("Sync file exists, append timestamp to new file name");
-                                                new FileSyncDownloader(jsonObj.port, syncTargetFile.getAbsolutePath() + "/" + System.currentTimeMillis() + jsonObj.fileName, jsonObj.fileName, jsonObj.fileSize, activityMethods);
-                                            } else {
-                                                //没重名 一切正常
-                                                new FileSyncDownloader(jsonObj.port, fileSyncOutputFile.getAbsolutePath(), jsonObj.fileName, jsonObj.fileSize, activityMethods);
-                                            }
-                                            webSocketClient.send(EmptyResponsePacketBuilder.buildEmptyResponsePacket(jsonObj).toString());
+                                            ConnectionPacketHandle.onDownloadSyncFilePacket(logger, jsonObj, activityMethods, ConnectMainService.this, webSocketClient);
                                             break;
                                         case "main_queryAllPackages":
                                             //查询所有已安装应用
@@ -591,30 +529,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                             }).start();
                                             break;
                                         case "main_bindDevice":
-                                            //绑定计算机
-                                            logger.debug("Received bind device packet");
-                                            new Thread(() -> {
-                                                File keyFile = new File(getFilesDir() + "/bind.key");
-                                                if(keyFile.exists()) {
-                                                    logger.debug("Has exists bind key file.Delete it");
-                                                    keyFile.delete();
-                                                }
-                                                JsonObject response = new JsonObject();
-                                                response.addProperty("_isResponsePacket", true);
-                                                response.addProperty("_responseId", jsonObj._request_id);
-                                                try (FileOutputStream keyFileOut = new FileOutputStream(keyFile)) {
-                                                    keyFileOut.write(jsonObj.msg.getBytes());
-                                                    keyFileOut.flush();
-                                                    GlobalVariables.settings.edit().putBoolean("boundDevice", true).apply();
-                                                    response.addProperty("success", true);
-                                                    logger.info("Bind computer success");
-                                                } catch (IOException e) {
-                                                    logger.error("Error when write bind key file", e);
-                                                    response.addProperty("success", false);
-                                                } finally {
-                                                    webSocketClient.send(response.toString());
-                                                }
-                                            }).start();
+                                            ConnectionPacketHandle.onBindDevicePacket(logger, jsonObj, ConnectMainService.this, webSocketClient);
                                             break;
                                         case "main_unbindDevice":
                                             //解绑计算机
@@ -701,63 +616,10 @@ public class ConnectMainService extends Service implements INetworkService {
                                             activityMethods.getActivity().updateConnectionStateDisplay();
                                             break;
                                         case "main_checkPermission":
-                                            JsonObject permissionCheckPacket = new JsonObject();
-                                            permissionCheckPacket.addProperty("_isResponsePacket", true);
-                                            permissionCheckPacket.addProperty("_responseId", jsonObj._request_id);
-                                            //存储空间权限
-                                            if(jsonObj.name.equals("android.permission.MANAGE_EXTERNAL_STORAGE")) {
-                                                if(Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
-                                                    permissionCheckPacket.addProperty("result", Environment.isExternalStorageManager());
-                                                } else {
-                                                    boolean hasPermission = checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") == PackageManager.PERMISSION_GRANTED && checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") == PackageManager.PERMISSION_GRANTED;
-                                                    permissionCheckPacket.addProperty("result", hasPermission);
-                                                }
-                                                webSocketClient.send(permissionCheckPacket.toString());
-                                                return;
-                                            }
-                                            webSocketClient.send(permissionCheckPacket.toString());
+                                            ConnectionPacketHandle.onCheckPermissionPacket(logger, jsonObj, ConnectMainService.this, webSocketClient);
                                             break;
                                         case "file_getFilesList":
-                                            JsonObject fileListPacket = new JsonObject();
-                                            fileListPacket.addProperty("_isResponsePacket", true);
-                                            fileListPacket.addProperty("_responseId", jsonObj._request_id);
-                                            //功能是否开启及设备是否被信任
-                                            if(!GlobalVariables.preferences.getBoolean("function_file_manager", false) || !GlobalVariables.computerConfigManager.isTrustedComputer()) {
-                                                fileListPacket.addProperty("code", GlobalVariables.computerConfigManager.isTrustedComputer() ? FileManagerResultCode.CODE_FUNCTION_DISABLED : FileManagerResultCode.CODE_DEVICE_NOT_TRUSTED);
-                                                webSocketClient.send(fileListPacket.toString());
-                                                return;
-                                            }
-                                            //读文件
-                                            File dir = new File(jsonObj.msg);
-                                            if(!dir.isDirectory()) {
-                                                //不是目录
-                                                logger.debug("Access path '{}' not directory", dir.getPath());
-                                                fileListPacket.addProperty("code", FileManagerResultCode.CODE_NOT_DIR);
-                                                webSocketClient.send(fileListPacket.toString());
-                                                return;
-                                            }
-                                            File[] files = dir.listFiles();
-                                            if(files == null) {
-                                                //无法列出文件
-                                                logger.debug("Access path '{}' not permission", dir.getPath());
-                                                fileListPacket.addProperty("code", FileManagerResultCode.CODE_NOT_PERMISSION);
-                                                webSocketClient.send(fileListPacket.toString());
-                                                return;
-                                            }
-                                            JsonArray fileListJsonArray = new JsonArray();
-                                            for(File inDirectoryFile : files) {
-                                                JsonObject fileInfoObject = new JsonObject();
-                                                fileInfoObject.addProperty("type", inDirectoryFile.isDirectory() ? "folder" : "file");
-                                                fileInfoObject.addProperty("name", inDirectoryFile.getName());
-                                                fileInfoObject.addProperty("size", inDirectoryFile.length());
-                                                fileListJsonArray.add(fileInfoObject);
-                                            }
-                                            fileListPacket.addProperty("code", FileManagerResultCode.CODE_NORMAL);
-                                            fileListPacket.add("files", fileListJsonArray);
-                                            webSocketClient.send(fileListPacket.toString());
-                                            //已经访问了目录 提前开启服务器
-                                            logger.debug("Prestart file server for access file");
-                                            if(!webFileServer.wasStarted()) webFileServer.start();
+                                            ConnectionPacketHandle.onGetFileListPacket(logger, jsonObj, webFileServer, webSocketClient, ConnectMainService.this);
                                             break;
                                         case "main_getCurrentNotificationsList":
                                             CurrentNotificationsListPacket packet = new CurrentNotificationsListPacket();
@@ -948,7 +810,7 @@ public class ConnectMainService extends Service implements INetworkService {
         return packageNames.contains(getApplicationContext().getPackageName());
     }
 
-    public void setupNotificationListenerService() {
+    private void setupNotificationListenerService() {
         //通知监听服务
         Intent listenerServiceIntent = new Intent(this, NotificationListenerService.class);
         listenerServiceIntent.setAction("networkServiceLaunch");

@@ -142,37 +142,6 @@ public class NewMainActivity extends AppCompatActivity {
             updateConnectionStateDisplay();
         }
         getOnBackPressedDispatcher().addCallback(onBackPressedCallback);
-//        getOnBackPressedDispatcher().addCallback(new OnBackPressedCallback(true) {
-//            @Override
-//            public void handleOnBackPressed() {
-//                //默认回主页
-//                if(binding.homeViewPager2.getCurrentItem() != 0) {
-//                    binding.connectedActivityNavigationBar.setSelectedItemId(navigationIds[0]);
-//                    return;
-//                }
-//                if(networkService == null || !networkService.isConnected) {
-//                    logger.debug("onBackInvokedCallback called.Show exit confirm dialog");
-//                    new MaterialAlertDialogBuilder(NewMainActivity.this)
-//                            .setMessage("当前未连接任何设备\n你是希望退出程序还是希望其继续后台运行?")
-//                            .setPositiveButton("后台运行", (dialog, which) -> {
-//                                logger.debug("onBackInvokedCallback called.Move task to back");
-//                                dialog.dismiss();
-//                                setInRecentTaskHidden(NewMainActivity.this, true);
-//                                moveTaskToBack(true);
-//                            })
-//                            .setNegativeButton("退出", (dialog, which) -> {
-//                                logger.debug("onBackInvokedCallback called.Exit");
-//                                finishAffinity();
-//                                System.exit(0);
-//                            })
-//                            .show();
-//                } else {
-//                    logger.debug("onBackInvokedCallback called.Move task to back by has connection");
-//                    setInRecentTaskHidden(NewMainActivity.this, true);
-//                    moveTaskToBack(true);
-//                }
-//            }
-//        });
         //debug参数
         hasDebuggableArg = getIntent().getBooleanExtra("enableDebugMenu", false);
         if(hasDebuggableArg) logger.info("Launch with debug menu");
