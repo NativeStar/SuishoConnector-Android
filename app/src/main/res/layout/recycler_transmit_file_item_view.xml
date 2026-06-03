@@ -58,7 +58,7 @@
                 android:id="@+id/transmit_file_time"
                 android:textSize="11sp"
                 android:textColor="@color/text_gray"
-                android:text="@string/text_open_url"
+                android:text=""
                 android:layout_marginStart="74dp"
                 android:layout_marginTop="82dp"/>
         </FrameLayout>

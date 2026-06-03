@@ -12,7 +12,7 @@ import com.suisho.linktocomputer.interfaces.IConnectedActivityMethods;
 import com.suisho.linktocomputer.jsonClass.MainServiceJson;
 import com.suisho.linktocomputer.network.FileServer;
 import com.suisho.linktocomputer.network.TransmitDownloadFile;
-import com.suisho.linktocomputer.network.udp.FileSyncDownloader;
+import com.suisho.linktocomputer.network.FileSyncDownloader;
 import com.suisho.linktocomputer.responseBuilders.EmptyResponsePacketBuilder;
 
 import org.slf4j.Logger;

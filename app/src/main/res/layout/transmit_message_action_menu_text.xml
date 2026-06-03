@@ -36,12 +36,5 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/text_open_url" />
-
-<!--        <com.google.android.material.button.MaterialButton-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:id="@+id/long_click_menu_action_multiple_choice"-->
-<!--            android:text="@string/text_multiple_choice"/>-->
-
     </LinearLayout>
 </androidx.cardview.widget.CardView>

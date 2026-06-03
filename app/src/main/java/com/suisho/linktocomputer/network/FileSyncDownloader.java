@@ -1,4 +1,4 @@
-package com.suisho.linktocomputer.network.udp;
+package com.suisho.linktocomputer.network;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;

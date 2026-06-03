@@ -36,7 +36,7 @@
                 android:layout_marginBottom="5dp"
                 android:maxWidth="275dp"
                 android:textColor="@color/text_gray"
-                android:text="@string/auth_dialog_title"
+                android:text=""
                 android:textIsSelectable="false"
                 android:textSize="11sp" />
 
