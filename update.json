@@ -1,6 +1,6 @@
 {
-  "versionCode":14,
-  "versionName":"1.2.2",
-  "downloadUrl":"https://github.com/NativeStar/SuishoConnector-Android/releases/download/1.2.2/app-release.apk",
-  "description": "支持在关于弹窗中手动检查更新\n在连接后才在最近任务列表隐藏自身\n连接状态卡片添加计算机IP显示\n修复一些UI布局和崩溃问题"
+  "versionCode":15,
+  "versionName":"1.2.3",
+  "downloadUrl":"https://github.com/NativeStar/SuishoConnector-Android/releases/download/1.2.3/app-release.apk",
+  "description": "改为使用CustomTabs打开url\n修复在互传中打开无http协议前缀url时崩溃\n修复一些显示异常 并且界面不再强制锁定竖屏"
 }
