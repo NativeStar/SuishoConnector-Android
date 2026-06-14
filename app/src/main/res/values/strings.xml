@@ -27,12 +27,13 @@
     <string name="text_cancel">取消</string>
     <string name="transmit_upload_failed_has_uploading_file">请等待上一个文件上传完成</string>
     <string name="transmit_open_file_failed_not_resolve_application">无法打开文件:没有应用程序支持打开它</string>
-    <string name="transmit_open_file_failed_not_exists">打开失败:文件已被删除</string>
+    <string name="transmit_open_file_failed_not_exists">处理失败:文件已被删除</string>
     <string name="transmit_open_file_failed_null_path">无法打开文件:路径数据异常</string>
     <string name="transmit_send_text_save_local_failed_not_exists">未连接计算机 文本将仅保存至本地</string>
     <string name="transmit_send_clipboard_invalid_data">无法获取数据 请检查剪切板是否为空或已授予本程序剪切板权限</string>
     <string name="transmit_send_failed_network">请先连接计算机或检查网络状况</string>
     <string name="transmit_drag_text_tip">长按时间以拖动文本消息</string>
+    <string name="transmit_drag_file_tip">长按文件图标以拖动消息</string>
     <string name="service_connect_success">连接成功</string>
     <string name="text_not_connect">未连接</string>
     <string name="text_unauthorized">未授权</string>

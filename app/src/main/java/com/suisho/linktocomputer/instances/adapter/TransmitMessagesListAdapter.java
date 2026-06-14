@@ -274,7 +274,13 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         );
                         return true;
                     });
-
+                    messageIconView.setOnClickListener(v -> {
+                        Util.performHapticIfEnabled(v, HapticFeedbackConstants.KEYBOARD_TAP);
+                        Snackbar.make(((NewMainActivity) activity).getBinding().getRoot(), activity.getString(R.string.transmit_drag_file_tip), 2000).show();
+                    });
+                }else{
+                    messageIconView.setOnLongClickListener(null);
+                    messageIconView.setOnClickListener(null);
                 }
                 holder.messageView.findViewById(R.id.transmit_file_background_card_view).setOnLongClickListener(view -> {
                     View menuLayout = LayoutInflater.from(activity).inflate(R.layout.transmit_message_action_menu_file, null, false);
