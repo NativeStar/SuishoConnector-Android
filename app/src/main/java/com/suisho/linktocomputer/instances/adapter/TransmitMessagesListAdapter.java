@@ -180,6 +180,13 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     showPopupMenu(popupWindow, view, menuLayout);
                     return true;
                 });
+                timeTextView.setOnLongClickListener(view -> {
+                    ClipData dragData = ClipData.newPlainText("DragText", text);
+                    View.DragShadowBuilder dragShadowBuilder = new View.DragShadowBuilder(textView);
+                    textView.startDragAndDrop(dragData, dragShadowBuilder, null, View.DRAG_FLAG_GLOBAL);
+                    return true;
+                });
+                timeTextView.setOnClickListener(view -> Snackbar.make(((NewMainActivity) activity).getBinding().getRoot(), activity.getString(R.string.transmit_drag_text_tip), 2000).show());
                 //来自手机的消息额外处理
                 boolean isFromPhone = ((TransmitMessageTypeText) dataList.get(position)).messageFrom == MessageConf.MESSAGE_FROM_PHONE;
                 applyMessageFormGravity(holder.messageView, isFromPhone);
@@ -207,7 +214,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     if(messageInstance.filePath == null || messageInstance.filePath.equals("null")) {
                         //文件路径为空
                         logger.warn("File message path is null!");
-                        Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getResources().getText(R.string.transmit_open_file_failed_null_path), 2000).show();
+                        Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getString(R.string.transmit_open_file_failed_null_path), 2000).show();
                         return;
                     }
                     File file = new File(messageInstance.filePath);
@@ -215,7 +222,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     if(!file.exists()) {
                         logger.debug("File message path '{}' deleted", file.getPath());
                         //不存在
-                        Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getResources().getText(R.string.transmit_open_file_failed_not_exists), 2000).show();
+                        Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getString(R.string.transmit_open_file_failed_not_exists), 2000).show();
                         return;
                     }
                     File openTarget = new File(messageInstance.filePath);
@@ -232,7 +239,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         activity.startActivity(intent);
                     } else {
                         logger.info("File message can not resolve application to open it");
-                        Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getResources().getText(R.string.transmit_open_file_failed_not_resolve_application), 2000).show();
+                        Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getString(R.string.transmit_open_file_failed_not_resolve_application), 2000).show();
                     }
                 });
                 holder.messageView.findViewById(R.id.transmit_file_background_card_view).setOnLongClickListener(view -> {
@@ -258,7 +265,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         //检测文件是否存在
                         if(!file.exists()) {
                             //不存在
-                            Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getResources().getText(R.string.transmit_open_file_failed_not_exists), 2000).show();
+                            Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getString(R.string.transmit_open_file_failed_not_exists), 2000).show();
                             popupWindow.dismiss();
                             logger.debug("Share file failed because file deleted");
                             return;
