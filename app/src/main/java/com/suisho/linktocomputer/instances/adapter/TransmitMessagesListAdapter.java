@@ -196,6 +196,7 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
             case MessageConf.MESSAGE_TYPE_FILE:
                 logger.debug("Init file message");
                 TransmitMessageTypeFile messageInstance = (TransmitMessageTypeFile) dataList.get(position);
+                View messageIconView = holder.messageView.findViewById(R.id.transmit_file_icon);
                 //文件名
                 ((TextView) holder.messageView.findViewById(R.id.transmit_file_name)).setText(messageInstance.fileName);
                 //文件大小
@@ -213,14 +214,14 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                     Util.performHapticIfEnabled(v, HapticFeedbackConstants.KEYBOARD_TAP);
                     if(messageInstance.filePath == null || messageInstance.filePath.equals("null")) {
                         //文件路径为空
-                        logger.warn("File message path is null!");
+                        logger.warn("File message path is null!Action:click");
                         Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getString(R.string.transmit_open_file_failed_null_path), 2000).show();
                         return;
                     }
                     File file = new File(messageInstance.filePath);
                     //检测文件是否存在
                     if(!file.exists()) {
-                        logger.debug("File message path '{}' deleted", file.getPath());
+                        logger.debug("File message path '{}' deleted.Action:click", file.getPath());
                         //不存在
                         Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getString(R.string.transmit_open_file_failed_not_exists), 2000).show();
                         return;
@@ -242,6 +243,39 @@ public class TransmitMessagesListAdapter extends RecyclerView.Adapter<TransmitMe
                         Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getString(R.string.transmit_open_file_failed_not_resolve_application), 2000).show();
                     }
                 });
+                if(messageInstance.messageFrom == MessageConf.MESSAGE_FROM_COMPUTER) {
+                    messageIconView.setOnLongClickListener(v -> {
+                        if(messageInstance.filePath == null || messageInstance.filePath.equals("null")) {
+                            //文件路径为空
+                            logger.warn("File message path is null!Action:drag");
+                            Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getString(R.string.transmit_open_file_failed_null_path), 2000).show();
+                            return true;
+                        }
+                        File file = new File(messageInstance.filePath);
+                        //检测文件是否存在
+                        if(!file.exists()) {
+                            logger.debug("File message path '{}' deleted.Action:drag", file.getPath());
+                            //不存在
+                            Snackbar.make(activity, ((NewMainActivity) activity).getBinding().getRoot(), activity.getString(R.string.transmit_open_file_failed_not_exists), 2000).show();
+                            return true;
+                        }
+                        Uri uri;
+                        if(messageInstance.filePath.endsWith("/" + messageInstance.fileName)) {
+                            uri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".transmitOpenFileProvider", file);
+                        } else {
+                            ShareFileProvider.setShareFileName(messageInstance.fileName);
+                            uri = ShareFileProvider.getUriForFile(activity, activity.getPackageName() + ".ShareFileProvider", file);
+                        }
+                        String mimeType = URLConnection.getFileNameMap().getContentTypeFor(messageInstance.fileName);
+                        if(mimeType == null) mimeType = "application/octet-stream";
+                        ClipData dragData = new ClipData(messageInstance.fileName, new String[]{mimeType}, new ClipData.Item(uri));
+                        View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(holder.messageView);
+                        messageIconView.startDragAndDrop(dragData, shadowBuilder, null, View.DRAG_FLAG_GLOBAL | View.DRAG_FLAG_GLOBAL_URI_READ
+                        );
+                        return true;
+                    });
+
+                }
                 holder.messageView.findViewById(R.id.transmit_file_background_card_view).setOnLongClickListener(view -> {
                     View menuLayout = LayoutInflater.from(activity).inflate(R.layout.transmit_message_action_menu_file, null, false);
                     PopupWindow popupWindow = new PopupWindow(menuLayout, ViewGroup.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
