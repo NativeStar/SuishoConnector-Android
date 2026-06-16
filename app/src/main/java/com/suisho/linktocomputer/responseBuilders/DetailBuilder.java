@@ -3,9 +3,7 @@ package com.suisho.linktocomputer.responseBuilders;
 import android.app.ActivityManager;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.graphics.Point;
 import android.os.BatteryManager;
-import android.view.WindowManager;
 
 import com.google.gson.JsonObject;
 
@@ -36,10 +34,6 @@ public class DetailBuilder {
         obj.add("memoryInfo", getMemoryInfo());
         //勿扰模式
         obj.addProperty("doNotDisturbEnabled", notificationManager.getCurrentInterruptionFilter() != NotificationManager.INTERRUPTION_FILTER_ALL);
-        //TODO 移除屏幕数据上报 早就没用了
-        short[] screenResolution = getScreenResolution();
-        obj.addProperty("screenWidth", screenResolution[0]);
-        obj.addProperty("screenHeight", screenResolution[1]);
         logger.debug("Created device detail packet");
         return obj;
     }
@@ -61,16 +55,5 @@ public class DetailBuilder {
         jsonObj.addProperty("avail", memInfo.availMem);
         logger.debug("Memory info:{}/{}", memInfo.availMem, memInfo.totalMem);
         return jsonObj;
-    }
-
-    //屏幕分辨率
-    private short[] getScreenResolution() {
-        short[] screenInfo = new short[2];
-        WindowManager windowManager = (WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE);
-        Point point = new Point();
-        windowManager.getDefaultDisplay().getRealSize(point);
-        screenInfo[0] = (short) point.x;//宽
-        screenInfo[1] = (short) point.y;//高
-        return screenInfo;
     }
 }

@@ -36,7 +36,6 @@ public class States {
     }
 
     public static HashMap<String, State> getStateList() {
-        //TODO 也许可以优化下 类似js map
         if(StateList.isEmpty()) {
             //init
             //图标打包
