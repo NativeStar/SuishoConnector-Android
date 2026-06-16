@@ -50,9 +50,9 @@ public class StateListAdapter extends RecyclerView.Adapter {
         //根据等级设置图标
         ImageView imageView = holder.itemView.findViewById(R.id.state_dialog_card_icon);
         logger.debug("Init new state:{}", state.id);
-        if(state.icon !=-1) {
+        if(state.icon != -1) {
             imageView.setImageResource(state.icon);
-        }else{
+        } else {
             switch (state.level) {
                 case BUSY:
                     imageView.setImageResource(R.drawable.baseline_hourglass_top_24);
@@ -133,6 +133,10 @@ public class StateListAdapter extends RecyclerView.Adapter {
                 break;
             case "info_update_available":
                 Util.showUpdateDialog(activity);
+                break;
+            case "info_not_interruption_filter_access_permission":
+                Intent notificationPolicyIntent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+                activity.startActivity(notificationPolicyIntent);
                 break;
             default:
                 logger.warn("Unknown state card type:{}", state.id);

@@ -45,7 +45,7 @@ import com.suisho.linktocomputer.interfaces.INetworkService;
 import com.suisho.linktocomputer.jsonClass.MainServiceJson;
 import com.suisho.linktocomputer.network.FileServer;
 import com.suisho.linktocomputer.network.TransmitUploadFile;
-import com.suisho.linktocomputer.receiver.BatteryStateReceiver;
+import com.suisho.linktocomputer.receiver.DeviceStateReceiver;
 import com.suisho.linktocomputer.receiver.ShutdownReceiver;
 import com.suisho.linktocomputer.responseBuilders.AllPackageResponse;
 import com.suisho.linktocomputer.responseBuilders.CurrentNotificationsListPacket;
@@ -108,12 +108,13 @@ public class ConnectMainService extends Service implements INetworkService {
     //通知监听服务运行状态
     private boolean notificationListenerServiceWorking = false;
     //电池状广播接收器
-    private BatteryStateReceiver batteryStateReceiver = null;
+    private DeviceStateReceiver deviceStateReceiver = null;
     //设备关机接收器
     private ShutdownReceiver shutdownReceiver = null;
     private BroadcastReceiver closeConnectionBroadcastReceiver = null;
     private ServiceConnection bindAudioForwardServiceConnection = null;
     private ServiceConnection bingNotificationListenerServiceConnection = null;
+    private NotificationManager notificationManager;
     //文件管理器 远程播放流媒体等的文件服务器
     public final FileServer webFileServer = new FileServer(30767);
     //投屏同意返回intent
@@ -174,6 +175,7 @@ public class ConnectMainService extends Service implements INetworkService {
                 ConnectMainService.this.disconnect();
             }
         };
+        notificationManager = getSystemService(NotificationManager.class);
         ContextCompat.registerReceiver(this, closeConnectionBroadcastReceiver, new IntentFilter("close_connection"), ContextCompat.RECEIVER_NOT_EXPORTED);
         createNotificationChannel();
     }
@@ -391,7 +393,6 @@ public class ConnectMainService extends Service implements INetworkService {
                                                         .setContentText(reasonString)
                                                         .setAutoCancel(true)
                                                         .build();
-                                                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                                                 notificationManager.notify(128, notification);
                                             }
                                             //直接killProcess退出会导致下次启动带上莫名其妙的savedInstanceState
@@ -487,17 +488,17 @@ public class ConnectMainService extends Service implements INetworkService {
                                         case "main_server_initialled":
                                             //pc端窗口初始化完成
                                             //注册电池状态广播
-                                            IntentFilter batteryBroadcastFilter = BatteryStateReceiver.createIntentFilter();
-                                            if(batteryStateReceiver == null) {
+                                            IntentFilter deviceStateBroadcastFilter = DeviceStateReceiver.createIntentFilter();
+                                            if(deviceStateReceiver == null) {
                                                 logger.debug("Create battery state receiver");
-                                                batteryStateReceiver = new BatteryStateReceiver(ConnectMainService.this);
+                                                deviceStateReceiver = new DeviceStateReceiver(ConnectMainService.this,notificationManager.getCurrentInterruptionFilter());
                                             }
                                             if(shutdownReceiver == null) {
                                                 logger.debug("Create shutdown receiver");
                                                 shutdownReceiver = new ShutdownReceiver(ConnectMainService.this);
                                             }
                                             logger.debug("Register battery state receiver");
-                                            ContextCompat.registerReceiver(ConnectMainService.this, batteryStateReceiver, batteryBroadcastFilter, ContextCompat.RECEIVER_EXPORTED);
+                                            ContextCompat.registerReceiver(ConnectMainService.this, deviceStateReceiver, deviceStateBroadcastFilter, ContextCompat.RECEIVER_EXPORTED);
                                             ContextCompat.registerReceiver(ConnectMainService.this, shutdownReceiver, ShutdownReceiver.createIntentFilter(), ContextCompat.RECEIVER_EXPORTED);
                                             setupNotificationListenerService();
                                             initWakeLock();
@@ -505,7 +506,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                         case "main_getDeviceDetailInfo":
                                             //获取详细信息
                                             //详细信息构建模块
-                                            DetailBuilder detailResponse = new DetailBuilder(jsonObj._request_id, getApplicationContext());
+                                            DetailBuilder detailResponse = new DetailBuilder(jsonObj._request_id, getApplicationContext(),notificationManager);
                                             //返回详细信息
                                             webSocketClient.send(detailResponse.create().toString());
                                             break;
@@ -640,6 +641,26 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 notificationListenerService.appendMediaSessionControl(jsonObj.msg, jsonObj.time);
                                             }
                                             break;
+                                        //TODO 支持在掉线后自动关闭由pc端打开的勿扰模式
+                                        //TODO 开发模式状态提醒 PC端也要
+                                        case "changeDoNotDisturbMode":
+                                            JsonObject changeDoNotDisturbModePacket = new JsonObject();
+                                            changeDoNotDisturbModePacket.addProperty("_isResponsePacket", true);
+                                            changeDoNotDisturbModePacket.addProperty("_responseId", jsonObj._request_id);
+                                            if(!notificationManager.isNotificationPolicyAccessGranted()) {
+                                                changeDoNotDisturbModePacket.addProperty("result", false);
+                                                return;
+                                            }
+                                            changeDoNotDisturbModePacket.addProperty("result", true);
+                                            if(notificationManager.getCurrentInterruptionFilter() != NotificationManager.INTERRUPTION_FILTER_ALL) {
+                                                notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
+                                                changeDoNotDisturbModePacket.addProperty("mode","disable");
+                                            } else {
+                                                notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALARMS);
+                                                changeDoNotDisturbModePacket.addProperty("mode","enable");
+                                            }
+                                            sendObject(changeDoNotDisturbModePacket);
+                                            break;
                                         default:
                                             logger.warn("Unknown packet type:{}", jsonObj.packetType);
                                             break;
@@ -685,10 +706,10 @@ public class ConnectMainService extends Service implements INetworkService {
                 ConnectMainService.this.mediaProjectionIntent = null;
             }
         }
-        if(batteryStateReceiver != null)
+        if(deviceStateReceiver != null)
             try {
                 //偶发异常
-                unregisterReceiver(batteryStateReceiver);
+                unregisterReceiver(deviceStateReceiver);
             } catch (IllegalArgumentException ignore) {
             }
         if(shutdownReceiver != null)
@@ -884,7 +905,6 @@ public class ConnectMainService extends Service implements INetworkService {
         foregroundServiceChannel.setDescription("请勿关闭该通知");
         NotificationChannel onDisconnectNotificationChannel = new NotificationChannel("onDisconnectNotification", "断开连接通知", NotificationManager.IMPORTANCE_DEFAULT);
         onDisconnectNotificationChannel.setDescription("如不需要此功能可关闭该渠道或降低通知优先级");
-        NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.createNotificationChannel(foregroundServiceChannel);
         notificationManager.createNotificationChannel(onDisconnectNotificationChannel);
         logger.debug("Created foreground notification channel");

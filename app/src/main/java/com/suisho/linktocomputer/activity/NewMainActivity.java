@@ -418,6 +418,7 @@ public class NewMainActivity extends AppCompatActivity {
                         unregisterNetworkCallback();
                         autoConnector = null;
                         final int selfProtocolVersion = getResources().getInteger(R.integer.protoVersion);
+                        //TODO 改为协议版本不匹配提示
                         if(selfProtocolVersion > protocolVersion) {
                             logger.info("Show pc protocol version too low state");
                             stateBarManager.addState(States.getStateList().get("warn_pc_protocol_version_low"));
@@ -562,6 +563,13 @@ public class NewMainActivity extends AppCompatActivity {
         } else {
             logger.info("No notification listener permission.Add state");
             stateBarManager.addState(States.getStateList().get("info_notification_listener_permission"));
+        }
+        if(notificationManager.isNotificationPolicyAccessGranted()) {
+            logger.debug("Has notification policy access.Remove state");
+            stateBarManager.removeState(States.getStateList().get("info_not_interruption_filter_access_permission"));
+        }else{
+            logger.info("No notification policy access.Add state");
+            stateBarManager.addState(States.getStateList().get("info_not_interruption_filter_access_permission"));
         }
     }
 

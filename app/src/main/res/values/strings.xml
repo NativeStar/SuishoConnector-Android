@@ -85,6 +85,8 @@
     <string name="state_desc_auto_connect_error">功能运行过程中发生异常</string>
     <string name="state_title_pc_protocol_version_low">PC端版本低</string>
     <string name="state_desc_pc_protocol_version_low">部分功能可能无法正常工作 请更新PC端</string>
+    <string name="state_title_not_interruption_filter_access_permission">无勿扰模式权限</string>
+    <string name="state_desc_not_interruption_filter_access_permission">将无法在PC端调整该项设置</string>
     <string name="title_activity_file_upload">发送到计算机</string>
     <string name="text_send_file">发送文件</string>
     <string name="text_send_text">发送文本</string>

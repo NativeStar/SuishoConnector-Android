@@ -17,6 +17,7 @@ public class DeviceStateUpdatePacket {
     private final Intent broadcastIntent;
     private final Logger logger = LoggerFactory.getLogger(DeviceStateUpdatePacket.class);
     private boolean isDoze = false;
+    private boolean isDoNotDisturb=false;
 
     public DeviceStateUpdatePacket(Context context, Intent intent) {
         this.appContext = context;
@@ -44,6 +45,8 @@ public class DeviceStateUpdatePacket {
         jsonObject.addProperty("charging", isCharging());
         //doze模式
         jsonObject.addProperty("inDoze", isDoze);
+        //勿扰模式
+        jsonObject.addProperty("doNotDisturb", isDoNotDisturb);
         logger.debug("Created device state update packet");
         return jsonObject;
     }
@@ -59,6 +62,9 @@ public class DeviceStateUpdatePacket {
 
     public void setBatteryTemp(int temp) {
         this.batteryTemp = temp;
+    }
+    public void setIsDoNotDisturb(boolean mode) {
+        this.isDoNotDisturb = mode;
     }
 
     private JsonObject getMemoryInfo() {

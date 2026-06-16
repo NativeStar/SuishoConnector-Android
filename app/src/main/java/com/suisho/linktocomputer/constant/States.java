@@ -36,6 +36,7 @@ public class States {
     }
 
     public static HashMap<String, State> getStateList() {
+        //TODO 也许可以优化下 类似js map
         if(StateList.isEmpty()) {
             //init
             //图标打包
@@ -60,6 +61,8 @@ public class States {
             StateList.put("info_update_available", new State("info_update_available", R.string.state_title_update_available, R.string.state_desc_update_available, StateLevel.INFO, true,R.drawable.baseline_system_update_24));
             //PC端协议版本低
             StateList.put("warn_pc_protocol_version_low", new State("warn_pc_protocol_version_low", R.string.state_title_pc_protocol_version_low, R.string.state_desc_pc_protocol_version_low, StateLevel.WARN, false));
+            //缺少勿扰模式权限 优先级不高
+            StateList.put("info_not_interruption_filter_access_permission",new State("info_not_interruption_filter_access_permission", R.string.state_title_not_interruption_filter_access_permission, R.string.state_desc_not_interruption_filter_access_permission, StateLevel.INFO, true,R.drawable.baseline_do_not_disturb_off_24));
         }
         return StateList;
     }
