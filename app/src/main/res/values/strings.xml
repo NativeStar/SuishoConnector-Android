@@ -83,8 +83,8 @@
     <string name="state_desc_send_notification">前台服务不能通过常驻通知保活</string>
     <string name="state_name_auto_connect_error">自动连接异常</string>
     <string name="state_desc_auto_connect_error">功能运行过程中发生异常</string>
-    <string name="state_title_pc_protocol_version_low">PC端版本低</string>
-    <string name="state_desc_pc_protocol_version_low">部分功能可能无法正常工作 请更新PC端</string>
+    <string name="state_title_protocol_version_mismatch">协议版本不匹配</string>
+    <string name="state_desc_protocol_version_mismatch">部分功能可能无法正常工作 建议更新双方客户端</string>
     <string name="state_title_not_interruption_filter_access_permission">无勿扰模式权限</string>
     <string name="state_desc_not_interruption_filter_access_permission">将无法在PC端调整该项设置</string>
     <string name="title_activity_file_upload">发送到计算机</string>

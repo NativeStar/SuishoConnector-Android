@@ -419,9 +419,9 @@ public class NewMainActivity extends AppCompatActivity {
                         autoConnector = null;
                         final int selfProtocolVersion = getResources().getInteger(R.integer.protoVersion);
                         //TODO 改为协议版本不匹配提示
-                        if(selfProtocolVersion > protocolVersion) {
-                            logger.info("Show pc protocol version too low state");
-                            stateBarManager.addState(States.getStateList().get("warn_pc_protocol_version_low"));
+                        if(selfProtocolVersion != protocolVersion) {
+                            logger.info("Show protocol version mismatch state");
+                            stateBarManager.addState(States.getStateList().get("warn_protocol_version_mismatch"));
                         }
                         Util.performHapticIfEnabled(binding.toolbar, HapticFeedbackConstants.KEYBOARD_TAP);
                         new Timer().schedule(new TimerTask() {
@@ -450,7 +450,7 @@ public class NewMainActivity extends AppCompatActivity {
                                 ((FloatingActionButton) findViewById(R.id.home_disconnect_action_button)).setImageResource(R.drawable.baseline_close_24);
                                 ((TextView) findViewById(R.id.card_text_media_projection_mode)).setText(R.string.text_unauthorized);
                                 ((TextView)findViewById(R.id.card_text_connection_state_address)).setText("");
-                                stateBarManager.removeState("warn_pc_protocol_version_low");
+                                stateBarManager.removeState("warn_protocol_version_mismatch");
                             } catch (NullPointerException e) {
                                 logger.error("Error when init views", e);
                                 finish();
