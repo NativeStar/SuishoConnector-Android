@@ -418,7 +418,6 @@ public class NewMainActivity extends AppCompatActivity {
                         unregisterNetworkCallback();
                         autoConnector = null;
                         final int selfProtocolVersion = getResources().getInteger(R.integer.protoVersion);
-                        //TODO 改为协议版本不匹配提示
                         if(selfProtocolVersion != protocolVersion) {
                             logger.info("Show protocol version mismatch state");
                             stateBarManager.addState(States.getStateList().get("warn_protocol_version_mismatch"));

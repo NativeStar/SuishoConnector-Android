@@ -348,6 +348,7 @@ public class ConnectMainService extends Service implements INetworkService {
                     return;
                 }
                 logger.debug("Ready main connection");
+                //主连接
                 Request wsReq = new Request.Builder()
                         .url(url)
                         .addHeader("suisho-pair-token", pairToken)
@@ -359,6 +360,7 @@ public class ConnectMainService extends Service implements INetworkService {
                         .writeTimeout(Duration.ofSeconds(10))
                         .callTimeout(Duration.ofSeconds(10))
                         .pingInterval(Duration.ofSeconds(180))
+                        .minWebSocketMessageToCompress(1024L)
                         .build()
                         .newWebSocket(wsReq, new WebSocketListener() {
                             @Override
