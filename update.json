@@ -1,6 +1,6 @@
 {
-  "versionCode":15,
-  "versionName":"1.2.3",
-  "downloadUrl":"https://github.com/NativeStar/SuishoConnector-Android/releases/download/1.2.3/app-release.apk",
-  "description": "改为使用CustomTabs打开url\n修复在互传中打开无http协议前缀url时崩溃\n修复一些显示异常 并且界面不再强制锁定竖屏"
+  "versionCode":16,
+  "versionName":"1.2.4",
+  "downloadUrl":"https://github.com/NativeStar/SuishoConnector-Android/releases/download/1.2.4/app-release.apk",
+  "description": "互传消息支持拖拽交互\n支持远程调整勿扰模式\n其他逻辑优化"
 }
