@@ -123,6 +123,7 @@ public class ConnectMainService extends Service implements INetworkService {
     public IMediaProjectionServiceIPC projectionServiceIPC;
     private final Logger logger = LoggerFactory.getLogger(ConnectMainService.class);
     private PowerManager.WakeLock wakeLock;
+    private boolean isEnabledDoNotDisturbByComputer=false;
 
 
     public void setMediaProjectionIntent(Intent mediaProjectionIntent) {
@@ -375,12 +376,19 @@ public class ConnectMainService extends Service implements INetworkService {
                             public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
                                 super.onClosed(webSocket, code, reason);
                                 isConnected = false;
+                                final boolean isEnabledAutoDisabledDoNotDisturbOnDisconnect=isEnabledDoNotDisturbByComputer&&GlobalVariables.preferences.getBoolean("function_disable_do_not_disturb_on_disconnect", false);
                                 //关闭音频
                                 logger.info("Connection close with code:{}", code);
                                 onDisconnectCleanup();
                                 logger.debug("Checking activity on top");
-                                final String reasonString = reason.isEmpty() ? "计算机关闭连接" : reason;
+                                String reasonString = reason.isEmpty() ? "计算机关闭连接" : reason;
                                 ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                                //自动关闭勿扰
+                                if(isEnabledAutoDisabledDoNotDisturbOnDisconnect&&notificationManager.getCurrentInterruptionFilter()!=NotificationManager.INTERRUPTION_FILTER_ALL){
+                                    notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
+                                    reasonString+=".遵循您的设置 已自动关闭勿扰模式";
+                                }
+                                String finalReasonString = reasonString;
                                 am.getRunningAppProcesses().forEach(runningAppProcessInfo -> {
                                     if(runningAppProcessInfo.processName.equals("com.suisho.linktocomputer")) {
                                         logger.debug("Found self process");
@@ -392,7 +400,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 Notification notification = new Notification.Builder(ConnectMainService.this, "onDisconnectNotification")
                                                         .setSmallIcon(R.drawable.baseline_link_off_24)
                                                         .setContentTitle("连接断开")
-                                                        .setContentText(reasonString)
+                                                        .setContentText(finalReasonString)
                                                         .setAutoCancel(true)
                                                         .build();
                                                 notificationManager.notify(128, notification);
@@ -408,7 +416,7 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 NewMainActivity activity = activityMethods == null ? null : activityMethods.getActivity();
                                                 if(activity != null && !activity.isFinishing() && !activity.isDestroyed()) {
                                                     logger.info("Activity on stack top,show disconnect alert");
-                                                    activityMethods.showAlert("通讯关闭", reasonString, "确定");
+                                                    activityMethods.showAlert("通讯关闭", finalReasonString, "确定");
                                                     activityMethods.closeConnectingDialog();
                                                 }
                                             }
@@ -644,7 +652,6 @@ public class ConnectMainService extends Service implements INetworkService {
                                             }
                                             break;
                                         //TODO 支持在掉线后自动关闭由pc端打开的勿扰模式
-                                        //TODO 开发模式状态提醒 PC端也要
                                         case "changeDoNotDisturbMode":
                                             JsonObject changeDoNotDisturbModePacket = new JsonObject();
                                             changeDoNotDisturbModePacket.addProperty("_isResponsePacket", true);
@@ -656,9 +663,11 @@ public class ConnectMainService extends Service implements INetworkService {
                                             changeDoNotDisturbModePacket.addProperty("result", true);
                                             if(notificationManager.getCurrentInterruptionFilter() != NotificationManager.INTERRUPTION_FILTER_ALL) {
                                                 notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL);
+                                                isEnabledDoNotDisturbByComputer = false;
                                                 changeDoNotDisturbModePacket.addProperty("mode","disable");
                                             } else {
                                                 notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALARMS);
+                                                isEnabledDoNotDisturbByComputer = true;
                                                 changeDoNotDisturbModePacket.addProperty("mode","enable");
                                             }
                                             sendObject(changeDoNotDisturbModePacket);

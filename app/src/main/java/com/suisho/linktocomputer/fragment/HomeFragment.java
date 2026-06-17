@@ -13,7 +13,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.storage.StorageManager;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
@@ -247,7 +246,6 @@ public class HomeFragment extends Fragment {
                             "Finish activity",
                             "Throw exception",
                             "Edit state",
-                            "Launch storage manager intent"
                     }, (dialog, which) -> {
                         dialog.dismiss();
                         if(which == 0) {
@@ -288,9 +286,6 @@ public class HomeFragment extends Fragment {
                                     .setNeutralButton("Cancel", (dialog1, which1) -> {
                                     })
                                     .show();
-                        } else if(which == 4) {
-                            Intent intent = new Intent(StorageManager.ACTION_MANAGE_STORAGE);
-                            startActivity(intent);
                         }
                     })
                     .setTitle("Debug Menu")

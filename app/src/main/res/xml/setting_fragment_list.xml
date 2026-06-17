@@ -65,6 +65,13 @@
             android:key="function_enable_flag_secure"
             android:summary="阻止在应用内进行截屏并阻止录屏录制到应用窗口"
             android:title="阻止截录屏" />
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:icon="@drawable/baseline_do_disturb_off_24"
+            android:key="function_disable_do_not_disturb_on_disconnect"
+            android:summary="@string/setting_function_disable_do_not_disturb_on_disconnect_desc"
+            android:title="@string/setting_function_disable_do_not_disturb_on_disconnect"
+            />
     </PreferenceCategory>
     <PreferenceCategory android:title="互传">
         <Preference
