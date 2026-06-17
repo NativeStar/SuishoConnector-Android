@@ -651,7 +651,6 @@ public class ConnectMainService extends Service implements INetworkService {
                                                 notificationListenerService.appendMediaSessionControl(jsonObj.msg, jsonObj.time);
                                             }
                                             break;
-                                        //TODO 支持在掉线后自动关闭由pc端打开的勿扰模式
                                         case "changeDoNotDisturbMode":
                                             JsonObject changeDoNotDisturbModePacket = new JsonObject();
                                             changeDoNotDisturbModePacket.addProperty("_isResponsePacket", true);

@@ -19,7 +19,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -31,7 +30,6 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.gson.JsonObject;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.ChecksumException;
 import com.google.zxing.FormatException;
@@ -43,11 +41,11 @@ import com.journeyapps.barcodescanner.SourceData;
 import com.journeyapps.barcodescanner.camera.CameraManager;
 import com.journeyapps.barcodescanner.camera.CameraSettings;
 import com.journeyapps.barcodescanner.camera.PreviewCallback;
+import com.suisho.linktocomputer.DebugMenuHandle;
 import com.suisho.linktocomputer.GlobalVariables;
 import com.suisho.linktocomputer.R;
 import com.suisho.linktocomputer.Util;
 import com.suisho.linktocomputer.activity.NewMainActivity;
-import com.suisho.linktocomputer.constant.States;
 import com.suisho.linktocomputer.databinding.FragmentHomeBinding;
 import com.suisho.linktocomputer.enums.CodeScannerState;
 import com.suisho.linktocomputer.interfaces.IQRCodeDetectSuccess;
@@ -240,57 +238,7 @@ public class HomeFragment extends Fragment {
                 return;
             }
             logger.debug("Show debug menu");
-            new MaterialAlertDialogBuilder(getActivity())
-                    .setItems(new CharSequence[]{
-                            "Edit desktop client state",
-                            "Finish activity",
-                            "Throw exception",
-                            "Edit state",
-                    }, (dialog, which) -> {
-                        dialog.dismiss();
-                        if(which == 0) {
-                            EditText editText = new EditText(getActivity());
-                            editText.setHint("State id");
-                            new MaterialAlertDialogBuilder(getActivity())
-                                    .setView(editText)
-                                    .setTitle("Edit desktop state")
-                                    .setPositiveButton("Add", (dialog1, which1) -> {
-                                        JsonObject jsonObject = new JsonObject();
-                                        jsonObject.addProperty("packetType", "edit_state");
-                                        jsonObject.addProperty("type", "add");
-                                        jsonObject.addProperty("name", editText.getText().toString());
-                                        GlobalVariables.computerConfigManager.getNetworkService().sendObject(jsonObject);
-                                    })
-                                    .setNegativeButton("Remove", (dialog1, which1) -> {
-                                        JsonObject jsonObject = new JsonObject();
-                                        jsonObject.addProperty("packetType", "edit_state");
-                                        jsonObject.addProperty("type", "remove");
-                                        jsonObject.addProperty("name", editText.getText().toString());
-                                        GlobalVariables.computerConfigManager.getNetworkService().sendObject(jsonObject);
-                                    })
-                                    .setNeutralButton("Cancel", (dialog1, which1) -> {
-                                    })
-                                    .show();
-                        } else if(which == 1) {
-                            getActivity().finish();
-                        } else if(which == 2) {
-                            throw new RuntimeException("Test exception.Do not feedback this!");
-                        } else if(which == 3) {
-                            EditText editText = new EditText(getActivity());
-                            editText.setHint("State id");
-                            new MaterialAlertDialogBuilder(getActivity())
-                                    .setView(editText)
-                                    .setTitle("Edit state")
-                                    .setPositiveButton("Add", (dialog1, which1) -> ((NewMainActivity) getActivity()).stateBarManager.addState(States.getStateList().get(editText.getText().toString())))
-                                    .setNegativeButton("Remove", (dialog1, which1) -> ((NewMainActivity) getActivity()).stateBarManager.removeState(States.getStateList().get(editText.getText().toString())))
-                                    .setNeutralButton("Cancel", (dialog1, which1) -> {
-                                    })
-                                    .show();
-                        }
-                    })
-                    .setTitle("Debug Menu")
-                    .setPositiveButton("Close", null)
-                    .show();
+            DebugMenuHandle.showDebugMenu((NewMainActivity) getActivity());
         });
         binding.buttonConnectMethodAddressInput.setOnClickListener(v -> {
             Util.performHapticIfEnabled(binding.buttonConnectMethodAddressInput, HapticFeedbackConstants.VIRTUAL_KEY);
